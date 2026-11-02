@@ -100,7 +100,7 @@
         <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight">Student Login</h1>
         <span class="text-[11px] font-extrabold bg-blue-600/20 text-sky-400 border border-sky-500/40 px-2.5 py-1 rounded-lg">PC & Mobile</span>
       </div>
-      <p class="text-xs text-slate-400 mb-5 leading-relaxed">Private per-device login. Sharing this link in groups never shares your account.</p>
+      <p class="text-xs text-slate-400 mb-5 leading-relaxed">Secure login with Cloud & Cross-Device Sync support.</p>
 
       <div id="login-error" class="hidden bg-red-950/80 border border-red-500 text-red-200 text-xs font-semibold p-3 rounded-xl mb-4"></div>
 
@@ -173,7 +173,12 @@
     <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-4 sm:p-6 shadow-xl">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 id="greeting-title" class="text-xl sm:text-2xl font-black text-white">Good Morning, Student</h1>
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <h1 id="greeting-title" class="text-xl sm:text-2xl font-black text-white">Good Morning, Student</h1>
+            <span id="sync-status-pill" class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40">
+              Saved on Device
+            </span>
+          </div>
           <p id="student-meta" class="text-xs sm:text-sm text-slate-400 mt-1 font-medium"></p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -183,12 +188,68 @@
             <option value="Batch B">Batch B</option>
             <option value="Batch C">Batch C</option>
           </select>
+          <button id="btn-toggle-sync-box" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-black px-3.5 py-2 rounded-xl shadow transition">
+            PC &#8596; Mobile Sync
+          </button>
           <button id="btn-reset-sem" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl transition">
             Reset Missed to 0
           </button>
           <button id="btn-logout" class="bg-red-950 hover:bg-red-900 border border-red-500/60 text-red-100 text-xs font-bold px-3 py-2 rounded-xl transition">
             Logout
           </button>
+        </div>
+      </div>
+
+      <!-- PC <-> MOBILE SYNC DRAWER (SOLVES STATIC HOSTING CROSS-DEVICE SYNC) -->
+      <div id="sync-drawer" class="hidden mt-4 pt-4 border-t border-slate-800 bg-slate-950/90 rounded-xl p-4 space-y-4 border border-sky-500/40">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-black text-sky-400">PC &#8596; Mobile Account Sync</h3>
+            <p class="text-xs text-slate-400">Sync your attendance, calendar ticks, and extra lectures between your PC and Android phone:</p>
+          </div>
+          <button id="btn-close-sync" class="text-xs text-slate-400 hover:text-white font-bold px-2 py-1 bg-slate-800 rounded">Close</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Method 1: Automatic Cloud Sync Room -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
+            <div class="text-xs font-black text-emerald-400 uppercase">Method 1: 1-Click Cloud Sync (PC &amp; Phone)</div>
+            <p class="text-[11px] text-slate-300 leading-relaxed">
+              Click <b>Push to Cloud</b> on one device, copy your <b>Cloud Sync ID</b>, and click <b>Pull from Cloud</b> on your other device. Once linked, both devices sync directly!
+            </p>
+            <div class="flex gap-2">
+              <input id="cloud-sync-id" type="text" placeholder="Cloud Sync ID (Auto-generated on Push)"
+                class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white flex-grow font-mono" />
+            </div>
+            <div class="flex gap-2">
+              <button id="btn-cloud-push" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs py-2 rounded-lg transition">
+                &#8593; Push This Device to Cloud
+              </button>
+              <button id="btn-cloud-pull" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs py-2 rounded-lg transition">
+                &#8595; Pull from Cloud to This Device
+              </button>
+            </div>
+            <div id="cloud-sync-msg" class="text-[11px] font-bold text-sky-300"></div>
+          </div>
+
+          <!-- Method 2: Instant Backup Code Copy/Paste -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
+            <div class="text-xs font-black text-amber-400 uppercase">Method 2: Instant Sync Code (WhatsApp / Clipboard)</div>
+            <p class="text-[11px] text-slate-300 leading-relaxed">
+              Tap <b>Copy Sync Code</b> on PC, send it to yourself on WhatsApp, and paste it below on your phone (works 100% offline/instant):
+            </p>
+            <div class="flex gap-2">
+              <input id="manual-sync-input" type="text" placeholder="Paste Sync Code here to import..."
+                class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white flex-grow font-mono" />
+              <button id="btn-import-code" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs px-3 py-2 rounded-lg shrink-0">
+                Load Code
+              </button>
+            </div>
+            <button id="btn-copy-code" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-300 font-black text-xs py-2 rounded-lg transition">
+              Copy My Current Sync Code
+            </button>
+            <div id="manual-sync-msg" class="text-[11px] font-bold text-emerald-400"></div>
+          </div>
         </div>
       </div>
 
@@ -211,7 +272,7 @@
       <div id="admin-broadcast-banner" class="hidden mt-4 bg-sky-950/80 border border-sky-500/60 text-sky-200 text-xs font-bold px-4 py-3 rounded-xl"></div>
     </div>
 
-    <!-- EXCLUSIVE ADMIN POWER PANEL (Unlocked via Cryptographic Hash Only — Zero Plaintext in Code) -->
+    <!-- EXCLUSIVE ADMIN POWER PANEL (Zero Plaintext Credentials in Code) -->
     <div id="admin-panel" class="hidden bg-slate-900 border-2 border-amber-500/80 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between">
         <h2 class="text-base sm:text-lg font-black text-amber-400">Admin Power Panel (Verified Exclusive Access)</h2>
@@ -264,10 +325,10 @@
         Note: These calculations assume that you will attend all of your remaining upcoming lectures—so don't be a defaulter!
       </div>
 
-      <!-- Mobile Touch Cards (Android & Small Screens) -->
+      <!-- Mobile Touch Cards -->
       <div id="mobile-subject-cards" class="grid grid-cols-1 gap-3.5 lg:hidden"></div>
 
-      <!-- Desktop Full Table (PC & Large Screens) -->
+      <!-- Desktop Full Table -->
       <div class="hidden lg:block overflow-x-auto">
         <table class="w-full text-left border-collapse text-sm">
           <thead>
@@ -350,21 +411,27 @@
           </div>
 
           <p class="text-xs text-slate-300 leading-relaxed font-medium">
-            Tap any date on the calendar to view its <b>Even Week</b> or <b>Odd Week</b> timetable below. Continuous bulk classes (like CP Slots 3–4 or 2-hr Labs) count as <b>1 single bulk unit</b>. Tick the checkbox beside any lecture you missed:
+            Theory lectures and Labs/Tutorials are always kept separate. Continuous identical sessions (like Wednesday CP 3–4 or 2-hr Labs) merge into <b>1 Bulk Unit</b>. Tick the checkbox beside any class (including 4–5 PM UHV or extra lectures) you missed on this date:
           </p>
 
           <div id="daily-slots-container" class="space-y-2.5"></div>
 
-          <!-- Editable 4:00 PM - 5:00 PM Extra Lecture Box -->
+          <!-- Editable 4:00 PM - 5:00 PM Extra Lecture Box (Independent per day, case-insensitive) -->
           <div id="slot7-editor-box" class="pt-4 border-t border-slate-800">
-            <label class="block text-xs font-black text-sky-400 mb-1.5">
-              Edit 4:00 PM – 5:00 PM Slot Only (Auto-Adds +1 Extra Lecture Attended):
+            <label class="block text-xs font-black text-sky-400 mb-1">
+              Set / Edit 4:00 PM – 5:00 PM Slot for This Date Only:
             </label>
+            <p class="text-[11px] text-slate-400 mb-2">
+              Type any subject short-form in lowercase or uppercase (e.g. <b>ap</b>, <b>cp</b>, <b>fem-i</b>, <b>ec</b>, <b>eg</b>, <b>be&amp;de</b>, <b>ws-i</b>, <b>uhv</b>). It stays independent to this date, adds +1 Extra Lecture when attended, and can be ticked above if missed!
+            </p>
             <div class="flex gap-2">
-              <input id="slot7-input" type="text" placeholder="Type Short Form (e.g. CP, FEM-I, AP, EC, EG, BE&DE, WS-I, UHV)"
+              <input id="slot7-input" type="text" placeholder="e.g. ap, cp, fem-i, uhv, ec, eg..."
                 class="bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white flex-grow focus:outline-none focus:border-sky-400" />
               <button id="btn-save-slot7" class="bg-blue-600 hover:bg-blue-500 text-white font-black text-xs px-4 py-2.5 rounded-xl shrink-0 transition">
                 Save 4–5 PM
+              </button>
+              <button id="btn-clear-slot7" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-bold text-xs px-3 py-2.5 rounded-xl shrink-0 transition">
+                Clear
               </button>
             </div>
           </div>
@@ -372,16 +439,21 @@
       </div>
     </div>
 
-    <!-- SECTION 5: FULL EVEN & ODD WEEK TIMETABLES (MOBILE DAY CARDS + 5-DAY MERGED GRID) & IMAGE MANAGER -->
+    <!-- SECTION 5: FULL EVEN & ODD WEEK TIMETABLES (AUTO-SYNCED TO CURRENT/SELECTED WEEK) -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 class="text-base sm:text-lg font-black text-white">5. Official Even & Odd Week Timetables (Batch-Filtered Labs)</h2>
-          <p class="text-xs text-slate-400 font-medium">Switch between Even Week, Odd Week, or upload/paste your Timetable Image.</p>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h2 class="text-base sm:text-lg font-black text-white">5. Official Even &amp; Odd Week Timetables</h2>
+            <span id="sec5-auto-badge" class="text-[11px] font-black px-2.5 py-0.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40">
+              Auto-Synced to Odd Week
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 font-medium mt-0.5">Automatically switches to Odd Week or Even Week based on the current/selected date.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <button id="btn-tt-even" class="px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white">Even Week Timetable</button>
-          <button id="btn-tt-odd" class="px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300">Odd Week Timetable</button>
+          <button id="btn-tt-even" class="px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300">Even Week Timetable</button>
+          <button id="btn-tt-odd" class="px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white">Odd Week Timetable</button>
           <button id="btn-tt-img" class="px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300">Timetable Image</button>
         </div>
       </div>
@@ -423,7 +495,7 @@
             <input id="tt-file-input" type="file" accept="image/*" class="text-xs text-slate-400 mt-1" />
           </label>
           <div id="paste-zone" tabindex="0" class="border-2 border-dashed border-sky-500/70 rounded-2xl p-5 text-center bg-slate-950/50 cursor-pointer">
-            <span class="text-xs font-extrabold text-sky-300 block mb-0.5">Option 2: Click Here & Press Ctrl + V</span>
+            <span class="text-xs font-extrabold text-sky-300 block mb-0.5">Option 2: Click Here &amp; Press Ctrl + V</span>
             <span id="paste-status" class="text-[11px] text-slate-400 font-medium">Accepts copied clipboard images directly</span>
           </div>
         </div>
@@ -439,7 +511,6 @@
 
 <script>
 // ZERO PLAINTEXT EMAIL OR PASSWORD IN SOURCE CODE:
-// Salted SHA-256 digests verify Admin identity without exposing email or password in GitHub.
 const AUTH_PEPPER = "ATT_V9_PEPPER_2026";
 const ADMIN_EMAIL_SALTSHA256 = "fd59fa4b0e9158a4ef72be9a7459c5b4b8b8532a60b0f74a370623bc6b271357";
 const ADMIN_PW_SALTSHA256 = "a2eb4d78636647b59f87c3e45b18a431a6c27ff8df435364a85261e6401564a1";
@@ -522,8 +593,8 @@ const SEMESTER_DATA = {
 let currentUser = null;
 let isCurrentUserAdmin = false;
 let currentSem = "Semester I";
-let selectedCalDate = "2026-11-02"; // Default to a working day in Nov 2026
-let ttWeekTab = "Even";
+let selectedCalDate = "2026-11-02";
+let ttWeekTab = "Odd"; // Auto-synced to selectedCalDate on startup
 let ttViewMode = window.innerWidth < 768 ? "cards" : "grid";
 let ttSelectedDay = "MON";
 
@@ -561,6 +632,14 @@ function getWeekType(isoDate) {
   return weekNo % 2 === 0 ? "Even Week" : "Odd Week";
 }
 
+// FIX 1: Identify exact session category ('theory' vs 'lab' vs 'tut') so Theory AP and Lab AP (B) NEVER merge!
+function getSessionKind(entryText) {
+  const up = entryText.toUpperCase();
+  if (/\bLAB\b/.test(up) || /\bWORKSHOP\b/.test(up) || up.includes("WS-I") || up.includes("WS-II")) return "lab";
+  if (/\bTUT\b/.test(up) || /\bTUTORIAL\b/.test(up)) return "tut";
+  return "theory";
+}
+
 function extractBatchEntry(raw, batchLetter) {
   if (raw.includes("/") && (raw.includes("(A)") || raw.includes("(B)") || raw.includes("(C)"))) {
     const parts = raw.split("/").map(p => p.trim());
@@ -571,18 +650,77 @@ function extractBatchEntry(raw, batchLetter) {
   return { text: raw, isLab: false };
 }
 
+// FIX 4 & 5: Strict word-boundary matching + ignore generic 4-5 PM placeholders ('Remedial Lecture', 'FE Mentoring Slot', etc.)
 function matchSubjectShort(text, semCourses) {
   if (!text) return null;
-  const up = text.toUpperCase();
-  if (up.includes("WORKSHOP") || up.includes("WS-I")) return "WS-I";
-  for (const c of semCourses) {
-    if (up.includes(c.code.toUpperCase())) return c.short;
+  const up = text.trim().toUpperCase();
+  if (!up) return null;
+
+  // Never match generic non-credit placeholders unless overridden by user
+  if (
+    up.includes("REMEDIAL LECTURE") ||
+    up.includes("MENTORING SLOT") ||
+    up.includes("EXTRA LECTURE SLOT") ||
+    up.includes("SHORT BREAK") ||
+    up.includes("LUNCH BREAK")
+  ) {
+    return null;
   }
+
+  if (up.includes("WORKSHOP") || up.includes("WS-I") || up === "WS" || up === "WS1") {
+    return semCourses.some(c => c.short === "WS-I") ? "WS-I" : null;
+  }
+
+  // Exact match on short form or course code (case-insensitive)
+  for (const c of semCourses) {
+    if (up === c.short.toUpperCase() || up === c.code.toUpperCase()) return c.short;
+  }
+
+  // Word-boundary match so "LECTURE" never matches "EC" and "MENTORING" never matches "EM"
   const sorted = [...semCourses].sort((a, b) => b.short.length - a.short.length);
   for (const c of sorted) {
-    if (up.includes(c.short.toUpperCase())) return c.short;
+    const escaped = c.short.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(^|[^A-Z0-9&-])${escaped}($|[^A-Z0-9&-])`);
+    if (regex.test(up)) return c.short;
   }
   return null;
+}
+
+// Sync Section 5 Timetable Tab & Day Pill to any given ISO date
+function syncTimetableToDate(isoDate) {
+  const wk = getWeekType(isoDate);
+  if (ttWeekTab !== "Img") {
+    ttWeekTab = wk === "Odd Week" ? "Odd" : "Even";
+  }
+  const dObj = new Date(isoDate + "T00:00:00");
+  const dow = (dObj.getDay() + 6) % 7;
+  if (dow >= 0 && dow <= 4) {
+    ttSelectedDay = ["MON", "TUE", "WED", "THR", "FRI"][dow];
+  }
+  updateTimetableTabButtons();
+}
+
+function updateTimetableTabButtons() {
+  document.getElementById("btn-tt-even").className = ttWeekTab === "Even"
+    ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white shadow"
+    : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+  document.getElementById("btn-tt-odd").className = ttWeekTab === "Odd"
+    ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white shadow"
+    : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+  document.getElementById("btn-tt-img").className = ttWeekTab === "Img"
+    ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white shadow"
+    : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+
+  const autoBadge = document.getElementById("sec5-auto-badge");
+  if (autoBadge && ttWeekTab !== "Img") {
+    autoBadge.textContent = `Auto-Synced: ${ttWeekTab} Week (${ttSelectedDay})`;
+  }
+
+  document.querySelectorAll(".day-pill").forEach(b => {
+    b.className = b.dataset.day === ttSelectedDay
+      ? "day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-blue-600 text-white"
+      : "day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300";
+  });
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -592,6 +730,17 @@ window.addEventListener("DOMContentLoaded", async () => {
     opt.value = s; opt.textContent = s;
     semSel.appendChild(opt);
   });
+
+  // Set default date to today if within Sem I window, else 2026-11-02
+  const todayIso = new Date().toISOString().slice(0, 10);
+  if (todayIso >= "2026-09-01" && todayIso <= "2026-12-31") {
+    selectedCalDate = todayIso;
+  }
+  const ym = selectedCalDate.slice(0, 7);
+  if (MONTHS_LIST.includes(ym)) {
+    document.getElementById("cal-month-select").value = ym;
+  }
+  syncTimetableToDate(selectedCalDate);
 
   const rememberedEmail = localStorage.getItem("att_remembered_user_v9");
   const db = getAllUsersDB();
@@ -628,6 +777,9 @@ function persistCurrentUser() {
   const db = getAllUsersDB();
   db[currentUser.email] = currentUser;
   saveAllUsersDB(db);
+  if (currentUser.cloudSyncId) {
+    autoPushCloudSilent();
+  }
 }
 
 function getComputedStats() {
@@ -689,6 +841,10 @@ function enterDashboard() {
 
   document.getElementById("dash-batch").value = currentUser.batch;
   document.getElementById("custom-target-input").value = currentUser.targetPct || 75;
+  if (currentUser.cloudSyncId) {
+    document.getElementById("cloud-sync-id").value = currentUser.cloudSyncId;
+    document.getElementById("sync-status-pill").textContent = `Cloud Synced (${currentUser.cloudSyncId})`;
+  }
 
   const adminPanel = document.getElementById("admin-panel");
   if (isCurrentUserAdmin) {
@@ -698,6 +854,7 @@ function enterDashboard() {
     adminPanel.classList.add("hidden");
   }
 
+  syncTimetableToDate(selectedCalDate);
   loadSavedTimetableImage();
   renderAll();
 }
@@ -873,7 +1030,7 @@ function renderCalendarGrid() {
   const ym = document.getElementById("cal-month-select").value;
   const [year, month] = ym.split("-").map(Number);
   const firstDay = new Date(year, month - 1, 1);
-  const startOffset = (firstDay.getDay() + 6) % 7; // Monday = 0
+  const startOffset = (firstDay.getDay() + 6) % 7;
   const daysInMonth = new Date(year, month, 0).getDate();
   const todayIso = new Date().toISOString().slice(0, 10);
 
@@ -919,6 +1076,7 @@ function renderCalendarGrid() {
   gridEl.innerHTML = html;
 }
 
+// FIX 3: Clicking any calendar date automatically syncs Section 5 Timetable to that date's Odd/Even Week!
 window.selectDate = function(iso) {
   selectedCalDate = iso;
   const ym = iso.slice(0, 7);
@@ -926,6 +1084,7 @@ window.selectDate = function(iso) {
   if (MONTHS_LIST.includes(ym) && selEl.value !== ym) {
     selEl.value = ym;
   }
+  syncTimetableToDate(iso);
   renderAll();
 };
 
@@ -944,20 +1103,44 @@ function getMergedDaySlots(isoDate) {
 
   const extracted = rawSlots.map((raw, idx) => {
     if (idx === 8 && savedSlot7) {
-      return { idx, slotLabel: TIME_SLOTS[idx], text: `Extra Lecture: ${savedSlot7}`, short: savedSlot7, isLab: false };
+      return {
+        idx,
+        slotLabel: TIME_SLOTS[idx],
+        text: `Extra Lecture: ${savedSlot7} (4–5 PM)`,
+        short: savedSlot7,
+        isLab: false,
+        kind: "extra",
+        isCustomExtra: true
+      };
     }
     const { text, isLab } = extractBatchEntry(raw, batchLetter);
     const short = matchSubjectShort(text, courses);
-    return { idx, slotLabel: TIME_SLOTS[idx], text, short, isLab };
+    const kind = getSessionKind(text);
+    return { idx, slotLabel: TIME_SLOTS[idx], text, short, isLab, kind, isCustomExtra: false };
   });
 
+  // FIX 1: Only merge consecutive slots if BOTH subject short-form AND session kind ('theory' vs 'lab' vs 'tut') match!
   const units = [];
   let i = 0;
   while (i < extracted.length) {
     const curr = extracted[i];
-    if (curr.short && curr.idx < 8 && i + 1 < extracted.length && extracted[i + 1].short === curr.short && extracted[i + 1].idx < 8) {
+    if (
+      curr.short &&
+      curr.idx < 8 &&
+      i + 1 < extracted.length &&
+      extracted[i + 1].short === curr.short &&
+      extracted[i + 1].kind === curr.kind &&
+      extracted[i + 1].idx < 8
+    ) {
       let endI = i + 1;
-      while (endI < extracted.length && extracted[endI].short === curr.short && extracted[endI].idx < 8) endI++;
+      while (
+        endI < extracted.length &&
+        extracted[endI].short === curr.short &&
+        extracted[endI].kind === curr.kind &&
+        extracted[endI].idx < 8
+      ) {
+        endI++;
+      }
       endI--;
       const indices = [];
       for (let k = i; k <= endI; k++) indices.push(extracted[k].idx);
@@ -965,9 +1148,11 @@ function getMergedDaySlots(isoDate) {
         headIdx: curr.idx,
         indices,
         slotLabel: `Bulk Unit (Slots ${i + 1}–${endI + 1})`,
-        text: `${curr.text} [1 Combined Bulk Lecture]`,
+        text: `${curr.text} [1 Combined Bulk Unit]`,
         short: curr.short,
-        isLab: curr.isLab
+        isLab: curr.isLab,
+        kind: curr.kind,
+        isCustomExtra: false
       });
       i = endI + 1;
     } else {
@@ -977,7 +1162,9 @@ function getMergedDaySlots(isoDate) {
         slotLabel: curr.slotLabel,
         text: curr.text,
         short: curr.short,
-        isLab: curr.isLab
+        isLab: curr.isLab,
+        kind: curr.kind,
+        isCustomExtra: curr.isCustomExtra
       });
       i++;
     }
@@ -1016,10 +1203,14 @@ function renderDailyInspector(statsMap, targetPct) {
   container.innerHTML = units.map((u, uIdx) => {
     const isTicked = u.indices.some(i => Boolean(dayTicks[i]));
     const st = u.short ? statsMap[u.short] : null;
-    let statusHtml = `<span class="text-slate-400">Break / Non-Credit</span>`;
-    if (st) {
-      if (u.headIdx === 8 && currentUser.slot7Map[selectedCalDate]) {
-        statusHtml = `<span class="text-emerald-400 font-bold">+1 Extra Credited (${st.pct}%)</span>`;
+    let statusHtml = `<span class="text-slate-400">Non-Credit / Free Slot (Editable in 4–5 PM box below)</span>`;
+    if (u.text.includes("BREAK")) {
+      statusHtml = `<span class="text-slate-400">Official Break</span>`;
+    } else if (st) {
+      if (u.isCustomExtra) {
+        statusHtml = isTicked
+          ? `<span class="text-amber-300 font-bold">Marked Missed (${u.short} Curr: ${st.pct}%)</span>`
+          : `<span class="text-emerald-400 font-bold">+1 Extra Lecture Credited to ${u.short} (Curr: ${st.pct}%)</span>`;
       } else if (st.needed > 0) {
         statusHtml = `<span class="text-amber-300 font-bold">Missed: ${st.unattended}/${st.total} | Need ${st.needed} for ${targetPct}% (${st.pct}%)</span>`;
       } else {
@@ -1028,10 +1219,11 @@ function renderDailyInspector(statsMap, targetPct) {
     }
 
     const labBadge = u.isLab ? `<span class="batch-badge ml-1">YOUR ${currentUser.batch.toUpperCase()} LAB</span>` : "";
-    const canTick = Boolean(u.short && u.headIdx < 8);
+    // FIX 4: Allow ticking ANY valid subject slot, INCLUDING Slot 7 (headIdx === 8, such as Friday UHV or custom 4-5 PM extra lecture)!
+    const canTick = Boolean(u.short);
 
     return `
-      <div class="flex items-center justify-between gap-2.5 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs">
+      <div class="flex items-center justify-between gap-2.5 bg-slate-900 border ${isTicked ? 'border-amber-500/60 bg-amber-950/20' : 'border-slate-800'} rounded-xl px-3.5 py-2.5 text-xs">
         <div class="flex items-center gap-3">
           ${canTick ? `
             <input type="checkbox" ${isTicked ? "checked" : ""}
@@ -1043,12 +1235,13 @@ function renderDailyInspector(statsMap, targetPct) {
             <div class="text-[11px] text-slate-400 font-medium mt-0.5">${u.slotLabel} &bull; ${statusHtml}</div>
           </div>
         </div>
-        ${canTick ? `<span class="text-[10px] font-black ${isTicked ? 'text-amber-400' : 'text-slate-500'}">${isTicked ? 'MISSED' : 'ATTENDED'}</span>` : ''}
+        ${canTick ? `<span class="text-[10px] font-black ${isTicked ? 'text-amber-400' : 'text-emerald-400'}">${isTicked ? 'MISSED' : 'ATTENDED'}</span>` : ''}
       </div>
     `;
   }).join("");
 }
 
+// FIX 4 & 5: Independent per-date ticking for regular slots (including Friday UHV) AND custom 4-5 PM extra lectures
 window.toggleDailyUnitTick = function(isoDate, unitIdx, isChecked) {
   const { units } = getMergedDaySlots(isoDate);
   const unit = units[unitIdx];
@@ -1064,8 +1257,15 @@ window.toggleDailyUnitTick = function(isoDate, unitIdx, isChecked) {
     const course = SEMESTER_DATA[currentSem].find(c => c.short === unit.short);
     if (course) {
       const rec = currentUser.semData[currentSem][course.code];
-      const delta = isChecked ? 1 : -1;
-      rec.unattended = Math.min(course.total, Math.max(0, (rec.unattended || 0) + delta));
+      if (unit.isCustomExtra) {
+        // Custom 4-5 PM extra lecture: when attended (unchecked), it gives +1 extra; when ticked as missed, remove that +1 extra
+        const extraDelta = isChecked ? -1 : 1;
+        rec.extra = Math.max(0, (rec.extra || 0) + extraDelta);
+      } else {
+        // Scheduled timetable lecture (Slots 1-6 or Friday Odd Week UHV in Slot 7)
+        const unattDelta = isChecked ? 1 : -1;
+        rec.unattended = Math.min(course.total, Math.max(0, (rec.unattended || 0) + unattDelta));
+      }
     }
   }
 
@@ -1081,22 +1281,27 @@ function applyPresetBunkMode(mode) {
   const dayTicks = currentUser.dailyTicks[selectedCalDate];
 
   units.forEach(u => {
-    if (u.short && u.headIdx < 8) {
+    if (u.short) {
       const wasTicked = u.indices.some(i => Boolean(dayTicks[i]));
       let shouldTick = false;
       if (mode === "FULL") shouldTick = true;
       else if (mode === "AM" && u.headIdx <= 4) shouldTick = true;
-      else if (mode === "PM" && u.headIdx >= 5 && u.headIdx < 8) shouldTick = true;
+      else if (mode === "PM" && u.headIdx >= 5) shouldTick = true;
       else if (mode === "CLEAR") shouldTick = false;
 
       u.indices.forEach(i => { dayTicks[i] = shouldTick; });
 
       if (shouldTick !== wasTicked) {
-        const delta = shouldTick ? 1 : -1;
         const course = SEMESTER_DATA[currentSem].find(c => c.short === u.short);
         if (course) {
           const rec = currentUser.semData[currentSem][course.code];
-          rec.unattended = Math.min(course.total, Math.max(0, (rec.unattended || 0) + delta));
+          if (u.isCustomExtra) {
+            const extraDelta = shouldTick ? -1 : 1;
+            rec.extra = Math.max(0, (rec.extra || 0) + extraDelta);
+          } else {
+            const delta = shouldTick ? 1 : -1;
+            rec.unattended = Math.min(course.total, Math.max(0, (rec.unattended || 0) + delta));
+          }
         }
       }
     }
@@ -1113,7 +1318,7 @@ function applyPresetBunkMode(mode) {
 }
 
 function recomputeDayBadge(isoDate, units, dayTicks) {
-  const creditUnits = units.filter(u => u.short && u.headIdx < 8);
+  const creditUnits = units.filter(u => Boolean(u.short));
   const missedShorts = [];
   let tickedCount = 0;
 
@@ -1133,6 +1338,7 @@ function recomputeDayBadge(isoDate, units, dayTicks) {
   }
 }
 
+// --- SECTION 5: TIMETABLE RENDERER (SEPARATES THEORY VS LAB/TUTORIAL) ---
 function renderTimetableSection(statsMap, targetPct) {
   const grid = ttWeekTab === "Odd" ? ODD_GRID : EVEN_GRID;
   const batchLetter = currentUser.batch.slice(-1).toUpperCase();
@@ -1145,16 +1351,21 @@ function renderTimetableSection(statsMap, targetPct) {
     const raw = daySlots[i];
     const { text, isLab } = extractBatchEntry(raw, batchLetter);
     const short = matchSubjectShort(text, courses);
+    const kind = getSessionKind(text);
     let span = 1;
     if (short && i < 8) {
-      while (i + span < 8 && matchSubjectShort(extractBatchEntry(daySlots[i + span], batchLetter).text, courses) === short) {
+      while (
+        i + span < 8 &&
+        matchSubjectShort(extractBatchEntry(daySlots[i + span], batchLetter).text, courses) === short &&
+        getSessionKind(extractBatchEntry(daySlots[i + span], batchLetter).text) === kind
+      ) {
         span++;
       }
     }
 
     const st = short ? statsMap[short] : null;
     let cardClass = "cell-blue";
-    let meta = "Break / Extra Slot";
+    let meta = "Non-Credit / Extra Slot";
     if (raw.includes("BREAK")) {
       cardClass = "cell-red";
       meta = "Official Break";
@@ -1188,9 +1399,14 @@ function renderTimetableSection(statsMap, targetPct) {
     while (s < TIME_SLOTS.length) {
       const { text } = extractBatchEntry(grid[d][s], batchLetter);
       const sf = matchSubjectShort(text, courses);
+      const kind = getSessionKind(text);
       if (sf && s < 8) {
         let sp = 1;
-        while (s + sp < 8 && matchSubjectShort(extractBatchEntry(grid[d][s + sp], batchLetter).text, courses) === sf) {
+        while (
+          s + sp < 8 &&
+          matchSubjectShort(extractBatchEntry(grid[d][s + sp], batchLetter).text, courses) === sf &&
+          getSessionKind(extractBatchEntry(grid[d][s + sp], batchLetter).text) === kind
+        ) {
           skip[d][s + sp] = true;
           sp++;
         }
@@ -1226,7 +1442,7 @@ function renderTimetableSection(statsMap, targetPct) {
         sub = `<div class="text-[11px] mt-1.5 opacity-95 font-medium">Att: ${st.pct}% | Missed: ${st.unattended}/${st.total}</div>`;
       }
 
-      const bulkTag = rSpan > 1 ? `<div class="text-[10px] text-sky-300 font-black">[1 Combined Bulk Lecture (${rSpan} Hrs)]</div>` : "";
+      const bulkTag = rSpan > 1 ? `<div class="text-[10px] text-sky-300 font-black">[1 Combined Bulk Unit (${rSpan} Hrs)]</div>` : "";
       const labTag = isLab ? `<div class="mt-1.5"><span class="batch-badge">YOUR ${currentUser.batch.toUpperCase()} LAB</span></div>` : "";
       tableHtml += `<td class="${cls}" ${rSpan > 1 ? `rowspan="${rSpan}"` : ""}><div>${text}</div>${bulkTag}${labTag}${sub}</td>`;
     });
@@ -1236,12 +1452,122 @@ function renderTimetableSection(statsMap, targetPct) {
   document.getElementById("tt-grid-output").innerHTML = tableHtml;
 }
 
+// --- CLOUD SYNC & PORTABLE SYNC CODE HELPERS ---
+async function autoPushCloudSilent() {
+  if (!currentUser || !currentUser.cloudSyncId) return;
+  try {
+    await fetch(`https://jsonblob.com/api/jsonBlob/${currentUser.cloudSyncId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(currentUser)
+    });
+    document.getElementById("sync-status-pill").textContent = `Cloud Synced (${currentUser.cloudSyncId.slice(0, 8)}...)`;
+  } catch (e) {}
+}
+
 function setupEventListeners() {
   document.getElementById("btn-toggle-login-pw").addEventListener("click", () => {
     const inp = document.getElementById("login-password");
     const btn = document.getElementById("btn-toggle-login-pw");
     if (inp.type === "password") { inp.type = "text"; btn.textContent = "Hide"; }
     else { inp.type = "password"; btn.textContent = "Show"; }
+  });
+
+  // Sync Drawer Controls
+  document.getElementById("btn-toggle-sync-box").addEventListener("click", () => {
+    document.getElementById("sync-drawer").classList.toggle("hidden");
+  });
+  document.getElementById("btn-close-sync").addEventListener("click", () => {
+    document.getElementById("sync-drawer").classList.add("hidden");
+  });
+
+  // Cloud Push
+  document.getElementById("btn-cloud-push").addEventListener("click", async () => {
+    const msgEl = document.getElementById("cloud-sync-msg");
+    msgEl.textContent = "Syncing to cloud...";
+    const existingId = document.getElementById("cloud-sync-id").value.trim() || currentUser.cloudSyncId;
+    try {
+      if (existingId) {
+        const res = await fetch(`https://jsonblob.com/api/jsonBlob/${existingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(currentUser)
+        });
+        if (res.ok) {
+          currentUser.cloudSyncId = existingId;
+          persistCurrentUser();
+          msgEl.textContent = `Synced! Use Cloud Sync ID "${existingId}" on your other device.`;
+          return;
+        }
+      }
+      const res = await fetch("https://jsonblob.com/api/jsonBlob", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(currentUser)
+      });
+      const loc = res.headers.get("Location") || "";
+      const newId = loc.split("/").pop();
+      if (newId) {
+        currentUser.cloudSyncId = newId;
+        document.getElementById("cloud-sync-id").value = newId;
+        persistCurrentUser();
+        navigator.clipboard.writeText(newId).catch(() => {});
+        msgEl.textContent = `Cloud ID created & copied: ${newId}. Paste this ID on your other device!`;
+      } else {
+        msgEl.textContent = "Use Method 2 (Instant Sync Code) on the right if your network blocks Cloud API.";
+      }
+    } catch (err) {
+      msgEl.textContent = "Network firewall blocked Cloud API — use Method 2 (Instant Sync Code) on the right!";
+    }
+  });
+
+  // Cloud Pull
+  document.getElementById("btn-cloud-pull").addEventListener("click", async () => {
+    const msgEl = document.getElementById("cloud-sync-msg");
+    const pullId = document.getElementById("cloud-sync-id").value.trim();
+    if (!pullId) {
+      msgEl.textContent = "Please paste your Cloud Sync ID first.";
+      return;
+    }
+    msgEl.textContent = "Fetching from cloud...";
+    try {
+      const res = await fetch(`https://jsonblob.com/api/jsonBlob/${pullId}`);
+      if (!res.ok) throw new Error("Not found");
+      const remoteUser = await res.json();
+      if (remoteUser && remoteUser.semData) {
+        currentUser = { ...remoteUser, cloudSyncId: pullId };
+        persistCurrentUser();
+        enterDashboard();
+        msgEl.textContent = "Successfully pulled latest attendance from Cloud!";
+      }
+    } catch (e) {
+      msgEl.textContent = "Could not fetch Cloud ID. Check the ID or use Method 2 (Sync Code).";
+    }
+  });
+
+  // Method 2: Copy & Load Base64 Sync Code
+  document.getElementById("btn-copy-code").addEventListener("click", () => {
+    const codeStr = btoa(unescape(encodeURIComponent(JSON.stringify(currentUser))));
+    navigator.clipboard.writeText(codeStr).catch(() => {});
+    document.getElementById("manual-sync-input").value = codeStr;
+    document.getElementById("manual-sync-msg").textContent = "Sync Code copied to clipboard! Paste it on your other device.";
+  });
+
+  document.getElementById("btn-import-code").addEventListener("click", () => {
+    const rawCode = document.getElementById("manual-sync-input").value.trim();
+    const msgEl = document.getElementById("manual-sync-msg");
+    if (!rawCode) return;
+    try {
+      const decoded = JSON.parse(decodeURIComponent(escape(atob(rawCode))));
+      if (decoded && decoded.semData) {
+        currentUser = decoded;
+        persistCurrentUser();
+        enterDashboard();
+        msgEl.textContent = "Account synced and loaded on this device!";
+      }
+    } catch (e) {
+      msgEl.textContent = "Invalid Sync Code.";
+    }
   });
 
   document.getElementById("login-form").addEventListener("submit", async (e) => {
@@ -1314,9 +1640,10 @@ function setupEventListeners() {
     enterDashboard();
   });
 
-  // Month Navigation Buttons & Dropdown
+  // Month Navigation
   document.getElementById("cal-month-select").addEventListener("change", (e) => {
     selectedCalDate = `${e.target.value}-01`;
+    syncTimetableToDate(selectedCalDate);
     renderAll();
   });
   document.getElementById("btn-prev-month").addEventListener("click", () => {
@@ -1325,6 +1652,7 @@ function setupEventListeners() {
     if (idx > 0) {
       sel.value = MONTHS_LIST[idx - 1];
       selectedCalDate = `${sel.value}-01`;
+      syncTimetableToDate(selectedCalDate);
       renderAll();
     }
   });
@@ -1334,11 +1662,12 @@ function setupEventListeners() {
     if (idx < MONTHS_LIST.length - 1) {
       sel.value = MONTHS_LIST[idx + 1];
       selectedCalDate = `${sel.value}-01`;
+      syncTimetableToDate(selectedCalDate);
       renderAll();
     }
   });
 
-  // Daily Absentee Quick Buttons (Full, Half AM, Half PM, Clear)
+  // Daily Absentee Quick Buttons
   document.getElementById("btn-day-full-bunk").addEventListener("click", () => applyPresetBunkMode("FULL"));
   document.getElementById("btn-day-am-bunk").addEventListener("click", () => applyPresetBunkMode("AM"));
   document.getElementById("btn-day-pm-bunk").addEventListener("click", () => applyPresetBunkMode("PM"));
@@ -1350,6 +1679,8 @@ function setupEventListeners() {
   });
   document.getElementById("dash-batch").addEventListener("change", (e) => {
     currentUser.batch = e.target.value;
+    document.getElementById("student-meta").innerHTML =
+      `<b>Branch:</b> ${currentUser.branch} &nbsp;|&nbsp; <b>Batch:</b> ${currentUser.batch} &nbsp;|&nbsp; <b>Account:</b> ${currentUser.email}`;
     persistCurrentUser();
     renderAll();
   });
@@ -1390,34 +1721,57 @@ function setupEventListeners() {
     renderAll();
   });
 
-  document.getElementById("btn-save-slot7").addEventListener("click", () => {
-    const val = document.getElementById("slot7-input").value.trim();
+  // Save & Clear 4:00 PM - 5:00 PM Slot (Independent per date, case-insensitive)
+  function updateSlot7ForSelectedDate(rawInput) {
+    const val = rawInput.trim();
     const courses = SEMESTER_DATA[currentSem];
     const newShort = val ? matchSubjectShort(val, courses) : null;
     if (val && !newShort) {
-      alert("Unrecognized subject code. Use FEM-I, AP, EC, EG, BE&DE, WS-I, CP, or UHV.");
+      alert("Unrecognized subject short-form. Type ap, cp, fem-i, ec, eg, be&de, ws-i, or uhv (lowercase or uppercase).");
       return;
     }
+
+    const dayTicks = currentUser.dailyTicks[selectedCalDate] || {};
+    const wasSlot8Ticked = Boolean(dayTicks[8]);
     const oldShort = currentUser.slot7Map[selectedCalDate] || null;
-    if (oldShort && oldShort !== newShort) {
+
+    // Remove previous extra credit if it was attended (not ticked as missed)
+    if (oldShort && !wasSlot8Ticked) {
       const oldCourse = courses.find(c => c.short === oldShort);
       if (oldCourse) {
         const rec = currentUser.semData[currentSem][oldCourse.code];
         rec.extra = Math.max(0, (rec.extra || 0) - 1);
       }
     }
-    if (newShort && newShort !== oldShort) {
+
+    // Reset tick on slot 8 when changing the 4-5 PM subject
+    if (currentUser.dailyTicks[selectedCalDate]) {
+      delete currentUser.dailyTicks[selectedCalDate][8];
+    }
+
+    if (newShort) {
+      currentUser.slot7Map[selectedCalDate] = newShort;
       const newCourse = courses.find(c => c.short === newShort);
       if (newCourse) {
         const rec = currentUser.semData[currentSem][newCourse.code];
         rec.extra = (rec.extra || 0) + 1;
       }
+    } else {
+      delete currentUser.slot7Map[selectedCalDate];
     }
-    if (newShort) currentUser.slot7Map[selectedCalDate] = newShort;
-    else delete currentUser.slot7Map[selectedCalDate];
 
+    const { units } = getMergedDaySlots(selectedCalDate);
+    recomputeDayBadge(selectedCalDate, units, currentUser.dailyTicks[selectedCalDate] || {});
     persistCurrentUser();
     renderAll();
+  }
+
+  document.getElementById("btn-save-slot7").addEventListener("click", () => {
+    updateSlot7ForSelectedDate(document.getElementById("slot7-input").value);
+  });
+  document.getElementById("btn-clear-slot7").addEventListener("click", () => {
+    document.getElementById("slot7-input").value = "";
+    updateSlot7ForSelectedDate("");
   });
 
   document.getElementById("btn-tt-even").addEventListener("click", () => switchTtTab("Even"));
@@ -1430,11 +1784,7 @@ function setupEventListeners() {
   document.querySelectorAll(".day-pill").forEach(btn => {
     btn.addEventListener("click", () => {
       ttSelectedDay = btn.dataset.day;
-      document.querySelectorAll(".day-pill").forEach(b => {
-        b.className = b.dataset.day === ttSelectedDay
-          ? "day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-blue-600 text-white"
-          : "day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300";
-      });
+      updateTimetableTabButtons();
       renderAll();
     });
   });
@@ -1511,9 +1861,7 @@ function populateAdminPanel() {
 
 function switchTtTab(tab) {
   ttWeekTab = tab;
-  document.getElementById("btn-tt-even").className = tab === "Even" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
-  document.getElementById("btn-tt-odd").className = tab === "Odd" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
-  document.getElementById("btn-tt-img").className = tab === "Img" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+  updateTimetableTabButtons();
 
   if (tab === "Img") {
     document.getElementById("tt-schedule-container").classList.add("hidden");
