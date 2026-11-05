@@ -272,7 +272,7 @@
         </div>
       </div>
 
-      <!-- Official Term Working Days Banner (Starts 07 Sept 2026) -->
+      <!-- Official Term Working Days Banner -->
       <div id="term-working-days-bar" class="mt-4 bg-slate-950/90 border border-slate-800 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs"></div>
 
       <div id="admin-broadcast-banner" class="hidden mt-4 bg-sky-950/80 border border-sky-500/60 text-sky-200 text-xs font-bold px-4 py-3 rounded-xl"></div>
@@ -310,7 +310,7 @@
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg">
         <div class="text-[11px] font-black uppercase tracking-wider text-slate-400">Total Unattended</div>
         <div id="metric-unattended" class="text-xl sm:text-2xl font-black text-amber-400 mt-1">0 missed</div>
-        <div class="text-[11px] text-slate-400 mt-1 font-medium">Since 07 Sept 2026</div>
+        <div class="text-[11px] text-slate-400 mt-1 font-medium">Across all subjects</div>
       </div>
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg">
         <div id="metric-bunks-label" class="text-[11px] font-black uppercase tracking-wider text-slate-400">Safe Bunks Left (75%)</div>
@@ -328,7 +328,7 @@
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
       <div class="missed-banner text-sm sm:text-xl">ENTER HOW MANY LECTURES YOU HAVE MISSED</div>
       <div class="bg-sky-950/60 border border-sky-500/40 text-sky-200 text-xs sm:text-sm font-bold px-4 py-3 rounded-xl text-center">
-        Note: Classes officially started on <b>07th September 2026</b>. These calculations assume that you will attend all of your remaining upcoming lectures—so don't be a defaulter!
+        Note: These calculations assume that you will attend all of your remaining upcoming lectures—so don't be a defaulter!
       </div>
 
       <!-- Mobile Touch Cards -->
@@ -357,18 +357,12 @@
       </div>
     </div>
 
-    <!-- SECTION 3: INTERACTIVE CALENDAR WITH MONTH NAVIGATION & DAILY EVEN/ODD TIMETABLE INSPECTOR -->
+    <!-- SECTION 3: INTERACTIVE CALENDAR WITH LOCKED MONTH NAVIGATION BAR & DAILY EVEN/ODD TIMETABLE INSPECTOR -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <h2 class="text-base sm:text-lg font-black text-white">3. Interactive Calendar &amp; Daily Even/Odd Timetable Absentee Marker</h2>
-        <span class="text-xs font-extrabold text-sky-400 bg-sky-950/70 border border-sky-500/40 px-3 py-1 rounded-lg">
-          Term Start: 07 Sept 2026 | Term End: 23 Dec 2026
-        </span>
-      </div>
+      <h2 class="text-base sm:text-lg font-black text-white">3. Interactive Calendar &amp; Daily Even/Odd Timetable Absentee Marker</h2>
 
       <!-- Color Legend -->
       <div class="flex flex-wrap gap-3 text-xs font-bold bg-slate-800/60 p-3.5 rounded-xl border border-slate-700">
-        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-slate-700 border border-slate-500 inline-block"></span> Grey ('PRE'): Pre-Term (Before 07 Sept)</span>
         <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-red-500 inline-block"></span> Red: Holiday &amp; Weekend</span>
         <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-emerald-500 inline-block"></span> Green: Past Attended (0 Missed)</span>
         <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-amber-400 inline-block"></span> Yellow: Unattended ('F' = Full Bunk / Short-Form = Partial)</span>
@@ -376,19 +370,22 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- Left: 7-Column Calendar with Prev/Next Month Navigation -->
-        <div class="lg:col-span-6 space-y-3">
-          <div class="flex items-center justify-between gap-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
-            <button id="btn-prev-month" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-xs px-3 py-2 rounded-lg border border-slate-600 transition">
+        <!-- Left: 7-Column Calendar with Prev/Next Month Navigation Locked inside Viewport -->
+        <div class="lg:col-span-6 space-y-3 min-w-0">
+          <div class="w-full flex items-center justify-between gap-2 bg-slate-950/90 p-2 rounded-xl border border-slate-800">
+            <button id="btn-prev-month" type="button"
+              class="shrink-0 whitespace-nowrap bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-xs px-3 py-2.5 rounded-lg border border-slate-600 transition">
               &#9664; Prev
             </button>
-            <select id="cal-month-select" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-black text-sky-300 text-center flex-grow">
-              <option value="2026-09">September 2026 (From 07 Sept)</option>
+            <select id="cal-month-select"
+              class="min-w-0 flex-1 bg-slate-800 border border-slate-600 rounded-xl px-2 py-2 text-xs sm:text-sm font-black text-sky-300 text-center truncate focus:outline-none focus:border-sky-400">
+              <option value="2026-09">September 2026</option>
               <option value="2026-10">October 2026</option>
               <option value="2026-11" selected>November 2026</option>
               <option value="2026-12">December 2026</option>
             </select>
-            <button id="btn-next-month" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-xs px-3 py-2 rounded-lg border border-slate-600 transition">
+            <button id="btn-next-month" type="button"
+              class="shrink-0 whitespace-nowrap bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-xs px-3 py-2.5 rounded-lg border border-slate-600 transition">
               Next &#9654;
             </button>
           </div>
@@ -400,7 +397,7 @@
         </div>
 
         <!-- Right: Daily Even/Odd Week Timetable & Absentee Tick Inspector -->
-        <div class="lg:col-span-6 bg-slate-950/90 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
+        <div class="lg:col-span-6 bg-slate-950/90 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 min-w-0">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
             <div>
               <h3 id="inspected-date-title" class="text-sm sm:text-base font-black text-white">Selected Day</h3>
@@ -438,7 +435,7 @@
             </p>
             <div class="flex gap-2">
               <input id="slot7-input" type="text" placeholder="e.g. ap, cp, fem-i, uhv, ec, eg..."
-                class="bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white flex-grow focus:outline-none focus:border-sky-400" />
+                class="min-w-0 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white flex-grow focus:outline-none focus:border-sky-400" />
               <button id="btn-save-slot7" class="bg-blue-600 hover:bg-blue-500 text-white font-black text-xs px-4 py-2.5 rounded-xl shrink-0 transition">
                 Save 4–5 PM
               </button>
@@ -522,10 +519,10 @@
   </footer>
 
 <script>
-// 1. DEFAULT BACKEND URL (Replace with your live Render URL or set it in the PC <-> Mobile Sync drawer)
+// 1. DEFAULT BACKEND URL
 const DEFAULT_BACKEND_URL = "https://attendencetracker.onrender.com";
 
-// 2. OFFICIAL SEMESTER I COMMENCEMENT & END DATES (CLASSES STARTED 07 SEPT 2026)
+// 2. SEMESTER I START & END DATES (Internal calculation boundary: 2026-09-07 to 2026-12-23)
 const SEM1_START_DATE = "2026-09-07";
 const SEM1_END_DATE = "2026-12-23";
 
@@ -621,7 +618,6 @@ function isBeforeTermStart(isoDate) {
   return currentSem === "Semester I" && isoDate < SEM1_START_DATE;
 }
 
-// Compute official working days strictly starting from 07th September 2026 to 23rd December 2026
 function computeSem1WorkingDaysSummary() {
   const start = new Date(SEM1_START_DATE + "T00:00:00");
   const end = new Date(SEM1_END_DATE + "T00:00:00");
@@ -636,7 +632,7 @@ function computeSem1WorkingDaysSummary() {
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
     const iso = `${y}-${m}-${day}`;
-    const dow = (d.getDay() + 6) % 7; // Mon=0 .. Sun=6
+    const dow = (d.getDay() + 6) % 7;
     if (dow < 5 && !HOLIDAYS[iso]) {
       totalWorkingDays++;
       if (iso <= todayIso) completedWorkingDays++;
@@ -669,7 +665,6 @@ function saveAdminGlobalExtras(obj) {
   localStorage.setItem("att_admin_global_extras", JSON.stringify(obj));
 }
 
-// Clean up any accidental logs/ticks saved before 07th September 2026
 function purgePreTermDates(user) {
   if (!user) return;
   if (user.dailyLogs) {
@@ -759,7 +754,6 @@ async function fetchGlobalExtrasFromBackend() {
 }
 
 function getWeekType(isoDate) {
-  if (isoDate < SEM1_START_DATE) return "Pre-Term";
   for (const [s, e] of EVEN_RANGES) {
     if (isoDate >= s && isoDate <= e) return "Even Week";
   }
@@ -1001,15 +995,13 @@ function enterDashboard() {
 function renderAll() {
   const { list, statsMap, targetPct } = getComputedStats();
 
-  // Render Term Working Days Bar (Strictly starting 07 Sept 2026)
   const wdBar = document.getElementById("term-working-days-bar");
   if (currentSem === "Semester I") {
     const { totalWorkingDays, completedWorkingDays, remainingWorkingDays } = computeSem1WorkingDaysSummary();
     const minDaysForTarget = Math.ceil((targetPct / 100) * totalWorkingDays);
     wdBar.innerHTML = `
-      <span class="font-bold text-slate-300"><b>Sem I Official Window:</b> 07 Sept – 23 Dec 2026</span>
       <span class="font-bold text-sky-300">Total Working Days: <b>${totalWorkingDays}</b></span>
-      <span class="font-bold text-emerald-400">Completed Since 07 Sept: <b>${completedWorkingDays}</b></span>
+      <span class="font-bold text-emerald-400">Completed Working Days: <b>${completedWorkingDays}</b></span>
       <span class="font-bold text-amber-300">Remaining Working Days: <b>${remainingWorkingDays}</b> (Min ${minDaysForTarget} days for ${targetPct}%)</span>
     `;
     wdBar.classList.remove("hidden");
@@ -1206,10 +1198,7 @@ function renderCalendarGrid() {
     let bg = "bg-blue-600 text-white border-blue-400";
     let sub = getWeekType(iso).split(" ")[0].toUpperCase();
 
-    if (isPreTerm) {
-      bg = "bg-slate-800/75 text-slate-400 border-slate-700";
-      sub = "PRE";
-    } else if (isHoliday) {
+    if (isHoliday || isPreTerm) {
       bg = "bg-red-600 text-white border-red-400";
       sub = "HOL";
     } else if (isWeekend) {
@@ -1341,7 +1330,7 @@ function renderDailyInspector(statsMap, targetPct) {
   const quickBtns = document.getElementById("day-quick-bunk-btns");
 
   if (isBeforeTermStart(selectedCalDate)) {
-    container.innerHTML = `<div class="bg-slate-900 border border-slate-700 text-slate-300 p-4 rounded-xl text-xs font-bold leading-relaxed">Pre-Term Period (Before 07th Sept 2026): Official Semester I classes started on <b>Monday, 07th September 2026</b>. No lectures were held on this date.</div>`;
+    container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">No Regular Lectures (Classes started on 07th September 2026)</div>`;
     slot7Box.classList.add("hidden");
     quickBtns.classList.add("hidden");
     return;
@@ -1789,7 +1778,7 @@ function setupEventListeners() {
     enterDashboard();
   });
 
-  // Month Navigation (Jumps to 2026-09-07 when switching to September)
+  // Month Navigation
   document.getElementById("cal-month-select").addEventListener("change", (e) => {
     selectedCalDate = getDefaultDateForMonth(e.target.value);
     syncTimetableToDate(selectedCalDate);
