@@ -98,9 +98,9 @@
     <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-5 sm:p-7 shadow-2xl">
       <div class="flex items-center justify-between mb-1">
         <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight">Student Login</h1>
-        <span class="text-[11px] font-extrabold bg-blue-600/20 text-sky-400 border border-sky-500/40 px-2.5 py-1 rounded-lg">PC & Mobile</span>
+        <span class="text-[11px] font-extrabold bg-blue-600/20 text-sky-400 border border-sky-500/40 px-2.5 py-1 rounded-lg">PC &amp; Mobile Sync</span>
       </div>
-      <p class="text-xs text-slate-400 mb-5 leading-relaxed">Secure login with Cloud & Cross-Device Sync support.</p>
+      <p class="text-xs text-slate-400 mb-5 leading-relaxed">Log in with your Gmail and password to sync your attendance across PC and Android.</p>
 
       <div id="login-error" class="hidden bg-red-950/80 border border-red-500 text-red-200 text-xs font-semibold p-3 rounded-xl mb-4"></div>
 
@@ -158,9 +158,9 @@
           <span class="font-semibold">Remember Me on this device</span>
         </label>
 
-        <button type="submit"
+        <button type="submit" id="btn-login-submit"
           class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-black py-3.5 rounded-xl text-sm shadow-xl transition">
-          Login / Register & Enter Dashboard
+          Login / Register &amp; Sync Dashboard
         </button>
       </form>
     </div>
@@ -200,43 +200,46 @@
         </div>
       </div>
 
-      <!-- PC <-> MOBILE SYNC DRAWER (SOLVES STATIC HOSTING CROSS-DEVICE SYNC) -->
+      <!-- PC <-> MOBILE BACKEND & INSTANT SYNC DRAWER -->
       <div id="sync-drawer" class="hidden mt-4 pt-4 border-t border-slate-800 bg-slate-950/90 rounded-xl p-4 space-y-4 border border-sky-500/40">
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="text-sm font-black text-sky-400">PC &#8596; Mobile Account Sync</h3>
-            <p class="text-xs text-slate-400">Sync your attendance, calendar ticks, and extra lectures between your PC and Android phone:</p>
+            <h3 class="text-sm font-black text-sky-400">PC &#8596; Mobile Real-Time Backend &amp; Instant Sync</h3>
+            <p class="text-xs text-slate-400">Sync your account automatically via your FastAPI Backend Server (`main.py`) or via Instant Sync Code:</p>
           </div>
-          <button id="btn-close-sync" class="text-xs text-slate-400 hover:text-white font-bold px-2 py-1 bg-slate-800 rounded">Close</button>
+          <button id="btn-close-sync" class="text-xs text-slate-400 hover:text-white font-bold px-2.5 py-1 bg-slate-800 rounded-lg">Close</button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Method 1: Automatic Cloud Sync Room -->
+          <!-- Method 1: Python FastAPI Backend Server Sync -->
           <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
-            <div class="text-xs font-black text-emerald-400 uppercase">Method 1: 1-Click Cloud Sync (PC &amp; Phone)</div>
+            <div class="text-xs font-black text-emerald-400 uppercase">Method 1: Python FastAPI Backend Server (Automatic)</div>
             <p class="text-[11px] text-slate-300 leading-relaxed">
-              Click <b>Push to Cloud</b> on one device, copy your <b>Cloud Sync ID</b>, and click <b>Pull from Cloud</b> on your other device. Once linked, both devices sync directly!
+              Enter your deployed Render Backend URL (e.g. <code>https://attendencetracker.onrender.com</code>). Once saved, every change on PC or Android syncs automatically!
             </p>
             <div class="flex gap-2">
-              <input id="cloud-sync-id" type="text" placeholder="Cloud Sync ID (Auto-generated on Push)"
+              <input id="backend-url-input" type="url" placeholder="https://attendencetracker.onrender.com"
                 class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white flex-grow font-mono" />
+              <button id="btn-save-backend-url" class="bg-sky-600 hover:bg-sky-500 text-white font-black text-xs px-3 py-2 rounded-lg shrink-0">
+                Save URL
+              </button>
             </div>
             <div class="flex gap-2">
-              <button id="btn-cloud-push" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs py-2 rounded-lg transition">
-                &#8593; Push This Device to Cloud
+              <button id="btn-backend-push" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs py-2 rounded-lg transition">
+                &#8593; Push to Server Now
               </button>
-              <button id="btn-cloud-pull" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs py-2 rounded-lg transition">
-                &#8595; Pull from Cloud to This Device
+              <button id="btn-backend-pull" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs py-2 rounded-lg transition">
+                &#8595; Pull from Server Now
               </button>
             </div>
-            <div id="cloud-sync-msg" class="text-[11px] font-bold text-sky-300"></div>
+            <div id="backend-sync-msg" class="text-[11px] font-bold text-sky-300"></div>
           </div>
 
-          <!-- Method 2: Instant Backup Code Copy/Paste -->
+          <!-- Method 2: Firewall-Proof Instant Sync Code -->
           <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
-            <div class="text-xs font-black text-amber-400 uppercase">Method 2: Instant Sync Code (WhatsApp / Clipboard)</div>
+            <div class="text-xs font-black text-amber-400 uppercase">Method 2: Firewall-Proof Sync Code (WhatsApp / Clipboard)</div>
             <p class="text-[11px] text-slate-300 leading-relaxed">
-              Tap <b>Copy Sync Code</b> on PC, send it to yourself on WhatsApp, and paste it below on your phone (works 100% offline/instant):
+              Works even if college Wi-Fi blocks cloud servers: tap <b>Copy My Current Sync Code</b> on PC and paste it below on your phone:
             </p>
             <div class="flex gap-2">
               <input id="manual-sync-input" type="text" placeholder="Paste Sync Code here to import..."
@@ -269,6 +272,9 @@
         </div>
       </div>
 
+      <!-- Official Term Working Days Banner (Starts 07 Sept 2026) -->
+      <div id="term-working-days-bar" class="mt-4 bg-slate-950/90 border border-slate-800 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs"></div>
+
       <div id="admin-broadcast-banner" class="hidden mt-4 bg-sky-950/80 border border-sky-500/60 text-sky-200 text-xs font-bold px-4 py-3 rounded-xl"></div>
     </div>
 
@@ -289,7 +295,7 @@
       </div>
       <div id="admin-broadcast-status" class="text-xs text-emerald-400 font-extrabold"></div>
       <div class="pt-2">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Student Visitor Log (This Device)</h3>
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Student Visitor Log</h3>
         <div id="admin-visitor-log" class="text-xs text-slate-300 bg-slate-950 p-3.5 rounded-xl max-h-40 overflow-y-auto border border-slate-800"></div>
       </div>
     </div>
@@ -304,7 +310,7 @@
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg">
         <div class="text-[11px] font-black uppercase tracking-wider text-slate-400">Total Unattended</div>
         <div id="metric-unattended" class="text-xl sm:text-2xl font-black text-amber-400 mt-1">0 missed</div>
-        <div class="text-[11px] text-slate-400 mt-1 font-medium">Across all subjects</div>
+        <div class="text-[11px] text-slate-400 mt-1 font-medium">Since 07 Sept 2026</div>
       </div>
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg">
         <div id="metric-bunks-label" class="text-[11px] font-black uppercase tracking-wider text-slate-400">Safe Bunks Left (75%)</div>
@@ -322,7 +328,7 @@
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
       <div class="missed-banner text-sm sm:text-xl">ENTER HOW MANY LECTURES YOU HAVE MISSED</div>
       <div class="bg-sky-950/60 border border-sky-500/40 text-sky-200 text-xs sm:text-sm font-bold px-4 py-3 rounded-xl text-center">
-        Note: These calculations assume that you will attend all of your remaining upcoming lectures—so don't be a defaulter!
+        Note: Classes officially started on <b>07th September 2026</b>. These calculations assume that you will attend all of your remaining upcoming lectures—so don't be a defaulter!
       </div>
 
       <!-- Mobile Touch Cards -->
@@ -353,11 +359,17 @@
 
     <!-- SECTION 3: INTERACTIVE CALENDAR WITH MONTH NAVIGATION & DAILY EVEN/ODD TIMETABLE INSPECTOR -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
-      <h2 class="text-base sm:text-lg font-black text-white">3. Interactive Calendar & Daily Even/Odd Timetable Absentee Marker</h2>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <h2 class="text-base sm:text-lg font-black text-white">3. Interactive Calendar &amp; Daily Even/Odd Timetable Absentee Marker</h2>
+        <span class="text-xs font-extrabold text-sky-400 bg-sky-950/70 border border-sky-500/40 px-3 py-1 rounded-lg">
+          Term Start: 07 Sept 2026 | Term End: 23 Dec 2026
+        </span>
+      </div>
 
       <!-- Color Legend -->
       <div class="flex flex-wrap gap-3 text-xs font-bold bg-slate-800/60 p-3.5 rounded-xl border border-slate-700">
-        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-red-500 inline-block"></span> Red: Holiday & Weekend</span>
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-slate-700 border border-slate-500 inline-block"></span> Grey ('PRE'): Pre-Term (Before 07 Sept)</span>
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-red-500 inline-block"></span> Red: Holiday &amp; Weekend</span>
         <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-emerald-500 inline-block"></span> Green: Past Attended (0 Missed)</span>
         <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-amber-400 inline-block"></span> Yellow: Unattended ('F' = Full Bunk / Short-Form = Partial)</span>
         <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-blue-500 inline-block"></span> Blue: Working Day (EVEN / ODD)</span>
@@ -371,7 +383,7 @@
               &#9664; Prev
             </button>
             <select id="cal-month-select" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-black text-sky-300 text-center flex-grow">
-              <option value="2026-09">September 2026</option>
+              <option value="2026-09">September 2026 (From 07 Sept)</option>
               <option value="2026-10">October 2026</option>
               <option value="2026-11" selected>November 2026</option>
               <option value="2026-12">December 2026</option>
@@ -394,7 +406,7 @@
               <h3 id="inspected-date-title" class="text-sm sm:text-base font-black text-white">Selected Day</h3>
               <p id="inspected-date-meta" class="text-xs text-sky-400 font-extrabold mt-0.5"></p>
             </div>
-            <div class="grid grid-cols-2 sm:flex gap-1.5">
+            <div id="day-quick-bunk-btns" class="grid grid-cols-2 sm:flex gap-1.5">
               <button id="btn-day-full-bunk" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] px-2.5 py-1.5 rounded-lg transition">
                 Full Bunk ('F')
               </button>
@@ -416,7 +428,7 @@
 
           <div id="daily-slots-container" class="space-y-2.5"></div>
 
-          <!-- Editable 4:00 PM - 5:00 PM Extra Lecture Box (Independent per day, case-insensitive) -->
+          <!-- Editable 4:00 PM - 5:00 PM Extra Lecture Box -->
           <div id="slot7-editor-box" class="pt-4 border-t border-slate-800">
             <label class="block text-xs font-black text-sky-400 mb-1">
               Set / Edit 4:00 PM – 5:00 PM Slot for This Date Only:
@@ -510,7 +522,14 @@
   </footer>
 
 <script>
-// ZERO PLAINTEXT EMAIL OR PASSWORD IN SOURCE CODE:
+// 1. DEFAULT BACKEND URL (Replace with your live Render URL or set it in the PC <-> Mobile Sync drawer)
+const DEFAULT_BACKEND_URL = "https://attendencetracker.onrender.com";
+
+// 2. OFFICIAL SEMESTER I COMMENCEMENT & END DATES (CLASSES STARTED 07 SEPT 2026)
+const SEM1_START_DATE = "2026-09-07";
+const SEM1_END_DATE = "2026-12-23";
+
+// 3. ZERO PLAINTEXT EMAIL OR PASSWORD IN SOURCE CODE:
 const AUTH_PEPPER = "ATT_V9_PEPPER_2026";
 const ADMIN_EMAIL_SALTSHA256 = "fd59fa4b0e9158a4ef72be9a7459c5b4b8b8532a60b0f74a370623bc6b271357";
 const ADMIN_PW_SALTSHA256 = "a2eb4d78636647b59f87c3e45b18a431a6c27ff8df435364a85261e6401564a1";
@@ -593,10 +612,43 @@ const SEMESTER_DATA = {
 let currentUser = null;
 let isCurrentUserAdmin = false;
 let currentSem = "Semester I";
-let selectedCalDate = "2026-11-02";
-let ttWeekTab = "Odd"; // Auto-synced to selectedCalDate on startup
+let selectedCalDate = "2026-11-05";
+let ttWeekTab = "Odd";
 let ttViewMode = window.innerWidth < 768 ? "cards" : "grid";
-let ttSelectedDay = "MON";
+let ttSelectedDay = "THR";
+
+function isBeforeTermStart(isoDate) {
+  return currentSem === "Semester I" && isoDate < SEM1_START_DATE;
+}
+
+// Compute official working days strictly starting from 07th September 2026 to 23rd December 2026
+function computeSem1WorkingDaysSummary() {
+  const start = new Date(SEM1_START_DATE + "T00:00:00");
+  const end = new Date(SEM1_END_DATE + "T00:00:00");
+  const todayIso = new Date().toISOString().slice(0, 10);
+
+  let totalWorkingDays = 0;
+  let completedWorkingDays = 0;
+  let remainingWorkingDays = 0;
+
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const iso = `${y}-${m}-${day}`;
+    const dow = (d.getDay() + 6) % 7; // Mon=0 .. Sun=6
+    if (dow < 5 && !HOLIDAYS[iso]) {
+      totalWorkingDays++;
+      if (iso <= todayIso) completedWorkingDays++;
+      else remainingWorkingDays++;
+    }
+  }
+  return { totalWorkingDays, completedWorkingDays, remainingWorkingDays };
+}
+
+function getBackendUrl() {
+  return (localStorage.getItem("att_custom_backend_url") || DEFAULT_BACKEND_URL).replace(/\/+$/, "");
+}
 
 async function saltedHash(str) {
   const data = new TextEncoder().encode(`${AUTH_PEPPER}:${str.trim()}`);
@@ -617,7 +669,97 @@ function saveAdminGlobalExtras(obj) {
   localStorage.setItem("att_admin_global_extras", JSON.stringify(obj));
 }
 
+// Clean up any accidental logs/ticks saved before 07th September 2026
+function purgePreTermDates(user) {
+  if (!user) return;
+  if (user.dailyLogs) {
+    Object.keys(user.dailyLogs).forEach(iso => {
+      if (iso < SEM1_START_DATE) delete user.dailyLogs[iso];
+    });
+  }
+  if (user.dailyTicks) {
+    Object.keys(user.dailyTicks).forEach(iso => {
+      if (iso < SEM1_START_DATE) delete user.dailyTicks[iso];
+    });
+  }
+  if (user.slot7Map) {
+    Object.keys(user.slot7Map).forEach(iso => {
+      if (iso < SEM1_START_DATE) delete user.slot7Map[iso];
+    });
+  }
+}
+
+async function syncWithFastAPIBackend(mode = "push", showMsg = false) {
+  if (!currentUser || !currentUser.email || !currentUser.passwordHash) return false;
+  const pill = document.getElementById("sync-status-pill");
+  const msgEl = document.getElementById("backend-sync-msg");
+  const apiUrl = getBackendUrl();
+
+  try {
+    if (showMsg && msgEl) msgEl.textContent = mode === "pull" ? "Pulling from backend server..." : "Pushing to backend server...";
+    const res = await fetch(`${apiUrl}/api/sync/${mode}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: currentUser.email,
+        passwordHash: currentUser.passwordHash,
+        profile: currentUser
+      })
+    });
+
+    if (res.status === 401) {
+      if (showMsg && msgEl) msgEl.textContent = "Server rejected password: Incorrect password for this Gmail account.";
+      return false;
+    }
+
+    if (res.ok) {
+      const data = await res.json();
+      if (mode === "pull" && data.found && data.profile && data.profile.semData) {
+        currentUser = data.profile;
+        purgePreTermDates(currentUser);
+        const db = getAllUsersDB();
+        db[currentUser.email] = currentUser;
+        saveAllUsersDB(db);
+        renderAll();
+      }
+      if (pill) {
+        pill.textContent = "Synced (PC ↔ Mobile)";
+        pill.className = "text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40";
+      }
+      if (showMsg && msgEl) {
+        msgEl.textContent = mode === "pull"
+          ? "Successfully pulled latest attendance from Backend Server!"
+          : "Successfully pushed attendance to Backend Server!";
+      }
+      return true;
+    }
+  } catch (e) {
+    if (pill) {
+      pill.textContent = "Saved Locally (Server Offline)";
+      pill.className = "text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-600";
+    }
+    if (showMsg && msgEl) {
+      msgEl.textContent = "Backend server unreachable or waking up on Render (try again in 15s, or use Method 2 Sync Code).";
+    }
+  }
+  return false;
+}
+
+async function fetchGlobalExtrasFromBackend() {
+  try {
+    const res = await fetch(`${getBackendUrl()}/api/global-extras`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.extras) {
+        saveAdminGlobalExtras(data.extras);
+        renderAll();
+      }
+    }
+  } catch (e) {}
+}
+
 function getWeekType(isoDate) {
+  if (isoDate < SEM1_START_DATE) return "Pre-Term";
   for (const [s, e] of EVEN_RANGES) {
     if (isoDate >= s && isoDate <= e) return "Even Week";
   }
@@ -632,7 +774,6 @@ function getWeekType(isoDate) {
   return weekNo % 2 === 0 ? "Even Week" : "Odd Week";
 }
 
-// FIX 1: Identify exact session category ('theory' vs 'lab' vs 'tut') so Theory AP and Lab AP (B) NEVER merge!
 function getSessionKind(entryText) {
   const up = entryText.toUpperCase();
   if (/\bLAB\b/.test(up) || /\bWORKSHOP\b/.test(up) || up.includes("WS-I") || up.includes("WS-II")) return "lab";
@@ -650,13 +791,11 @@ function extractBatchEntry(raw, batchLetter) {
   return { text: raw, isLab: false };
 }
 
-// FIX 4 & 5: Strict word-boundary matching + ignore generic 4-5 PM placeholders ('Remedial Lecture', 'FE Mentoring Slot', etc.)
 function matchSubjectShort(text, semCourses) {
   if (!text) return null;
   const up = text.trim().toUpperCase();
   if (!up) return null;
 
-  // Never match generic non-credit placeholders unless overridden by user
   if (
     up.includes("REMEDIAL LECTURE") ||
     up.includes("MENTORING SLOT") ||
@@ -671,12 +810,10 @@ function matchSubjectShort(text, semCourses) {
     return semCourses.some(c => c.short === "WS-I") ? "WS-I" : null;
   }
 
-  // Exact match on short form or course code (case-insensitive)
   for (const c of semCourses) {
     if (up === c.short.toUpperCase() || up === c.code.toUpperCase()) return c.short;
   }
 
-  // Word-boundary match so "LECTURE" never matches "EC" and "MENTORING" never matches "EM"
   const sorted = [...semCourses].sort((a, b) => b.short.length - a.short.length);
   for (const c of sorted) {
     const escaped = c.short.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -686,13 +823,13 @@ function matchSubjectShort(text, semCourses) {
   return null;
 }
 
-// Sync Section 5 Timetable Tab & Day Pill to any given ISO date
 function syncTimetableToDate(isoDate) {
-  const wk = getWeekType(isoDate);
+  const effectiveIso = isoDate < SEM1_START_DATE ? SEM1_START_DATE : isoDate;
+  const wk = getWeekType(effectiveIso);
   if (ttWeekTab !== "Img") {
     ttWeekTab = wk === "Odd Week" ? "Odd" : "Even";
   }
-  const dObj = new Date(isoDate + "T00:00:00");
+  const dObj = new Date(effectiveIso + "T00:00:00");
   const dow = (dObj.getDay() + 6) % 7;
   if (dow >= 0 && dow <= 4) {
     ttSelectedDay = ["MON", "TUE", "WED", "THR", "FRI"][dow];
@@ -731,10 +868,13 @@ window.addEventListener("DOMContentLoaded", async () => {
     semSel.appendChild(opt);
   });
 
-  // Set default date to today if within Sem I window, else 2026-11-02
+  document.getElementById("backend-url-input").value = getBackendUrl();
+
   const todayIso = new Date().toISOString().slice(0, 10);
-  if (todayIso >= "2026-09-01" && todayIso <= "2026-12-31") {
+  if (todayIso >= SEM1_START_DATE && todayIso <= "2026-12-31") {
     selectedCalDate = todayIso;
+  } else {
+    selectedCalDate = SEM1_START_DATE;
   }
   const ym = selectedCalDate.slice(0, 7);
   if (MONTHS_LIST.includes(ym)) {
@@ -746,9 +886,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   const db = getAllUsersDB();
   if (rememberedEmail && db[rememberedEmail]) {
     currentUser = db[rememberedEmail];
+    purgePreTermDates(currentUser);
     const emailDigest = await saltedHash(currentUser.email.toLowerCase());
     isCurrentUserAdmin = (emailDigest === ADMIN_EMAIL_SALTSHA256);
     enterDashboard();
+    syncWithFastAPIBackend("pull", false);
+    fetchGlobalExtrasFromBackend();
   } else {
     document.getElementById("login-view").classList.remove("hidden");
   }
@@ -762,6 +905,7 @@ function ensureUserSemData(user) {
   if (!user.dailyTicks) user.dailyTicks = {};
   if (!user.slot7Map) user.slot7Map = {};
   if (!user.targetPct) user.targetPct = 75;
+  purgePreTermDates(user);
   Object.keys(SEMESTER_DATA).forEach(sem => {
     if (!user.semData[sem]) user.semData[sem] = {};
     SEMESTER_DATA[sem].forEach(c => {
@@ -774,12 +918,11 @@ function ensureUserSemData(user) {
 
 function persistCurrentUser() {
   if (!currentUser) return;
+  purgePreTermDates(currentUser);
   const db = getAllUsersDB();
   db[currentUser.email] = currentUser;
   saveAllUsersDB(db);
-  if (currentUser.cloudSyncId) {
-    autoPushCloudSilent();
-  }
+  syncWithFastAPIBackend("push", false);
 }
 
 function getComputedStats() {
@@ -841,10 +984,6 @@ function enterDashboard() {
 
   document.getElementById("dash-batch").value = currentUser.batch;
   document.getElementById("custom-target-input").value = currentUser.targetPct || 75;
-  if (currentUser.cloudSyncId) {
-    document.getElementById("cloud-sync-id").value = currentUser.cloudSyncId;
-    document.getElementById("sync-status-pill").textContent = `Cloud Synced (${currentUser.cloudSyncId})`;
-  }
 
   const adminPanel = document.getElementById("admin-panel");
   if (isCurrentUserAdmin) {
@@ -861,6 +1000,22 @@ function enterDashboard() {
 
 function renderAll() {
   const { list, statsMap, targetPct } = getComputedStats();
+
+  // Render Term Working Days Bar (Strictly starting 07 Sept 2026)
+  const wdBar = document.getElementById("term-working-days-bar");
+  if (currentSem === "Semester I") {
+    const { totalWorkingDays, completedWorkingDays, remainingWorkingDays } = computeSem1WorkingDaysSummary();
+    const minDaysForTarget = Math.ceil((targetPct / 100) * totalWorkingDays);
+    wdBar.innerHTML = `
+      <span class="font-bold text-slate-300"><b>Sem I Official Window:</b> 07 Sept – 23 Dec 2026</span>
+      <span class="font-bold text-sky-300">Total Working Days: <b>${totalWorkingDays}</b></span>
+      <span class="font-bold text-emerald-400">Completed Since 07 Sept: <b>${completedWorkingDays}</b></span>
+      <span class="font-bold text-amber-300">Remaining Working Days: <b>${remainingWorkingDays}</b> (Min ${minDaysForTarget} days for ${targetPct}%)</span>
+    `;
+    wdBar.classList.remove("hidden");
+  } else {
+    wdBar.classList.add("hidden");
+  }
 
   document.querySelectorAll(".target-pill").forEach(btn => {
     const val = parseInt(btn.dataset.target);
@@ -1025,7 +1180,6 @@ window.setSubjectVal = function(code, field, val) {
   renderAll();
 };
 
-// --- MONTH NAVIGATION & CALENDAR GRID ---
 function renderCalendarGrid() {
   const ym = document.getElementById("cal-month-select").value;
   const [year, month] = ym.split("-").map(Number);
@@ -1045,13 +1199,17 @@ function renderCalendarGrid() {
     const dow = (startOffset + d - 1) % 7;
     const isWeekend = dow >= 5;
     const isHoliday = Boolean(HOLIDAYS[iso]);
-    const bunkVal = currentUser.dailyLogs[iso] || "";
+    const isPreTerm = isBeforeTermStart(iso);
+    const bunkVal = isPreTerm ? "" : (currentUser.dailyLogs[iso] || "");
     const isSelected = iso === selectedCalDate;
 
     let bg = "bg-blue-600 text-white border-blue-400";
     let sub = getWeekType(iso).split(" ")[0].toUpperCase();
 
-    if (isHoliday) {
+    if (isPreTerm) {
+      bg = "bg-slate-800/75 text-slate-400 border-slate-700";
+      sub = "PRE";
+    } else if (isHoliday) {
       bg = "bg-red-600 text-white border-red-400";
       sub = "HOL";
     } else if (isWeekend) {
@@ -1076,7 +1234,6 @@ function renderCalendarGrid() {
   gridEl.innerHTML = html;
 }
 
-// FIX 3: Clicking any calendar date automatically syncs Section 5 Timetable to that date's Odd/Even Week!
 window.selectDate = function(iso) {
   selectedCalDate = iso;
   const ym = iso.slice(0, 7);
@@ -1089,9 +1246,10 @@ window.selectDate = function(iso) {
 };
 
 function getMergedDaySlots(isoDate) {
+  if (isBeforeTermStart(isoDate)) return { dow: 0, isOff: true, isPreTerm: true, units: [] };
   const dObj = new Date(isoDate + "T00:00:00");
   const dow = (dObj.getDay() + 6) % 7;
-  if (dow >= 5 || HOLIDAYS[isoDate]) return { dow, isOff: true, units: [] };
+  if (dow >= 5 || HOLIDAYS[isoDate]) return { dow, isOff: true, isPreTerm: false, units: [] };
 
   const dayKey = ["MON", "TUE", "WED", "THR", "FRI"][dow];
   const wkType = getWeekType(isoDate);
@@ -1119,7 +1277,6 @@ function getMergedDaySlots(isoDate) {
     return { idx, slotLabel: TIME_SLOTS[idx], text, short, isLab, kind, isCustomExtra: false };
   });
 
-  // FIX 1: Only merge consecutive slots if BOTH subject short-form AND session kind ('theory' vs 'lab' vs 'tut') match!
   const units = [];
   let i = 0;
   while (i < extracted.length) {
@@ -1169,7 +1326,7 @@ function getMergedDaySlots(isoDate) {
       i++;
     }
   }
-  return { dow, isOff: false, wkType, units };
+  return { dow, isOff: false, isPreTerm: false, wkType, units };
 }
 
 function renderDailyInspector(statsMap, targetPct) {
@@ -1181,10 +1338,19 @@ function renderDailyInspector(statsMap, targetPct) {
 
   const container = document.getElementById("daily-slots-container");
   const slot7Box = document.getElementById("slot7-editor-box");
+  const quickBtns = document.getElementById("day-quick-bunk-btns");
+
+  if (isBeforeTermStart(selectedCalDate)) {
+    container.innerHTML = `<div class="bg-slate-900 border border-slate-700 text-slate-300 p-4 rounded-xl text-xs font-bold leading-relaxed">Pre-Term Period (Before 07th Sept 2026): Official Semester I classes started on <b>Monday, 07th September 2026</b>. No lectures were held on this date.</div>`;
+    slot7Box.classList.add("hidden");
+    quickBtns.classList.add("hidden");
+    return;
+  }
 
   if (HOLIDAYS[selectedCalDate]) {
     container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">Official Holiday: ${HOLIDAYS[selectedCalDate]} (No Regular Lectures)</div>`;
     slot7Box.classList.add("hidden");
+    quickBtns.classList.add("hidden");
     return;
   }
 
@@ -1192,10 +1358,12 @@ function renderDailyInspector(statsMap, targetPct) {
   if (isOff) {
     container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">Weekend (Saturday / Sunday) — No Regular Lectures</div>`;
     slot7Box.classList.add("hidden");
+    quickBtns.classList.add("hidden");
     return;
   }
 
   slot7Box.classList.remove("hidden");
+  quickBtns.classList.remove("hidden");
   document.getElementById("slot7-input").value = currentUser.slot7Map[selectedCalDate] || "";
 
   const dayTicks = currentUser.dailyTicks[selectedCalDate] || {};
@@ -1219,7 +1387,6 @@ function renderDailyInspector(statsMap, targetPct) {
     }
 
     const labBadge = u.isLab ? `<span class="batch-badge ml-1">YOUR ${currentUser.batch.toUpperCase()} LAB</span>` : "";
-    // FIX 4: Allow ticking ANY valid subject slot, INCLUDING Slot 7 (headIdx === 8, such as Friday UHV or custom 4-5 PM extra lecture)!
     const canTick = Boolean(u.short);
 
     return `
@@ -1241,8 +1408,8 @@ function renderDailyInspector(statsMap, targetPct) {
   }).join("");
 }
 
-// FIX 4 & 5: Independent per-date ticking for regular slots (including Friday UHV) AND custom 4-5 PM extra lectures
 window.toggleDailyUnitTick = function(isoDate, unitIdx, isChecked) {
+  if (isBeforeTermStart(isoDate)) return;
   const { units } = getMergedDaySlots(isoDate);
   const unit = units[unitIdx];
   if (!unit || !unit.short) return;
@@ -1258,11 +1425,9 @@ window.toggleDailyUnitTick = function(isoDate, unitIdx, isChecked) {
     if (course) {
       const rec = currentUser.semData[currentSem][course.code];
       if (unit.isCustomExtra) {
-        // Custom 4-5 PM extra lecture: when attended (unchecked), it gives +1 extra; when ticked as missed, remove that +1 extra
         const extraDelta = isChecked ? -1 : 1;
         rec.extra = Math.max(0, (rec.extra || 0) + extraDelta);
       } else {
-        // Scheduled timetable lecture (Slots 1-6 or Friday Odd Week UHV in Slot 7)
         const unattDelta = isChecked ? 1 : -1;
         rec.unattended = Math.min(course.total, Math.max(0, (rec.unattended || 0) + unattDelta));
       }
@@ -1275,6 +1440,7 @@ window.toggleDailyUnitTick = function(isoDate, unitIdx, isChecked) {
 };
 
 function applyPresetBunkMode(mode) {
+  if (isBeforeTermStart(selectedCalDate)) return;
   const { isOff, units } = getMergedDaySlots(selectedCalDate);
   if (isOff) return;
   if (!currentUser.dailyTicks[selectedCalDate]) currentUser.dailyTicks[selectedCalDate] = {};
@@ -1318,6 +1484,10 @@ function applyPresetBunkMode(mode) {
 }
 
 function recomputeDayBadge(isoDate, units, dayTicks) {
+  if (isBeforeTermStart(isoDate)) {
+    delete currentUser.dailyLogs[isoDate];
+    return;
+  }
   const creditUnits = units.filter(u => Boolean(u.short));
   const missedShorts = [];
   let tickedCount = 0;
@@ -1338,7 +1508,6 @@ function recomputeDayBadge(isoDate, units, dayTicks) {
   }
 }
 
-// --- SECTION 5: TIMETABLE RENDERER (SEPARATES THEORY VS LAB/TUTORIAL) ---
 function renderTimetableSection(statsMap, targetPct) {
   const grid = ttWeekTab === "Odd" ? ODD_GRID : EVEN_GRID;
   const batchLetter = currentUser.batch.slice(-1).toUpperCase();
@@ -1452,17 +1621,8 @@ function renderTimetableSection(statsMap, targetPct) {
   document.getElementById("tt-grid-output").innerHTML = tableHtml;
 }
 
-// --- CLOUD SYNC & PORTABLE SYNC CODE HELPERS ---
-async function autoPushCloudSilent() {
-  if (!currentUser || !currentUser.cloudSyncId) return;
-  try {
-    await fetch(`https://jsonblob.com/api/jsonBlob/${currentUser.cloudSyncId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(currentUser)
-    });
-    document.getElementById("sync-status-pill").textContent = `Cloud Synced (${currentUser.cloudSyncId.slice(0, 8)}...)`;
-  } catch (e) {}
+function getDefaultDateForMonth(ym) {
+  return ym === "2026-09" ? SEM1_START_DATE : `${ym}-01`;
 }
 
 function setupEventListeners() {
@@ -1473,7 +1633,6 @@ function setupEventListeners() {
     else { inp.type = "password"; btn.textContent = "Show"; }
   });
 
-  // Sync Drawer Controls
   document.getElementById("btn-toggle-sync-box").addEventListener("click", () => {
     document.getElementById("sync-drawer").classList.toggle("hidden");
   });
@@ -1481,71 +1640,23 @@ function setupEventListeners() {
     document.getElementById("sync-drawer").classList.add("hidden");
   });
 
-  // Cloud Push
-  document.getElementById("btn-cloud-push").addEventListener("click", async () => {
-    const msgEl = document.getElementById("cloud-sync-msg");
-    msgEl.textContent = "Syncing to cloud...";
-    const existingId = document.getElementById("cloud-sync-id").value.trim() || currentUser.cloudSyncId;
-    try {
-      if (existingId) {
-        const res = await fetch(`https://jsonblob.com/api/jsonBlob/${existingId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(currentUser)
-        });
-        if (res.ok) {
-          currentUser.cloudSyncId = existingId;
-          persistCurrentUser();
-          msgEl.textContent = `Synced! Use Cloud Sync ID "${existingId}" on your other device.`;
-          return;
-        }
-      }
-      const res = await fetch("https://jsonblob.com/api/jsonBlob", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(currentUser)
-      });
-      const loc = res.headers.get("Location") || "";
-      const newId = loc.split("/").pop();
-      if (newId) {
-        currentUser.cloudSyncId = newId;
-        document.getElementById("cloud-sync-id").value = newId;
-        persistCurrentUser();
-        navigator.clipboard.writeText(newId).catch(() => {});
-        msgEl.textContent = `Cloud ID created & copied: ${newId}. Paste this ID on your other device!`;
-      } else {
-        msgEl.textContent = "Use Method 2 (Instant Sync Code) on the right if your network blocks Cloud API.";
-      }
-    } catch (err) {
-      msgEl.textContent = "Network firewall blocked Cloud API — use Method 2 (Instant Sync Code) on the right!";
+  document.getElementById("btn-save-backend-url").addEventListener("click", () => {
+    const val = document.getElementById("backend-url-input").value.trim().replace(/\/+$/, "");
+    if (val) {
+      localStorage.setItem("att_custom_backend_url", val);
+      document.getElementById("backend-sync-msg").textContent = `Backend URL saved: ${val}`;
+      syncWithFastAPIBackend("pull", true);
     }
   });
 
-  // Cloud Pull
-  document.getElementById("btn-cloud-pull").addEventListener("click", async () => {
-    const msgEl = document.getElementById("cloud-sync-msg");
-    const pullId = document.getElementById("cloud-sync-id").value.trim();
-    if (!pullId) {
-      msgEl.textContent = "Please paste your Cloud Sync ID first.";
-      return;
-    }
-    msgEl.textContent = "Fetching from cloud...";
-    try {
-      const res = await fetch(`https://jsonblob.com/api/jsonBlob/${pullId}`);
-      if (!res.ok) throw new Error("Not found");
-      const remoteUser = await res.json();
-      if (remoteUser && remoteUser.semData) {
-        currentUser = { ...remoteUser, cloudSyncId: pullId };
-        persistCurrentUser();
-        enterDashboard();
-        msgEl.textContent = "Successfully pulled latest attendance from Cloud!";
-      }
-    } catch (e) {
-      msgEl.textContent = "Could not fetch Cloud ID. Check the ID or use Method 2 (Sync Code).";
-    }
+  document.getElementById("btn-backend-push").addEventListener("click", () => {
+    syncWithFastAPIBackend("push", true);
   });
 
-  // Method 2: Copy & Load Base64 Sync Code
+  document.getElementById("btn-backend-pull").addEventListener("click", () => {
+    syncWithFastAPIBackend("pull", true);
+  });
+
   document.getElementById("btn-copy-code").addEventListener("click", () => {
     const codeStr = btoa(unescape(encodeURIComponent(JSON.stringify(currentUser))));
     navigator.clipboard.writeText(codeStr).catch(() => {});
@@ -1561,6 +1672,7 @@ function setupEventListeners() {
       const decoded = JSON.parse(decodeURIComponent(escape(atob(rawCode))));
       if (decoded && decoded.semData) {
         currentUser = decoded;
+        purgePreTermDates(currentUser);
         persistCurrentUser();
         enterDashboard();
         msgEl.textContent = "Account synced and loaded on this device!";
@@ -1573,6 +1685,7 @@ function setupEventListeners() {
   document.getElementById("login-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const errEl = document.getElementById("login-error");
+    const submitBtn = document.getElementById("btn-login-submit");
     errEl.classList.add("hidden");
 
     const email = document.getElementById("login-email").value.trim().toLowerCase();
@@ -1599,24 +1712,21 @@ function setupEventListeners() {
     }
 
     const db = getAllUsersDB();
+    let candidateUser = null;
+
     if (db[email]) {
       if (db[email].passwordHash && db[email].passwordHash !== pwDigest && !isAdminEmail) {
         errEl.textContent = "Incorrect password for this account.";
         errEl.classList.remove("hidden");
         return;
       }
-      currentUser = db[email];
-      currentUser.passwordHash = pwDigest;
-      if (name) currentUser.name = name;
+      candidateUser = db[email];
+      candidateUser.passwordHash = pwDigest;
+      if (name) candidateUser.name = name;
     } else {
-      if (!name && !isAdminEmail) {
-        errEl.textContent = "Please enter your Full Name for first-time registration.";
-        errEl.classList.remove("hidden");
-        return;
-      }
-      currentUser = {
+      candidateUser = {
         email,
-        name: name || "Admin",
+        name: name || (isAdminEmail ? "Admin" : "Student"),
         branch,
         batch,
         passwordHash: pwDigest,
@@ -1628,9 +1738,48 @@ function setupEventListeners() {
       };
     }
 
+    ensureUserSemData(candidateUser);
+    submitBtn.textContent = "Syncing with Cloud Server...";
+
+    try {
+      const res = await fetch(`${getBackendUrl()}/api/sync/pull`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          passwordHash: pwDigest,
+          profile: candidateUser
+        })
+      });
+      if (res.status === 401 && !isAdminEmail) {
+        submitBtn.textContent = "Login / Register & Sync Dashboard";
+        errEl.textContent = "Incorrect password for this Gmail account on the cloud server.";
+        errEl.classList.remove("hidden");
+        return;
+      }
+      if (res.ok) {
+        const remoteData = await res.json();
+        if (remoteData.found && remoteData.profile && remoteData.profile.semData) {
+          candidateUser = remoteData.profile;
+          purgePreTermDates(candidateUser);
+          if (name) candidateUser.name = name;
+        }
+      }
+    } catch (err) {
+      if (!db[email] && !name && !isAdminEmail) {
+        submitBtn.textContent = "Login / Register & Sync Dashboard";
+        errEl.textContent = "Please enter your Full Name for first-time registration.";
+        errEl.classList.remove("hidden");
+        return;
+      }
+    }
+
+    submitBtn.textContent = "Login / Register & Sync Dashboard";
+    currentUser = candidateUser;
     isCurrentUserAdmin = isAdminEmail;
     currentUser.lastLogin = new Date().toLocaleString("en-IN");
     persistCurrentUser();
+    fetchGlobalExtrasFromBackend();
 
     if (remember) {
       localStorage.setItem("att_remembered_user_v9", email);
@@ -1640,9 +1789,9 @@ function setupEventListeners() {
     enterDashboard();
   });
 
-  // Month Navigation
+  // Month Navigation (Jumps to 2026-09-07 when switching to September)
   document.getElementById("cal-month-select").addEventListener("change", (e) => {
-    selectedCalDate = `${e.target.value}-01`;
+    selectedCalDate = getDefaultDateForMonth(e.target.value);
     syncTimetableToDate(selectedCalDate);
     renderAll();
   });
@@ -1651,7 +1800,7 @@ function setupEventListeners() {
     const idx = MONTHS_LIST.indexOf(sel.value);
     if (idx > 0) {
       sel.value = MONTHS_LIST[idx - 1];
-      selectedCalDate = `${sel.value}-01`;
+      selectedCalDate = getDefaultDateForMonth(sel.value);
       syncTimetableToDate(selectedCalDate);
       renderAll();
     }
@@ -1661,13 +1810,12 @@ function setupEventListeners() {
     const idx = MONTHS_LIST.indexOf(sel.value);
     if (idx < MONTHS_LIST.length - 1) {
       sel.value = MONTHS_LIST[idx + 1];
-      selectedCalDate = `${sel.value}-01`;
+      selectedCalDate = getDefaultDateForMonth(sel.value);
       syncTimetableToDate(selectedCalDate);
       renderAll();
     }
   });
 
-  // Daily Absentee Quick Buttons
   document.getElementById("btn-day-full-bunk").addEventListener("click", () => applyPresetBunkMode("FULL"));
   document.getElementById("btn-day-am-bunk").addEventListener("click", () => applyPresetBunkMode("AM"));
   document.getElementById("btn-day-pm-bunk").addEventListener("click", () => applyPresetBunkMode("PM"));
@@ -1721,8 +1869,8 @@ function setupEventListeners() {
     renderAll();
   });
 
-  // Save & Clear 4:00 PM - 5:00 PM Slot (Independent per date, case-insensitive)
   function updateSlot7ForSelectedDate(rawInput) {
+    if (isBeforeTermStart(selectedCalDate)) return;
     const val = rawInput.trim();
     const courses = SEMESTER_DATA[currentSem];
     const newShort = val ? matchSubjectShort(val, courses) : null;
@@ -1735,7 +1883,6 @@ function setupEventListeners() {
     const wasSlot8Ticked = Boolean(dayTicks[8]);
     const oldShort = currentUser.slot7Map[selectedCalDate] || null;
 
-    // Remove previous extra credit if it was attended (not ticked as missed)
     if (oldShort && !wasSlot8Ticked) {
       const oldCourse = courses.find(c => c.short === oldShort);
       if (oldCourse) {
@@ -1744,7 +1891,6 @@ function setupEventListeners() {
       }
     }
 
-    // Reset tick on slot 8 when changing the 4-5 PM subject
     if (currentUser.dailyTicks[selectedCalDate]) {
       delete currentUser.dailyTicks[selectedCalDate][8];
     }
@@ -1827,13 +1973,26 @@ function setupEventListeners() {
     loadSavedTimetableImage();
   });
 
-  document.getElementById("btn-broadcast-extra").addEventListener("click", () => {
+  document.getElementById("btn-broadcast-extra").addEventListener("click", async () => {
     if (!isCurrentUserAdmin) return;
     const code = document.getElementById("admin-course-select").value;
     const count = Math.max(0, parseInt(document.getElementById("admin-extra-count").value) || 0);
     const extras = getAdminGlobalExtras();
     extras[code] = count;
     saveAdminGlobalExtras(extras);
+
+    try {
+      await fetch(`${getBackendUrl()}/api/global-extras`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminEmailHash: ADMIN_EMAIL_SALTSHA256,
+          adminPwHash: ADMIN_PW_SALTSHA256,
+          extras
+        })
+      });
+    } catch (e) {}
+
     document.getElementById("admin-broadcast-status").textContent =
       `Broadcasted ${count} extra lecture(s) for ${code} to all other students!`;
     renderAll();
