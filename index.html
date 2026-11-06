@@ -1,176 +1,2182 @@
-import json
-import os
-import sqlite3
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Dict, Any
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Attendance, Timetable & Calendar Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #0b1120;
+      color: #f8fafc;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+    input, select, textarea { font-size: 16px !important; }
+    @keyframes pulseBadge {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.97); }
+    }
+    .batch-badge {
+      background-color: #dc2626;
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-weight: 800;
+      font-size: 10px;
+      border: 1px solid #fecaca;
+      animation: pulseBadge 1.1s infinite ease-in-out;
+      display: inline-block;
+    }
+    .missed-banner {
+      background: linear-gradient(90deg, #0f172a, #1e3a8a, #0f172a);
+      border: 2px solid #38bdf8;
+      border-radius: 12px;
+      padding: 13px 16px;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      text-align: center;
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    }
+    .tt-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1.5px solid #334155;
+      border-radius: 12px;
+    }
+    .tt-table {
+      width: 100%;
+      min-width: 820px;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    .tt-table th, .tt-table td {
+      border-bottom: 1.5px solid #334155;
+      border-right: 1.5px solid #334155;
+      padding: 13px 10px;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 13px;
+    }
+    .tt-table th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 800;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .tt-sticky-col {
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      background: #0f172a !important;
+      color: #38bdf8 !important;
+      font-weight: 800;
+      border-right: 2.5px solid #38bdf8 !important;
+      width: 135px;
+    }
+    .cell-green { background: rgba(22, 163, 74, 0.28); color: #dcfce7; font-weight: 700; }
+    .cell-yellow { background: rgba(202, 138, 4, 0.32); color: #fef08a; font-weight: 700; }
+    .cell-red { background: #dc2626; color: #ffffff; font-weight: 800; }
+    .cell-blue { background: rgba(37, 99, 235, 0.22); color: #dbeafe; font-weight: 600; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between pb-12">
 
-app = FastAPI(title="Attendance Tracker Sync API")
+  <!-- LOGIN VIEW (PC & MOBILE) -->
+  <div id="login-view" class="max-w-md w-full mx-auto px-4 pt-8 sm:pt-12 hidden">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-5 sm:p-7 shadow-2xl">
+      <div class="flex items-center justify-between mb-1">
+        <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight">Student Login</h1>
+        <span class="text-[11px] font-extrabold bg-blue-600/20 text-sky-400 border border-sky-500/40 px-2.5 py-1 rounded-lg">PC &amp; Mobile Sync</span>
+      </div>
+      <p class="text-xs text-slate-400 mb-5 leading-relaxed">Log in with your Gmail and password to sync your attendance across PC and Android.</p>
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+      <div id="login-error" class="hidden bg-red-950/80 border border-red-500 text-red-200 text-xs font-semibold p-3 rounded-xl mb-4"></div>
 
-DB_PATH = os.environ.get("SQLITE_DB_PATH", "attendance_cloud_sync.db")
-SEM1_START_DATE = "2026-09-07"
-SEM1_LAST_INSTRUCTION_DATE = "2026-12-04"
-EXAM_RANGES = [
-    ("2026-10-19", "2026-10-24"),  # Mid-Semester Examination (MSE)
-    ("2026-12-07", "2026-12-12"),  # Oral / Practical Examination
-    ("2026-12-14", "2026-12-23"),  # End-Semester Examination (ESE)
-]
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-extrabold text-slate-300 mb-1">Gmail Address (@gmail.com)</label>
+          <input id="login-email" type="email" required placeholder="yourname@gmail.com"
+            class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3.5 py-3 text-sm text-white focus:outline-none focus:border-sky-400" />
+        </div>
 
-ADMIN_EMAIL_SALTSHA256 = "fd59fa4b0e9158a4ef72be9a7459c5b4b8b8532a60b0f74a370623bc6b271357"
-ADMIN_PW_SALTSHA256 = "a2eb4d78636647b59f87c3e45b18a431a6c27ff8df435364a85261e6401564a1"
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label for="login-password" class="block text-xs font-extrabold text-slate-300">Account Password</label>
+            <span class="text-[10px] font-bold text-sky-400">New user? Choose a password</span>
+          </div>
+          <div class="relative flex items-center">
+            <input id="login-password" type="password" required placeholder="Enter your password"
+              class="w-full bg-slate-800 border border-slate-600 rounded-xl pl-3.5 pr-20 py-3 text-sm text-white focus:outline-none focus:border-sky-400" />
+            <button type="button" id="btn-toggle-login-pw"
+              class="absolute right-2 bg-slate-700 hover:bg-slate-600 text-sky-300 font-extrabold text-xs px-3 py-1.5 rounded-lg border border-slate-500">
+              Show
+            </button>
+          </div>
+        </div>
 
+        <div>
+          <label class="block text-xs font-extrabold text-slate-300 mb-1">Full Name (Required for first-time registration)</label>
+          <input id="login-name" type="text" placeholder="Your Full Name"
+            class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3.5 py-3 text-sm text-white focus:outline-none focus:border-sky-400" />
+        </div>
 
-def init_db():
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS users (
-                email TEXT PRIMARY KEY,
-                password_hash TEXT NOT NULL,
-                payload TEXT NOT NULL,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-            """
-        )
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS global_config (
-                key TEXT PRIMARY KEY,
-                value TEXT NOT NULL
-            )
-            """
-        )
-        conn.commit()
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-extrabold text-slate-300 mb-1">Branch</label>
+            <select id="login-branch" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-3 text-sm text-white">
+              <option>Basic Sciences and Humanities (FE)</option>
+              <option>Electronics and Telecommunication Engineering</option>
+              <option>Computer Engineering</option>
+              <option>Information Technology</option>
+              <option>Mechanical Engineering</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-extrabold text-slate-300 mb-1">College Batch</label>
+            <select id="login-batch" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-3 text-sm text-white">
+              <option value="Batch A">Batch A</option>
+              <option value="Batch B">Batch B</option>
+              <option value="Batch C">Batch C</option>
+            </select>
+          </div>
+        </div>
 
+        <label class="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer pt-1">
+          <input id="login-remember" type="checkbox" checked class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-sky-500" />
+          <span class="font-semibold">Remember Me on this device</span>
+        </label>
 
-init_db()
+        <button type="submit" id="btn-login-submit"
+          class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-black py-3.5 rounded-xl text-sm shadow-xl transition">
+          Login / Register &amp; Sync Dashboard
+        </button>
+      </form>
+    </div>
+  </div>
 
+  <!-- MAIN DASHBOARD VIEW -->
+  <div id="app-view" class="max-w-7xl w-full mx-auto px-3 sm:px-6 pt-4 hidden space-y-6">
 
-def is_valid_instructional_date(iso: str) -> bool:
-    if iso < SEM1_START_DATE or iso > SEM1_LAST_INSTRUCTION_DATE:
-        return False
-    for start, end in EXAM_RANGES:
-        if start <= iso <= end:
-            return False
-    return True
+    <!-- Top Header & Controls -->
+    <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-4 sm:p-6 shadow-xl">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <h1 id="greeting-title" class="text-xl sm:text-2xl font-black text-white">Good Morning, Student</h1>
+            <span id="sync-status-pill" class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40">
+              Saved on Device
+            </span>
+          </div>
+          <p id="student-meta" class="text-xs sm:text-sm text-slate-400 mt-1 font-medium"></p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="dash-semester" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white"></select>
+          <select id="dash-batch" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white">
+            <option value="Batch A">Batch A</option>
+            <option value="Batch B">Batch B</option>
+            <option value="Batch C">Batch C</option>
+          </select>
+          <button id="btn-toggle-sync-box" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-black px-3.5 py-2 rounded-xl shadow transition">
+            PC &#8596; Mobile Sync
+          </button>
+          <button id="btn-reset-sem" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl transition">
+            Reset Missed to 0
+          </button>
+          <button id="btn-logout" class="bg-red-950 hover:bg-red-900 border border-red-500/60 text-red-100 text-xs font-bold px-3 py-2 rounded-xl transition">
+            Logout
+          </button>
+        </div>
+      </div>
 
+      <!-- PC <-> MOBILE BACKEND & INSTANT SYNC DRAWER -->
+      <div id="sync-drawer" class="hidden mt-4 pt-4 border-t border-slate-800 bg-slate-950/90 rounded-xl p-4 space-y-4 border border-sky-500/40">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-black text-sky-400">PC &#8596; Mobile Real-Time Backend &amp; Instant Sync</h3>
+            <p class="text-xs text-slate-400">Sync your account automatically via your FastAPI Backend Server (`main.py`) or via Instant Sync Code:</p>
+          </div>
+          <button id="btn-close-sync" class="text-xs text-slate-400 hover:text-white font-bold px-2.5 py-1 bg-slate-800 rounded-lg">Close</button>
+        </div>
 
-def clean_non_instructional_profile(profile: Dict[str, Any]) -> Dict[str, Any]:
-    for key in ("dailyLogs", "dailyTicks", "slot7Map"):
-        if isinstance(profile.get(key), dict):
-            profile[key] = {
-                iso: val
-                for iso, val in profile[key].items()
-                if is_valid_instructional_date(iso)
-            }
-    return profile
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Method 1: Python FastAPI Backend Server Sync -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
+            <div class="text-xs font-black text-emerald-400 uppercase">Method 1: Python FastAPI Backend Server (Automatic)</div>
+            <p class="text-[11px] text-slate-300 leading-relaxed">
+              Enter your deployed Render Backend URL (e.g. <code>https://attendencetracker.onrender.com</code>). Once saved, every change on PC or Android syncs automatically!
+            </p>
+            <div class="flex gap-2">
+              <input id="backend-url-input" type="url" placeholder="https://attendencetracker.onrender.com"
+                class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white flex-grow font-mono" />
+              <button id="btn-save-backend-url" class="bg-sky-600 hover:bg-sky-500 text-white font-black text-xs px-3 py-2 rounded-lg shrink-0">
+                Save URL
+              </button>
+            </div>
+            <div class="flex gap-2">
+              <button id="btn-backend-push" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs py-2 rounded-lg transition">
+                &#8593; Push to Server Now
+              </button>
+              <button id="btn-backend-pull" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs py-2 rounded-lg transition">
+                &#8595; Pull from Server Now
+              </button>
+            </div>
+            <div id="backend-sync-msg" class="text-[11px] font-bold text-sky-300"></div>
+          </div>
 
+          <!-- Method 2: Firewall-Proof Instant Sync Code -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
+            <div class="text-xs font-black text-amber-400 uppercase">Method 2: Firewall-Proof Sync Code (WhatsApp / Clipboard)</div>
+            <p class="text-[11px] text-slate-300 leading-relaxed">
+              Works even if college Wi-Fi blocks cloud servers: tap <b>Copy My Current Sync Code</b> on PC and paste it below on your phone:
+            </p>
+            <div class="flex gap-2">
+              <input id="manual-sync-input" type="text" placeholder="Paste Sync Code here to import..."
+                class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white flex-grow font-mono" />
+              <button id="btn-import-code" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs px-3 py-2 rounded-lg shrink-0">
+                Load Code
+              </button>
+            </div>
+            <button id="btn-copy-code" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-300 font-black text-xs py-2 rounded-lg transition">
+              Copy My Current Sync Code
+            </button>
+            <div id="manual-sync-msg" class="text-[11px] font-bold text-emerald-400"></div>
+          </div>
+        </div>
+      </div>
 
-class UserSyncPayload(BaseModel):
-    email: str
-    passwordHash: str
-    profile: Dict[str, Any]
+      <!-- Custom Target Attendance % Bar -->
+      <div class="mt-5 pt-4 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs font-black uppercase tracking-wider text-sky-400 mr-1">Target Attendance % (Min 75%):</span>
+          <button data-target="75" class="target-pill px-3.5 py-2 rounded-xl text-xs font-black border">75% Min</button>
+          <button data-target="80" class="target-pill px-3.5 py-2 rounded-xl text-xs font-black border">80%</button>
+          <button data-target="85" class="target-pill px-3.5 py-2 rounded-xl text-xs font-black border">85%</button>
+          <button data-target="90" class="target-pill px-3.5 py-2 rounded-xl text-xs font-black border">90%</button>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <label class="text-xs font-bold text-slate-300">Custom %:</label>
+          <input id="custom-target-input" type="number" min="75" max="100" value="75"
+            class="w-20 bg-slate-800 border border-slate-600 rounded-xl px-2.5 py-2 text-sm font-black text-center text-sky-300" />
+        </div>
+      </div>
 
+      <!-- Official Instructional Lecture Days Banner (Excludes MSE, Oral/Practical & ESE Exam Weeks) -->
+      <div id="term-working-days-bar" class="mt-4 bg-slate-950/90 border border-slate-800 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs"></div>
 
-class GlobalExtrasPayload(BaseModel):
-    adminEmailHash: str
-    adminPwHash: str
-    extras: Dict[str, int]
+      <div id="admin-broadcast-banner" class="hidden mt-4 bg-sky-950/80 border border-sky-500/60 text-sky-200 text-xs font-bold px-4 py-3 rounded-xl"></div>
+    </div>
 
+    <!-- EXCLUSIVE ADMIN POWER PANEL (Zero Plaintext Credentials in Code) -->
+    <div id="admin-panel" class="hidden bg-slate-900 border-2 border-amber-500/80 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base sm:text-lg font-black text-amber-400">Admin Power Panel (Verified Exclusive Access)</h2>
+        <span class="text-xs bg-amber-500/20 text-amber-300 px-3 py-1 rounded-lg font-bold">Admin Session Active</span>
+      </div>
+      <p class="text-xs text-slate-300 font-medium">Broadcast Extra Lectures globally to <b>all other students</b>:</p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <select id="admin-course-select" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white font-bold"></select>
+        <input id="admin-extra-count" type="number" min="0" value="0" placeholder="Extra Lectures Count"
+          class="bg-slate-800 border border-slate-600 rounded-xl px-3.5 py-2.5 text-sm text-white font-black" />
+        <button id="btn-broadcast-extra" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs sm:text-sm">
+          Broadcast to Other Students
+        </button>
+      </div>
+      <div id="admin-broadcast-status" class="text-xs text-emerald-400 font-extrabold"></div>
+      <div class="pt-2">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Student Visitor Log</h3>
+        <div id="admin-visitor-log" class="text-xs text-slate-300 bg-slate-950 p-3.5 rounded-xl max-h-40 overflow-y-auto border border-slate-800"></div>
+      </div>
+    </div>
 
-@app.get("/")
-def health_check():
-    return {
-        "status": "online",
-        "service": "Attendance Tracker Cloud Sync Backend",
-        "term_start": SEM1_START_DATE,
-        "last_instruction_date": SEM1_LAST_INSTRUCTION_DATE,
+    <!-- SECTION 2: 4 SUMMARY METRIC CARDS -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg">
+        <div class="text-[11px] font-black uppercase tracking-wider text-slate-400">Overall Attendance</div>
+        <div id="metric-overall" class="text-xl sm:text-2xl font-black text-white mt-1">100.00%</div>
+        <div id="metric-overall-badge" class="text-[11px] font-black mt-1 text-emerald-400">Safe</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg">
+        <div class="text-[11px] font-black uppercase tracking-wider text-slate-400">Total Unattended</div>
+        <div id="metric-unattended" class="text-xl sm:text-2xl font-black text-amber-400 mt-1">0 missed</div>
+        <div class="text-[11px] text-slate-400 mt-1 font-medium">Calendar + Manual</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg">
+        <div id="metric-bunks-label" class="text-[11px] font-black uppercase tracking-wider text-slate-400">Safe Bunks Left (75%)</div>
+        <div id="metric-bunks" class="text-xl sm:text-2xl font-black text-emerald-400 mt-1">0 left</div>
+        <div class="text-[11px] text-slate-400 mt-1 font-medium">Without dropping below target</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg">
+        <div id="metric-needed-label" class="text-[11px] font-black uppercase tracking-wider text-slate-400">Classes Needed (75%)</div>
+        <div id="metric-needed" class="text-xl sm:text-2xl font-black text-sky-400 mt-1">0 classes</div>
+        <div class="text-[11px] text-slate-400 mt-1 font-medium">To reach target goal</div>
+      </div>
+    </div>
+
+    <!-- SECTIONS 1 & 4: SUBJECT UNATTENDED & EXTRA LECTURES INPUT (100% LINKED WITH CALENDAR) -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
+      <div class="missed-banner text-sm sm:text-xl">ENTER HOW MANY LECTURES YOU HAVE MISSED</div>
+      <div class="bg-sky-950/60 border border-sky-500/40 text-sky-200 text-xs sm:text-sm font-bold px-4 py-3 rounded-xl text-center">
+        Note: These calculations assume that you will attend all of your remaining upcoming lectures—so don't be a defaulter!
+      </div>
+
+      <!-- Mobile Touch Cards -->
+      <div id="mobile-subject-cards" class="grid grid-cols-1 gap-3.5 lg:hidden"></div>
+
+      <!-- Desktop Full Table -->
+      <div class="hidden lg:block overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="border-b border-slate-700 text-xs uppercase text-slate-400 bg-slate-800/60 tracking-wider">
+              <th class="py-3.5 px-3">Short</th>
+              <th class="py-3.5 px-3">Course Name</th>
+              <th class="py-3.5 px-3 text-center">Credits</th>
+              <th class="py-3.5 px-3 text-center">Unattended (Missed)</th>
+              <th class="py-3.5 px-3 text-center">Extra Attended</th>
+              <th class="py-3.5 px-3 text-center">Attended / Total</th>
+              <th class="py-3.5 px-3 text-center">Attendance %</th>
+              <th id="th-req-target" class="py-3.5 px-3 text-center">Req (75%)</th>
+              <th id="th-need-target" class="py-3.5 px-3 text-center">Need</th>
+              <th class="py-3.5 px-3 text-center">Safe Bunks</th>
+              <th class="py-3.5 px-3 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody id="desktop-subject-tbody" class="divide-y divide-slate-800"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SECTION 3: INTERACTIVE CALENDAR WITH LOCKED MONTH NAVIGATION BAR & DAILY EVEN/ODD TIMETABLE INSPECTOR -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
+      <h2 class="text-base sm:text-lg font-black text-white">3. Interactive Calendar &amp; Daily Even/Odd Timetable Absentee Marker</h2>
+
+      <!-- Color Legend -->
+      <div class="flex flex-wrap gap-3 text-xs font-bold bg-slate-800/60 p-3.5 rounded-xl border border-slate-700">
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-red-500 inline-block"></span> Red: Holiday &amp; Weekend</span>
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-purple-600 border border-purple-400 inline-block"></span> Purple ('EXAM'): Midsem / Practical / ESE Exams (No Regular Lectures)</span>
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-emerald-500 inline-block"></span> Green: Past Attended (0 Missed)</span>
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-amber-400 inline-block"></span> Yellow: Unattended ('F' = Full Bunk / Short-Form = Partial)</span>
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-blue-500 inline-block"></span> Blue: Working Lecture Day (EVEN / ODD)</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left: 7-Column Calendar with Prev/Next Month Navigation Locked inside Viewport -->
+        <div class="lg:col-span-6 space-y-3 min-w-0">
+          <div class="w-full flex items-center justify-between gap-2 bg-slate-950/90 p-2 rounded-xl border border-slate-800">
+            <button id="btn-prev-month" type="button"
+              class="shrink-0 whitespace-nowrap bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-xs px-3 py-2.5 rounded-lg border border-slate-600 transition">
+              &#9664; Prev
+            </button>
+            <select id="cal-month-select"
+              class="min-w-0 flex-1 bg-slate-800 border border-slate-600 rounded-xl px-2 py-2 text-xs sm:text-sm font-black text-sky-300 text-center truncate focus:outline-none focus:border-sky-400">
+              <option value="2026-09">September 2026</option>
+              <option value="2026-10">October 2026</option>
+              <option value="2026-11" selected>November 2026</option>
+              <option value="2026-12">December 2026</option>
+            </select>
+            <button id="btn-next-month" type="button"
+              class="shrink-0 whitespace-nowrap bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-xs px-3 py-2.5 rounded-lg border border-slate-600 transition">
+              Next &#9654;
+            </button>
+          </div>
+
+          <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-black text-slate-300 bg-slate-800 py-2.5 rounded-t-xl border border-slate-700">
+            <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+          </div>
+          <div id="calendar-grid" class="grid grid-cols-7 gap-1.5"></div>
+        </div>
+
+        <!-- Right: Daily Even/Odd Week Timetable & Absentee Tick Inspector -->
+        <div class="lg:col-span-6 bg-slate-950/90 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 min-w-0">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+            <div>
+              <h3 id="inspected-date-title" class="text-sm sm:text-base font-black text-white">Selected Day</h3>
+              <p id="inspected-date-meta" class="text-xs text-sky-400 font-extrabold mt-0.5"></p>
+            </div>
+            <div id="day-quick-bunk-btns" class="grid grid-cols-2 sm:flex gap-1.5">
+              <button id="btn-day-full-bunk" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] px-2.5 py-1.5 rounded-lg transition">
+                Full Bunk ('F')
+              </button>
+              <button id="btn-day-am-bunk" class="bg-amber-600/80 hover:bg-amber-500 text-white font-black text-[11px] px-2.5 py-1.5 rounded-lg transition">
+                Half Bunk (AM)
+              </button>
+              <button id="btn-day-pm-bunk" class="bg-amber-600/80 hover:bg-amber-500 text-white font-black text-[11px] px-2.5 py-1.5 rounded-lg transition">
+                Half Bunk (PM)
+              </button>
+              <button id="btn-day-clear-bunk" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] px-2.5 py-1.5 rounded-lg transition">
+                Attended All
+              </button>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-300 leading-relaxed font-medium">
+            Theory lectures and Labs/Tutorials are always kept separate. Continuous identical sessions (like Wednesday CP 3–4 or 2-hr Labs) merge into <b>1 Bulk Unit</b>. Tick the checkbox beside any class (including 4–5 PM UHV or extra lectures) you missed on this date—it immediately updates the <b>Unattended (Missed)</b> &amp; <b>Extra Attended</b> table above!
+          </p>
+
+          <div id="daily-slots-container" class="space-y-2.5"></div>
+
+          <!-- Editable 4:00 PM - 5:00 PM Extra Lecture Box -->
+          <div id="slot7-editor-box" class="pt-4 border-t border-slate-800">
+            <label class="block text-xs font-black text-sky-400 mb-1">
+              Set / Edit 4:00 PM – 5:00 PM Extra Lecture for This Date Only:
+            </label>
+            <p class="text-[11px] text-slate-400 mb-2">
+              Type any subject short-form in lowercase or uppercase (e.g. <b>eg</b>, <b>ap</b>, <b>cp</b>, <b>fem-i</b>, <b>ec</b>, <b>be&amp;de</b>, <b>ws-i</b>, <b>uhv</b>). If left unticked (attended), it adds <b>+1 Extra Attended</b> in the table above. If ticked as missed/absent above, it adds <b>+1 Unattended (Missed)</b> in the table above!
+            </p>
+            <div class="flex gap-2">
+              <input id="slot7-input" type="text" placeholder="e.g. eg, ap, cp, fem-i, uhv, ec..."
+                class="min-w-0 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white flex-grow focus:outline-none focus:border-sky-400" />
+              <button id="btn-save-slot7" class="bg-blue-600 hover:bg-blue-500 text-white font-black text-xs px-4 py-2.5 rounded-xl shrink-0 transition">
+                Save 4–5 PM
+              </button>
+              <button id="btn-clear-slot7" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-bold text-xs px-3 py-2.5 rounded-xl shrink-0 transition">
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 5: FULL EVEN & ODD WEEK TIMETABLES (AUTO-SYNCED TO CURRENT/SELECTED WEEK) -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h2 class="text-base sm:text-lg font-black text-white">5. Official Even &amp; Odd Week Timetables</h2>
+            <span id="sec5-auto-badge" class="text-[11px] font-black px-2.5 py-0.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40">
+              Auto-Synced to Odd Week
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 font-medium mt-0.5">Automatically switches to Odd Week or Even Week based on the current/selected date.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="btn-tt-even" class="px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300">Even Week Timetable</button>
+          <button id="btn-tt-odd" class="px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white">Odd Week Timetable</button>
+          <button id="btn-tt-img" class="px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300">Timetable Image</button>
+        </div>
+      </div>
+
+      <div id="tt-schedule-container" class="space-y-3.5">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 bg-slate-950/80 p-3 rounded-2xl border border-slate-800">
+          <div class="flex gap-2">
+            <button id="btn-mode-cards" class="px-3.5 py-2 rounded-xl text-xs font-black bg-sky-600 text-white">
+              Mobile Day Cards (Smooth on Android)
+            </button>
+            <button id="btn-mode-grid" class="px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300">
+              Full 5-Day Vertical Grid
+            </button>
+          </div>
+          <div id="tt-day-pills" class="flex gap-1">
+            <button data-day="MON" class="day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-blue-600 text-white">MON</button>
+            <button data-day="TUE" class="day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300">TUE</button>
+            <button data-day="WED" class="day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300">WED</button>
+            <button data-day="THR" class="day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300">THR</button>
+            <button data-day="FRI" class="day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300">FRI</button>
+          </div>
+        </div>
+
+        <div id="tt-cards-output" class="space-y-2.5"></div>
+        <div id="tt-grid-output" class="hidden"></div>
+      </div>
+
+      <!-- Timetable Image Upload / Paste / Remove -->
+      <div id="tt-image-container" class="hidden space-y-4 pt-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="text-xs text-slate-300 font-bold">Upload an image file or press <b>Ctrl + V</b> anywhere below to paste a copied image:</span>
+          <button id="btn-remove-img" class="hidden bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3.5 py-2 rounded-xl transition">
+            Remove Timetable Image
+          </button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <label class="border-2 border-dashed border-slate-600 hover:border-sky-400 rounded-2xl p-5 text-center cursor-pointer bg-slate-950/50 transition">
+            <span class="text-xs font-extrabold text-sky-400 block mb-1">Option 1: Choose Image File (JPG/PNG)</span>
+            <input id="tt-file-input" type="file" accept="image/*" class="text-xs text-slate-400 mt-1" />
+          </label>
+          <div id="paste-zone" tabindex="0" class="border-2 border-dashed border-sky-500/70 rounded-2xl p-5 text-center bg-slate-950/50 cursor-pointer">
+            <span class="text-xs font-extrabold text-sky-300 block mb-0.5">Option 2: Click Here &amp; Press Ctrl + V</span>
+            <span id="paste-status" class="text-[11px] text-slate-400 font-medium">Accepts copied clipboard images directly</span>
+          </div>
+        </div>
+        <img id="tt-saved-preview" class="hidden w-full rounded-2xl border border-slate-700 shadow-xl" alt="Official Timetable" />
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER SUBHEADING -->
+  <footer class="text-center mt-12 py-6 border-t border-slate-800 text-slate-200 font-black text-sm sm:text-base tracking-wide">
+    Designed and Created by Kanishka Maya Honrao
+  </footer>
+
+<script>
+// 1. DEFAULT BACKEND URL
+const DEFAULT_BACKEND_URL = "https://attendencetracker.onrender.com";
+
+// 2. SEMESTER I INSTRUCTIONAL LECTURE WINDOW (07 SEPT TO 04 DEC 2026) & TERM END (23 DEC 2026)
+const SEM1_START_DATE = "2026-09-07";
+const SEM1_LAST_INSTRUCTION_DATE = "2026-12-04";
+const SEM1_END_DATE = "2026-12-23";
+
+// 3. OFFICIAL EXAM PERIODS (MSE, ORAL/PRACTICAL, ESE) — Excluded from Instructional Lecture Days!
+const EXAM_PERIODS = [
+  ["2026-10-19", "2026-10-24", "Mid-Semester Examination (MSE)"],
+  ["2026-12-07", "2026-12-12", "Oral / Practical Examination"],
+  ["2026-12-14", "2026-12-23", "End-Semester Examination (ESE)"]
+];
+
+// 4. ZERO PLAINTEXT EMAIL OR PASSWORD IN SOURCE CODE:
+const AUTH_PEPPER = "ATT_V9_PEPPER_2026";
+const ADMIN_EMAIL_SALTSHA256 = "fd59fa4b0e9158a4ef72be9a7459c5b4b8b8532a60b0f74a370623bc6b271357";
+const ADMIN_PW_SALTSHA256 = "a2eb4d78636647b59f87c3e45b18a431a6c27ff8df435364a85261e6401564a1";
+
+const TIME_SLOTS = [
+  "1 (9:00 - 10:00)", "2 (10:00 - 11:00)", "Short Break (11:00 - 11:15)",
+  "3 (11:15 - 12:15)", "4 (12:15 - 13:15)", "Lunch Break (13:15 - 14:00)",
+  "5 (14:00 - 15:00)", "6 (15:00 - 16:00)", "7 (16:00 - 17:00)"
+];
+
+const EVEN_GRID = {
+  MON: ["AP", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Remedial Lecture"],
+  TUE: ["EC", "EG", "SHORT BREAK", "BE&DE", "FEM-I", "LUNCH BREAK", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "UHV", "FE Mentoring Slot"],
+  WED: ["FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "AP", "SHORT BREAK", "CP", "CP", "LUNCH BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Extra Lecture Slot 1"],
+  THR: ["Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "SHORT BREAK", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "BE&DE", "FEM-I", "Extra Lecture Slot 2"],
+  FRI: ["BE&DE", "FEM-I", "SHORT BREAK", "EG", "BE&DE", "LUNCH BREAK", "EC", "UHV", "Extra Lecture Slot 3"]
+};
+
+const ODD_GRID = {
+  MON: ["AP", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Remedial Lecture"],
+  TUE: ["EC", "BE&DE", "SHORT BREAK", "FEM-I", "AP", "LUNCH BREAK", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "UHV", "FE Mentoring Slot"],
+  WED: ["FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "EC", "SHORT BREAK", "CP", "CP", "LUNCH BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Extra Lecture Slot 1"],
+  THR: ["Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "SHORT BREAK", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "FEM-I", "BE&DE", "Extra Lecture Slot 2"],
+  FRI: ["EC", "BE&DE", "SHORT BREAK", "EG", "BE&DE", "LUNCH BREAK", "FEM-I", "AP", "UHV"]
+};
+
+const HOLIDAYS = {
+  "2026-09-14": "Ganeshotsav Break", "2026-09-15": "Ganeshotsav Break", "2026-09-16": "Ganeshotsav Break",
+  "2026-09-17": "Ganeshotsav Break", "2026-09-18": "Ganeshotsav Break", "2026-10-02": "Gandhi Jayanti",
+  "2026-10-20": "Dussehra", "2026-11-07": "Diwali Break", "2026-11-08": "Diwali Break",
+  "2026-11-09": "Diwali Break", "2026-11-10": "Diwali Break", "2026-11-24": "Guru Nanak Jayanti"
+};
+
+const EVEN_RANGES = [
+  ["2026-09-21", "2026-09-25"], ["2026-10-05", "2026-10-09"],
+  ["2026-10-26", "2026-10-30"], ["2026-11-09", "2026-11-13"], ["2026-11-23", "2026-11-27"]
+];
+
+const ODD_RANGES = [
+  ["2026-09-07", "2026-09-11"], ["2026-09-28", "2026-10-02"],
+  ["2026-10-12", "2026-10-16"], ["2026-11-01", "2026-11-06"],
+  ["2026-11-16", "2026-11-20"], ["2026-11-30", "2026-12-04"]
+];
+
+const MONTHS_LIST = ["2026-09", "2026-10", "2026-11", "2026-12"];
+
+const SEMESTER_DATA = {
+  "Semester I": [
+    { code: "25FE1BSC01", short: "FEM-I", name: "Fundamentals of Engineering Mathematics I", credits: 4, imp: 3, total: 45 },
+    { code: "25FE1BSC02", short: "AP", name: "Applied Physics", credits: 3, imp: 3, total: 35 },
+    { code: "25FE1BSC03", short: "EC", name: "Engineering Chemistry", credits: 3, imp: 3, total: 35 },
+    { code: "25FE1ESC01", short: "EG", name: "Engineering Graphics", credits: 3, imp: 2, total: 30 },
+    { code: "25FE1ESC02", short: "BE&DE", name: "Basic Electrical and Digital Electronics", credits: 3, imp: 2, total: 35 },
+    { code: "25FE1VSEC01", short: "WS-I", name: "Workshop - 1", credits: 2, imp: 2, total: 20 },
+    { code: "25FE1VSEC02", short: "CP", name: "Problem Solving using C programming", credits: 2, imp: 3, total: 30 },
+    { code: "25FE1VEC01", short: "UHV", name: "Universal Human Values", credits: 2, imp: 1, total: 20 }
+  ],
+  "Semester II": [
+    { code: "25FE2BSC01", short: "FEM-II", name: "Fundamentals of Engineering Mathematics II", credits: 4, imp: 3, total: 45 },
+    { code: "25FE2BSC02", short: "AP-II", name: "Applied Physics II", credits: 3, imp: 2, total: 30 },
+    { code: "25FE2BSC03", short: "AC-II", name: "Applied Chemistry II", credits: 3, imp: 2, total: 30 },
+    { code: "25FE2ESC01", short: "EM", name: "Engineering Mechanics", credits: 4, imp: 3, total: 40 },
+    { code: "25FE2VSEC01", short: "WS-II", name: "Workshop - 2", credits: 2, imp: 2, total: 20 },
+    { code: "25FE2VSEC02", short: "PY", name: "Python Programming", credits: 2, imp: 3, total: 30 },
+    { code: "25FE2AEC01", short: "PCE", name: "Professional Communication & Ethics", credits: 2, imp: 1, total: 25 }
+  ],
+  "Semester III": [
+    { code: "25SE3BSC01", short: "EM-III", name: "Engineering Mathematics III", credits: 4, imp: 3, total: 40 },
+    { code: "25SE3PCC01", short: "DSA", name: "Data Structures and Algorithms", credits: 4, imp: 3, total: 40 },
+    { code: "25SE3PCC02", short: "DBMS", name: "Database Management Systems", credits: 3, imp: 3, total: 35 },
+    { code: "25SE3PCC03", short: "COA", name: "Computer Organization & Architecture", credits: 3, imp: 2, total: 35 }
+  ],
+  "Semester IV": [
+    { code: "25SE4BSC01", short: "EM-IV", name: "Engineering Mathematics IV", credits: 4, imp: 3, total: 40 },
+    { code: "25SE4PCC01", short: "AOA", name: "Analysis of Algorithms", credits: 4, imp: 3, total: 40 },
+    { code: "25SE4PCC02", short: "OS", name: "Operating Systems", credits: 3, imp: 3, total: 35 }
+  ]
+};
+
+let currentUser = null;
+let isCurrentUserAdmin = false;
+let currentSem = "Semester I";
+let selectedCalDate = "2026-11-06";
+let ttWeekTab = "Odd";
+let ttViewMode = window.innerWidth < 768 ? "cards" : "grid";
+let ttSelectedDay = "FRI";
+
+function isBeforeTermStart(isoDate) {
+  return currentSem === "Semester I" && isoDate < SEM1_START_DATE;
+}
+
+function getExamPeriodName(isoDate) {
+  if (currentSem !== "Semester I") return null;
+  for (const [start, end, label] of EXAM_PERIODS) {
+    if (isoDate >= start && isoDate <= end) return label;
+  }
+  if (isoDate > SEM1_LAST_INSTRUCTION_DATE) {
+    return "Post-Instruction / Exam Preparation Period";
+  }
+  return null;
+}
+
+function isNonInstructionalDay(isoDate) {
+  return isBeforeTermStart(isoDate) || Boolean(HOLIDAYS[isoDate]) || Boolean(getExamPeriodName(isoDate));
+}
+
+// Computes exact Instructional Lecture Days (07 Sept to 04 Dec 2026, excluding Weekends, Holidays & MSE/Practical/ESE Exam Weeks)
+function computeSem1WorkingDaysSummary() {
+  const start = new Date(SEM1_START_DATE + "T00:00:00");
+  const end = new Date(SEM1_LAST_INSTRUCTION_DATE + "T00:00:00");
+  const todayIso = new Date().toISOString().slice(0, 10);
+
+  let totalWorkingDays = 0;
+  let completedWorkingDays = 0;
+  let remainingWorkingDays = 0;
+
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const iso = `${y}-${m}-${day}`;
+    const dow = (d.getDay() + 6) % 7;
+    if (dow < 5 && !HOLIDAYS[iso] && !getExamPeriodName(iso)) {
+      totalWorkingDays++;
+      if (iso <= todayIso) completedWorkingDays++;
+      else remainingWorkingDays++;
+    }
+  }
+  return { totalWorkingDays, completedWorkingDays, remainingWorkingDays };
+}
+
+function getBackendUrl() {
+  return (localStorage.getItem("att_custom_backend_url") || DEFAULT_BACKEND_URL).replace(/\/+$/, "");
+}
+
+async function saltedHash(str) {
+  const data = new TextEncoder().encode(`${AUTH_PEPPER}:${str.trim()}`);
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function getAllUsersDB() {
+  try { return JSON.parse(localStorage.getItem("att_users_db_v9") || "{}"); } catch { return {}; }
+}
+function saveAllUsersDB(db) {
+  localStorage.setItem("att_users_db_v9", JSON.stringify(db));
+}
+function getAdminGlobalExtras() {
+  try { return JSON.parse(localStorage.getItem("att_admin_global_extras") || "{}"); } catch { return {}; }
+}
+function saveAdminGlobalExtras(obj) {
+  localStorage.setItem("att_admin_global_extras", JSON.stringify(obj));
+}
+
+// Automatically cleans any accidental logs/ticks on Pre-Term, MSE, Practical, or ESE Exam dates
+function purgeNonInstructionalDates(user) {
+  if (!user) return;
+  const shouldPurge = (iso) => (
+    iso < SEM1_START_DATE ||
+    iso > SEM1_LAST_INSTRUCTION_DATE ||
+    EXAM_PERIODS.some(([s, e]) => iso >= s && iso <= e)
+  );
+  if (user.dailyLogs) {
+    Object.keys(user.dailyLogs).forEach(iso => {
+      if (shouldPurge(iso)) delete user.dailyLogs[iso];
+    });
+  }
+  if (user.dailyTicks) {
+    Object.keys(user.dailyTicks).forEach(iso => {
+      if (shouldPurge(iso)) delete user.dailyTicks[iso];
+    });
+  }
+  if (user.slot7Map) {
+    Object.keys(user.slot7Map).forEach(iso => {
+      if (shouldPurge(iso)) delete user.slot7Map[iso];
+    });
+  }
+}
+
+function computeCalendarTotalsForSem(sem) {
+  const calMissedByShort = {};
+  const calExtraAttendedByShort = {};
+  const courses = SEMESTER_DATA[sem] || [];
+  courses.forEach(c => {
+    calMissedByShort[c.short] = 0;
+    calExtraAttendedByShort[c.short] = 0;
+  });
+
+  if (sem !== "Semester I" || !currentUser) {
+    return { calMissedByShort, calExtraAttendedByShort };
+  }
+
+  const allDates = new Set([
+    ...Object.keys(currentUser.dailyTicks || {}),
+    ...Object.keys(currentUser.slot7Map || {})
+  ]);
+
+  allDates.forEach(isoDate => {
+    if (isNonInstructionalDay(isoDate)) return;
+    const { isOff, units } = getMergedDaySlots(isoDate, sem);
+    if (isOff) return;
+    const dayTicks = (currentUser.dailyTicks && currentUser.dailyTicks[isoDate]) || {};
+
+    units.forEach(u => {
+      if (!u.short) return;
+      const isTickedMissed = u.indices.some(i => Boolean(dayTicks[i]));
+      if (u.isCustomExtra) {
+        if (isTickedMissed) {
+          calMissedByShort[u.short] = (calMissedByShort[u.short] || 0) + 1;
+        } else {
+          calExtraAttendedByShort[u.short] = (calExtraAttendedByShort[u.short] || 0) + 1;
+        }
+      } else {
+        if (isTickedMissed) {
+          calMissedByShort[u.short] = (calMissedByShort[u.short] || 0) + 1;
+        }
+      }
+    });
+  });
+
+  return { calMissedByShort, calExtraAttendedByShort };
+}
+
+function syncCalendarToTableTotals() {
+  if (!currentUser || currentSem !== "Semester I") return;
+  ensureUserSemData(currentUser);
+  const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem("Semester I");
+  const courses = SEMESTER_DATA["Semester I"];
+
+  courses.forEach(c => {
+    const rec = currentUser.semData["Semester I"][c.code];
+    const manualMissed = Math.max(0, parseInt(rec.manualUnattended || 0));
+    const manualExtra = Math.max(0, parseInt(rec.manualExtra || 0));
+    const calMissed = calMissedByShort[c.short] || 0;
+    const calExtra = calExtraAttendedByShort[c.short] || 0;
+
+    rec.unattended = Math.min(c.total, manualMissed + calMissed);
+    rec.extra = manualExtra + calExtra;
+  });
+}
+
+async function syncWithFastAPIBackend(mode = "push", showMsg = false) {
+  if (!currentUser || !currentUser.email || !currentUser.passwordHash) return false;
+  const pill = document.getElementById("sync-status-pill");
+  const msgEl = document.getElementById("backend-sync-msg");
+  const apiUrl = getBackendUrl();
+
+  try {
+    if (showMsg && msgEl) msgEl.textContent = mode === "pull" ? "Pulling from backend server..." : "Pushing to backend server...";
+    const res = await fetch(`${apiUrl}/api/sync/${mode}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: currentUser.email,
+        passwordHash: currentUser.passwordHash,
+        profile: currentUser
+      })
+    });
+
+    if (res.status === 401) {
+      if (showMsg && msgEl) msgEl.textContent = "Server rejected password: Incorrect password for this Gmail account.";
+      return false;
     }
 
+    if (res.ok) {
+      const data = await res.json();
+      if (mode === "pull" && data.found && data.profile && data.profile.semData) {
+        currentUser = data.profile;
+        purgeNonInstructionalDates(currentUser);
+        syncCalendarToTableTotals();
+        const db = getAllUsersDB();
+        db[currentUser.email] = currentUser;
+        saveAllUsersDB(db);
+        renderAll();
+      }
+      if (pill) {
+        pill.textContent = "Synced (PC ↔ Mobile)";
+        pill.className = "text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40";
+      }
+      if (showMsg && msgEl) {
+        msgEl.textContent = mode === "pull"
+          ? "Successfully pulled latest attendance from Backend Server!"
+          : "Successfully pushed attendance to Backend Server!";
+      }
+      return true;
+    }
+  } catch (e) {
+    if (pill) {
+      pill.textContent = "Saved Locally (Server Offline)";
+      pill.className = "text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-600";
+    }
+    if (showMsg && msgEl) {
+      msgEl.textContent = "Backend server unreachable or waking up on Render (try again in 15s, or use Method 2 Sync Code).";
+    }
+  }
+  return false;
+}
 
-@app.post("/api/sync/push")
-def push_user_state(data: UserSyncPayload):
-    email = data.email.strip().lower()
-    if not email.endswith("@gmail.com"):
-        raise HTTPException(status_code=400, detail="Invalid Gmail address.")
+async function fetchGlobalExtrasFromBackend() {
+  try {
+    const res = await fetch(`${getBackendUrl()}/api/global-extras`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.extras) {
+        saveAdminGlobalExtras(data.extras);
+        renderAll();
+      }
+    }
+  } catch (e) {}
+}
 
-    cleaned_profile = clean_non_instructional_profile(data.profile)
+function getWeekType(isoDate) {
+  const examName = getExamPeriodName(isoDate);
+  if (examName) return "Exam Period";
+  for (const [s, e] of EVEN_RANGES) {
+    if (isoDate >= s && isoDate <= e) return "Even Week";
+  }
+  for (const [s, e] of ODD_RANGES) {
+    if (isoDate >= s && isoDate <= e) return "Odd Week";
+  }
+  const d = new Date(isoDate + "T00:00:00");
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return weekNo % 2 === 0 ? "Even Week" : "Odd Week";
+}
 
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT password_hash FROM users WHERE email = ?", (email,))
-        row = cur.fetchone()
+function getSessionKind(entryText) {
+  const up = entryText.toUpperCase();
+  if (/\bLAB\b/.test(up) || /\bWORKSHOP\b/.test(up) || up.includes("WS-I") || up.includes("WS-II")) return "lab";
+  if (/\bTUT\b/.test(up) || /\bTUTORIAL\b/.test(up)) return "tut";
+  return "theory";
+}
 
-        if row is not None:
-            stored_hash = row[0]
-            if stored_hash and stored_hash != data.passwordHash:
-                raise HTTPException(status_code=401, detail="Incorrect password for this account.")
-            cur.execute(
-                "UPDATE users SET payload = ?, password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE email = ?",
-                (json.dumps(cleaned_profile), data.passwordHash, email),
-            )
-        else:
-            cur.execute(
-                "INSERT INTO users (email, password_hash, payload) VALUES (?, ?, ?)",
-                (email, data.passwordHash, json.dumps(cleaned_profile)),
-            )
-        conn.commit()
+function extractBatchEntry(raw, batchLetter) {
+  if (raw.includes("/") && (raw.includes("(A)") || raw.includes("(B)") || raw.includes("(C)"))) {
+    const parts = raw.split("/").map(p => p.trim());
+    for (const p of parts) {
+      if (p.includes(`(${batchLetter})`)) return { text: p, isLab: true };
+    }
+  }
+  return { text: raw, isLab: false };
+}
 
-    return {"ok": True, "email": email}
+function matchSubjectShort(text, semCourses) {
+  if (!text) return null;
+  const up = text.trim().toUpperCase();
+  if (!up) return null;
 
+  if (
+    up.includes("REMEDIAL LECTURE") ||
+    up.includes("MENTORING SLOT") ||
+    up.includes("EXTRA LECTURE SLOT") ||
+    up.includes("SHORT BREAK") ||
+    up.includes("LUNCH BREAK")
+  ) {
+    return null;
+  }
 
-@app.post("/api/sync/pull")
-def pull_user_state(data: UserSyncPayload):
-    email = data.email.strip().lower()
-    cleaned_incoming = clean_non_instructional_profile(data.profile)
+  if (up.includes("WORKSHOP") || up.includes("WS-I") || up === "WS" || up === "WS1") {
+    return semCourses.some(c => c.short === "WS-I") ? "WS-I" : null;
+  }
 
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT password_hash, payload FROM users WHERE email = ?", (email,))
-        row = cur.fetchone()
+  for (const c of semCourses) {
+    if (up === c.short.toUpperCase() || up === c.code.toUpperCase()) return c.short;
+  }
 
-        if row is None:
-            cur.execute(
-                "INSERT INTO users (email, password_hash, payload) VALUES (?, ?, ?)",
-                (email, data.passwordHash, json.dumps(cleaned_incoming)),
-            )
-            conn.commit()
-            return {"ok": True, "found": False, "profile": cleaned_incoming}
+  const sorted = [...semCourses].sort((a, b) => b.short.length - a.short.length);
+  for (const c of sorted) {
+    const escaped = c.short.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(^|[^A-Z0-9&-])${escaped}($|[^A-Z0-9&-])`);
+    if (regex.test(up)) return c.short;
+  }
+  return null;
+}
 
-        stored_hash, payload_str = row
-        if stored_hash and stored_hash != data.passwordHash:
-            raise HTTPException(status_code=401, detail="Incorrect password for this account.")
+function syncTimetableToDate(isoDate) {
+  const effectiveIso = isoDate < SEM1_START_DATE ? SEM1_START_DATE : (isoDate > SEM1_LAST_INSTRUCTION_DATE ? SEM1_LAST_INSTRUCTION_DATE : isoDate);
+  const wk = getWeekType(effectiveIso);
+  if (ttWeekTab !== "Img" && (wk === "Odd Week" || wk === "Even Week")) {
+    ttWeekTab = wk === "Odd Week" ? "Odd" : "Even";
+  }
+  const dObj = new Date(effectiveIso + "T00:00:00");
+  const dow = (dObj.getDay() + 6) % 7;
+  if (dow >= 0 && dow <= 4) {
+    ttSelectedDay = ["MON", "TUE", "WED", "THR", "FRI"][dow];
+  }
+  updateTimetableTabButtons();
+}
 
-        saved_profile = clean_non_instructional_profile(json.loads(payload_str))
-        return {"ok": True, "found": True, "profile": saved_profile}
+function updateTimetableTabButtons() {
+  document.getElementById("btn-tt-even").className = ttWeekTab === "Even"
+    ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white shadow"
+    : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+  document.getElementById("btn-tt-odd").className = ttWeekTab === "Odd"
+    ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white shadow"
+    : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+  document.getElementById("btn-tt-img").className = ttWeekTab === "Img"
+    ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white shadow"
+    : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
 
+  const autoBadge = document.getElementById("sec5-auto-badge");
+  if (autoBadge && ttWeekTab !== "Img") {
+    autoBadge.textContent = `Auto-Synced: ${ttWeekTab} Week (${ttSelectedDay})`;
+  }
 
-@app.get("/api/global-extras")
-def get_global_extras():
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT value FROM global_config WHERE key = 'admin_extras'")
-        row = cur.fetchone()
-        return {"extras": json.loads(row[0]) if row else {}}
+  document.querySelectorAll(".day-pill").forEach(b => {
+    b.className = b.dataset.day === ttSelectedDay
+      ? "day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-blue-600 text-white"
+      : "day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300";
+  });
+}
 
+window.addEventListener("DOMContentLoaded", async () => {
+  const semSel = document.getElementById("dash-semester");
+  Object.keys(SEMESTER_DATA).forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = s; opt.textContent = s;
+    semSel.appendChild(opt);
+  });
 
-@app.post("/api/global-extras")
-def set_global_extras(data: GlobalExtrasPayload):
-    if data.adminEmailHash != ADMIN_EMAIL_SALTSHA256 or data.adminPwHash != ADMIN_PW_SALTSHA256:
-        raise HTTPException(status_code=403, detail="Unauthorized Admin credentials.")
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
-            "INSERT OR REPLACE INTO global_config (key, value) VALUES ('admin_extras', ?)",
-            (json.dumps(data.extras),),
-        )
-        conn.commit()
-    return {"ok": True, "extras": data.extras}
+  document.getElementById("backend-url-input").value = getBackendUrl();
+
+  const todayIso = new Date().toISOString().slice(0, 10);
+  if (todayIso >= SEM1_START_DATE && todayIso <= "2026-12-31") {
+    selectedCalDate = todayIso;
+  } else {
+    selectedCalDate = SEM1_START_DATE;
+  }
+  const ym = selectedCalDate.slice(0, 7);
+  if (MONTHS_LIST.includes(ym)) {
+    document.getElementById("cal-month-select").value = ym;
+  }
+  syncTimetableToDate(selectedCalDate);
+
+  const rememberedEmail = localStorage.getItem("att_remembered_user_v9");
+  const db = getAllUsersDB();
+  if (rememberedEmail && db[rememberedEmail]) {
+    currentUser = db[rememberedEmail];
+    purgeNonInstructionalDates(currentUser);
+    const emailDigest = await saltedHash(currentUser.email.toLowerCase());
+    isCurrentUserAdmin = (emailDigest === ADMIN_EMAIL_SALTSHA256);
+    enterDashboard();
+    syncWithFastAPIBackend("pull", false);
+    fetchGlobalExtrasFromBackend();
+  } else {
+    document.getElementById("login-view").classList.remove("hidden");
+  }
+
+  setupEventListeners();
+});
+
+function ensureUserSemData(user) {
+  if (!user.semData) user.semData = {};
+  if (!user.dailyLogs) user.dailyLogs = {};
+  if (!user.dailyTicks) user.dailyTicks = {};
+  if (!user.slot7Map) user.slot7Map = {};
+  if (!user.targetPct) user.targetPct = 75;
+  purgeNonInstructionalDates(user);
+
+  const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem("Semester I");
+
+  Object.keys(SEMESTER_DATA).forEach(sem => {
+    if (!user.semData[sem]) user.semData[sem] = {};
+    SEMESTER_DATA[sem].forEach(c => {
+      if (!user.semData[sem][c.code]) {
+        user.semData[sem][c.code] = {
+          unattended: 0,
+          extra: 0,
+          manualUnattended: 0,
+          manualExtra: 0,
+          imp: c.imp
+        };
+      } else {
+        const rec = user.semData[sem][c.code];
+        if (rec.manualUnattended === undefined) {
+          const calM = sem === "Semester I" ? (calMissedByShort[c.short] || 0) : 0;
+          rec.manualUnattended = Math.max(0, (parseInt(rec.unattended) || 0) - calM);
+        }
+        if (rec.manualExtra === undefined) {
+          const calE = sem === "Semester I" ? (calExtraAttendedByShort[c.short] || 0) : 0;
+          rec.manualExtra = Math.max(0, (parseInt(rec.extra) || 0) - calE);
+        }
+      }
+    });
+  });
+}
+
+function persistCurrentUser() {
+  if (!currentUser) return;
+  purgeNonInstructionalDates(currentUser);
+  syncCalendarToTableTotals();
+  const db = getAllUsersDB();
+  db[currentUser.email] = currentUser;
+  saveAllUsersDB(db);
+  syncWithFastAPIBackend("push", false);
+}
+
+function getComputedStats() {
+  ensureUserSemData(currentUser);
+  syncCalendarToTableTotals();
+  const courses = SEMESTER_DATA[currentSem];
+  const userSem = currentUser.semData[currentSem];
+  const globalExtras = getAdminGlobalExtras();
+  const targetPct = Math.max(75, Math.min(100, parseInt(currentUser.targetPct || 75)));
+  const tRatio = targetPct / 100.0;
+  const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem(currentSem);
+
+  const statsMap = {};
+  const list = courses.map(c => {
+    const rec = userSem[c.code] || { unattended: 0, extra: 0, manualUnattended: 0, manualExtra: 0, imp: c.imp };
+    const calMissed = calMissedByShort[c.short] || 0;
+    const calExtra = calExtraAttendedByShort[c.short] || 0;
+    const manualMissed = Math.max(0, parseInt(rec.manualUnattended || 0));
+    const manualExtra = Math.max(0, parseInt(rec.manualExtra || 0));
+
+    const unattended = Math.min(c.total, calMissed + manualMissed);
+    const personalExtra = calExtra + manualExtra;
+    const adminExtra = isCurrentUserAdmin ? 0 : Math.max(0, parseInt(globalExtras[c.code] || 0));
+    const totalExtra = personalExtra + adminExtra;
+    const regAttended = Math.max(0, c.total - unattended);
+    const effAttended = Math.min(c.total, regAttended + totalExtra);
+    const effUnattended = Math.max(0, c.total - effAttended);
+    const pct = Number(((effAttended / c.total) * 100).toFixed(2));
+    const reqTarget = Math.ceil(tRatio * c.total);
+    const needed = Math.max(0, reqTarget - effAttended);
+    const maxBunks = Math.max(0, c.total - reqTarget);
+    const safeBunks = Math.max(0, maxBunks - effUnattended);
+
+    const item = {
+      ...c,
+      imp: rec.imp || c.imp,
+      unattended,
+      calMissed,
+      manualMissed,
+      personalExtra,
+      calExtra,
+      manualExtra,
+      adminExtra,
+      totalExtra,
+      regAttended,
+      effAttended,
+      pct,
+      reqTarget,
+      needed,
+      safeBunks,
+      isSafe: pct >= targetPct
+    };
+    statsMap[c.short] = item;
+    return item;
+  });
+
+  return { list, statsMap, targetPct };
+}
+
+function enterDashboard() {
+  ensureUserSemData(currentUser);
+  syncCalendarToTableTotals();
+  document.getElementById("login-view").classList.add("hidden");
+  document.getElementById("app-view").classList.remove("hidden");
+
+  const hr = new Date().getHours();
+  const greet = hr < 12 ? "Good Morning" : hr < 17 ? "Good Afternoon" : "Good Evening";
+  document.getElementById("greeting-title").textContent = `${greet}, ${currentUser.name}`;
+  document.getElementById("student-meta").innerHTML =
+    `<b>Branch:</b> ${currentUser.branch} &nbsp;|&nbsp; <b>Batch:</b> ${currentUser.batch} &nbsp;|&nbsp; <b>Account:</b> ${currentUser.email}`;
+
+  document.getElementById("dash-batch").value = currentUser.batch;
+  document.getElementById("custom-target-input").value = currentUser.targetPct || 75;
+
+  const adminPanel = document.getElementById("admin-panel");
+  if (isCurrentUserAdmin) {
+    adminPanel.classList.remove("hidden");
+    populateAdminPanel();
+  } else {
+    adminPanel.classList.add("hidden");
+  }
+
+  syncTimetableToDate(selectedCalDate);
+  loadSavedTimetableImage();
+  renderAll();
+}
+
+function renderAll() {
+  const { list, statsMap, targetPct } = getComputedStats();
+
+  const wdBar = document.getElementById("term-working-days-bar");
+  if (currentSem === "Semester I") {
+    const { totalWorkingDays, completedWorkingDays, remainingWorkingDays } = computeSem1WorkingDaysSummary();
+    const minDaysForTarget = Math.ceil((targetPct / 100) * totalWorkingDays);
+    wdBar.innerHTML = `
+      <span class="font-bold text-sky-300">Instructional Lecture Days (Excl. MSE &amp; ESE): <b>${totalWorkingDays}</b></span>
+      <span class="font-bold text-emerald-400">Completed Lecture Days: <b>${completedWorkingDays}</b></span>
+      <span class="font-bold text-amber-300">Remaining Lecture Days: <b>${remainingWorkingDays}</b> (Min ${minDaysForTarget} days for ${targetPct}%)</span>
+    `;
+    wdBar.classList.remove("hidden");
+  } else {
+    wdBar.classList.add("hidden");
+  }
+
+  document.querySelectorAll(".target-pill").forEach(btn => {
+    const val = parseInt(btn.dataset.target);
+    if (val === targetPct) {
+      btn.className = "target-pill px-3.5 py-2 rounded-xl text-xs font-black border bg-blue-600 border-sky-400 text-white shadow-md";
+    } else {
+      btn.className = "target-pill px-3.5 py-2 rounded-xl text-xs font-black border bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700";
+    }
+  });
+
+  const totEff = list.reduce((a, b) => a + b.effAttended, 0);
+  const totLecs = list.reduce((a, b) => a + b.total, 0);
+  const overallPct = totLecs ? ((totEff / totLecs) * 100).toFixed(2) : "100.00";
+  const totMissed = list.reduce((a, b) => a + b.unattended, 0);
+  const totBunks = list.reduce((a, b) => a + b.safeBunks, 0);
+  const totNeeded = list.reduce((a, b) => a + b.needed, 0);
+  const totAdminEx = list.reduce((a, b) => a + b.adminExtra, 0);
+
+  document.getElementById("metric-overall").textContent = `${overallPct}%`;
+  const badgeEl = document.getElementById("metric-overall-badge");
+  if (parseFloat(overallPct) >= targetPct) {
+    badgeEl.textContent = `Safe (>=${targetPct}%)`;
+    badgeEl.className = "text-[11px] font-black mt-1 text-emerald-400";
+  } else {
+    badgeEl.textContent = `Shortage (<${targetPct}%)`;
+    badgeEl.className = "text-[11px] font-black mt-1 text-amber-400";
+  }
+  document.getElementById("metric-unattended").textContent = `${totMissed} missed`;
+  document.getElementById("metric-bunks-label").textContent = `Safe Bunks Left (${targetPct}%)`;
+  document.getElementById("metric-bunks").textContent = `${totBunks} left`;
+  document.getElementById("metric-needed-label").textContent = `Classes Needed (${targetPct}%)`;
+  document.getElementById("metric-needed").textContent = `${totNeeded} classes`;
+
+  const bannerEl = document.getElementById("admin-broadcast-banner");
+  if (!isCurrentUserAdmin && totAdminEx > 0) {
+    bannerEl.textContent = `Admin Broadcast Active: ${totAdminEx} extra college-wide lecture(s) automatically included in your attendance!`;
+    bannerEl.classList.remove("hidden");
+  } else {
+    bannerEl.classList.add("hidden");
+  }
+
+  renderSubjectsUI(list, targetPct);
+  renderCalendarGrid();
+  renderDailyInspector(statsMap, targetPct);
+  renderTimetableSection(statsMap, targetPct);
+}
+
+function renderSubjectsUI(list, targetPct) {
+  document.getElementById("th-req-target").textContent = `Req (${targetPct}%)`;
+  document.getElementById("th-need-target").textContent = `Need (${targetPct}%)`;
+
+  const mobContainer = document.getElementById("mobile-subject-cards");
+  mobContainer.innerHTML = list.map(item => {
+    const borderCol = item.isSafe ? "border-emerald-500/50 bg-emerald-950/20" : "border-amber-500/60 bg-amber-950/25";
+    const pctCol = item.isSafe ? "text-emerald-400" : "text-amber-300";
+    return `
+      <div class="border ${borderCol} rounded-2xl p-4 space-y-3 shadow-md">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <span class="text-xs font-black px-2.5 py-0.5 rounded-lg bg-slate-800 text-sky-300 border border-slate-700">${item.short}</span>
+            <h3 class="text-sm font-black text-white mt-1.5">${item.name}</h3>
+            <p class="text-[11px] text-slate-400 font-medium">Code: ${item.code} | Credits: ${item.credits}</p>
+          </div>
+          <div class="text-right shrink-0">
+            <div class="text-lg font-black ${pctCol}">${item.pct}%</div>
+            <div class="text-[10px] font-extrabold uppercase tracking-wider ${pctCol}">${item.isSafe ? `Safe (Bunk ${item.safeBunks})` : `Need ${item.needed} more`}</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 pt-1">
+          <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-2.5">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-black text-slate-400 uppercase">Unattended (Missed)</span>
+              <span class="text-[9px] font-bold text-amber-400/90">Cal: ${item.calMissed} | Man: ${item.manualMissed}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <button onclick="stepSubject('${item.code}', 'unattended', -1)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-base transition">-</button>
+              <input type="number" min="0" max="${item.total}" value="${item.unattended}"
+                onchange="setSubjectVal('${item.code}', 'unattended', this.value)"
+                class="w-12 bg-transparent text-center font-black text-sm text-amber-300 focus:outline-none" />
+              <button onclick="stepSubject('${item.code}', 'unattended', 1)" class="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-base transition">+</button>
+            </div>
+          </div>
+
+          <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-2.5">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-black text-slate-400 uppercase">Extra Attended</span>
+              <span class="text-[9px] font-bold text-emerald-400/90">Cal: ${item.calExtra} | Man: ${item.manualExtra}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <button onclick="stepSubject('${item.code}', 'extra', -1)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-base transition">-</button>
+              <input type="number" min="0" value="${item.personalExtra}"
+                onchange="setSubjectVal('${item.code}', 'extra', this.value)"
+                class="w-12 bg-transparent text-center font-black text-sm text-emerald-300 focus:outline-none" />
+              <button onclick="stepSubject('${item.code}', 'extra', 1)" class="w-8 h-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-base transition">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-between text-xs text-slate-300 pt-2 border-t border-slate-800/80 font-semibold">
+          <span>Attended: <b>${item.effAttended}/${item.total}</b></span>
+          <span>Req (${targetPct}%): <b>${item.reqTarget}</b></span>
+          <span>Safe Bunks: <b>${item.safeBunks}</b></span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  const tbody = document.getElementById("desktop-subject-tbody");
+  tbody.innerHTML = list.map(item => {
+    const rowBg = item.isSafe ? "bg-emerald-950/20 text-emerald-200" : "bg-amber-950/25 text-amber-200";
+    return `
+      <tr class="${rowBg} hover:bg-slate-800/60 transition">
+        <td class="py-3 px-3 font-black text-sky-300">${item.short}</td>
+        <td class="py-3 px-3 font-bold text-white">${item.name}</td>
+        <td class="py-3 px-3 text-center font-semibold">${item.credits}</td>
+        <td class="py-3 px-3 text-center">
+          <div class="inline-flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-2 py-1">
+            <button onclick="stepSubject('${item.code}', 'unattended', -1)" class="px-2 py-0.5 text-slate-300 hover:text-white font-black">-</button>
+            <input type="number" min="0" max="${item.total}" value="${item.unattended}"
+              onchange="setSubjectVal('${item.code}', 'unattended', this.value)"
+              class="w-12 bg-transparent text-center font-black text-amber-300 focus:outline-none" />
+            <button onclick="stepSubject('${item.code}', 'unattended', 1)" class="px-2 py-0.5 text-sky-400 hover:text-sky-300 font-black">+</button>
+          </div>
+          <div class="text-[10px] text-amber-300/80 font-bold mt-0.5">Cal: ${item.calMissed} | Man: ${item.manualMissed}</div>
+        </td>
+        <td class="py-3 px-3 text-center">
+          <div class="inline-flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-2 py-1">
+            <button onclick="stepSubject('${item.code}', 'extra', -1)" class="px-2 py-0.5 text-slate-300 hover:text-white font-black">-</button>
+            <input type="number" min="0" value="${item.personalExtra}"
+              onchange="setSubjectVal('${item.code}', 'extra', this.value)"
+              class="w-12 bg-transparent text-center font-black text-emerald-300 focus:outline-none" />
+            <button onclick="stepSubject('${item.code}', 'extra', 1)" class="px-2 py-0.5 text-emerald-400 hover:text-emerald-300 font-black">+</button>
+          </div>
+          <div class="text-[10px] text-emerald-300/80 font-bold mt-0.5">Cal: ${item.calExtra} | Man: ${item.manualExtra}</div>
+        </td>
+        <td class="py-3 px-3 text-center font-black">${item.effAttended} / ${item.total}</td>
+        <td class="py-3 px-3 text-center font-black">${item.pct}%</td>
+        <td class="py-3 px-3 text-center font-bold">${item.reqTarget}</td>
+        <td class="py-3 px-3 text-center font-black">${item.needed}</td>
+        <td class="py-3 px-3 text-center font-black">${item.safeBunks}</td>
+        <td class="py-3 px-3 text-center font-black text-xs">${item.isSafe ? `Safe (>=${targetPct}%)` : `Shortage (<${targetPct}%)`}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+window.stepSubject = function(code, field, delta) {
+  const rec = currentUser.semData[currentSem][code];
+  const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
+  const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem(currentSem);
+  const calMissed = calMissedByShort[course.short] || 0;
+  const calExtra = calExtraAttendedByShort[course.short] || 0;
+
+  if (field === "unattended") {
+    const currTotal = calMissed + (rec.manualUnattended || 0);
+    const desiredTotal = Math.min(course.total, Math.max(calMissed, currTotal + delta));
+    rec.manualUnattended = Math.max(0, desiredTotal - calMissed);
+  } else {
+    const currTotal = calExtra + (rec.manualExtra || 0);
+    const desiredTotal = Math.max(calExtra, currTotal + delta);
+    rec.manualExtra = Math.max(0, desiredTotal - calExtra);
+  }
+  persistCurrentUser();
+  renderAll();
+};
+
+window.setSubjectVal = function(code, field, val) {
+  const rec = currentUser.semData[currentSem][code];
+  const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
+  const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem(currentSem);
+  const calMissed = calMissedByShort[course.short] || 0;
+  const calExtra = calExtraAttendedByShort[course.short] || 0;
+  const num = parseInt(val) || 0;
+
+  if (field === "unattended") {
+    const clamped = Math.min(course.total, Math.max(calMissed, num));
+    rec.manualUnattended = Math.max(0, clamped - calMissed);
+  } else {
+    const clamped = Math.max(calExtra, num);
+    rec.manualExtra = Math.max(0, clamped - calExtra);
+  }
+  persistCurrentUser();
+  renderAll();
+};
+
+function renderCalendarGrid() {
+  const ym = document.getElementById("cal-month-select").value;
+  const [year, month] = ym.split("-").map(Number);
+  const firstDay = new Date(year, month - 1, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const todayIso = new Date().toISOString().slice(0, 10);
+
+  const gridEl = document.getElementById("calendar-grid");
+  let html = "";
+  for (let i = 0; i < startOffset; i++) {
+    html += `<div class="min-h-[54px] bg-slate-950/40 border border-slate-800/70 rounded-xl"></div>`;
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const dow = (startOffset + d - 1) % 7;
+    const isWeekend = dow >= 5;
+    const isHoliday = Boolean(HOLIDAYS[iso]);
+    const isPreTerm = isBeforeTermStart(iso);
+    const examLabel = getExamPeriodName(iso);
+    const bunkVal = (isPreTerm || examLabel) ? "" : (currentUser.dailyLogs[iso] || "");
+    const extraSlot7 = (isPreTerm || examLabel) ? "" : (currentUser.slot7Map[iso] || "");
+    const isSelected = iso === selectedCalDate;
+
+    let bg = "bg-blue-600 text-white border-blue-400";
+    let sub = getWeekType(iso).split(" ")[0].toUpperCase();
+
+    if (isHoliday || isPreTerm) {
+      bg = "bg-red-600 text-white border-red-400";
+      sub = "HOL";
+    } else if (examLabel) {
+      bg = "bg-purple-600 text-white border-purple-400";
+      sub = "EXAM";
+    } else if (isWeekend) {
+      bg = "bg-red-600/90 text-white border-red-400";
+      sub = "WKND";
+    } else if (bunkVal) {
+      bg = "bg-amber-400 text-slate-950 border-amber-200";
+      sub = bunkVal;
+    } else if (iso <= todayIso) {
+      bg = "bg-emerald-600 text-white border-emerald-400";
+      sub = extraSlot7 ? `+${extraSlot7}` : "ATT";
+    } else if (extraSlot7) {
+      sub = `+${extraSlot7}`;
+    }
+
+    const ring = isSelected ? "ring-2 ring-white scale-[1.04] z-10 shadow-lg" : "opacity-95 hover:opacity-100";
+    html += `
+      <button onclick="selectDate('${iso}')" class="min-h-[54px] p-1 rounded-xl border ${bg} ${ring} flex flex-col items-center justify-center transition active:scale-95">
+        <span class="text-xs sm:text-sm font-black leading-none">${d}</span>
+        <span class="text-[9px] font-black mt-1 leading-tight truncate max-w-full px-0.5">${sub}</span>
+      </button>
+    `;
+  }
+  gridEl.innerHTML = html;
+}
+
+window.selectDate = function(iso) {
+  selectedCalDate = iso;
+  const ym = iso.slice(0, 7);
+  const selEl = document.getElementById("cal-month-select");
+  if (MONTHS_LIST.includes(ym) && selEl.value !== ym) {
+    selEl.value = ym;
+  }
+  syncTimetableToDate(iso);
+  renderAll();
+};
+
+function getMergedDaySlots(isoDate, semOverride = null) {
+  const activeSem = semOverride || currentSem;
+  if (activeSem === "Semester I" && isNonInstructionalDay(isoDate)) {
+    return { dow: 0, isOff: true, units: [] };
+  }
+  const dObj = new Date(isoDate + "T00:00:00");
+  const dow = (dObj.getDay() + 6) % 7;
+  if (dow >= 5 || HOLIDAYS[isoDate]) return { dow, isOff: true, units: [] };
+
+  const dayKey = ["MON", "TUE", "WED", "THR", "FRI"][dow];
+  const wkType = getWeekType(isoDate);
+  const grid = wkType === "Even Week" ? EVEN_GRID : ODD_GRID;
+  const rawSlots = grid[dayKey];
+  const batchLetter = (currentUser?.batch || "Batch A").slice(-1).toUpperCase();
+  const courses = SEMESTER_DATA[activeSem];
+  const savedSlot7 = (currentUser?.slot7Map && currentUser.slot7Map[isoDate]) || "";
+
+  const extracted = rawSlots.map((raw, idx) => {
+    if (idx === 8 && savedSlot7) {
+      return {
+        idx,
+        slotLabel: TIME_SLOTS[idx],
+        text: `Extra Lecture: ${savedSlot7} (4–5 PM)`,
+        short: savedSlot7,
+        isLab: false,
+        kind: "extra",
+        isCustomExtra: true
+      };
+    }
+    const { text, isLab } = extractBatchEntry(raw, batchLetter);
+    const short = matchSubjectShort(text, courses);
+    const kind = getSessionKind(text);
+    return { idx, slotLabel: TIME_SLOTS[idx], text, short, isLab, kind, isCustomExtra: false };
+  });
+
+  const units = [];
+  let i = 0;
+  while (i < extracted.length) {
+    const curr = extracted[i];
+    if (
+      curr.short &&
+      curr.idx < 8 &&
+      i + 1 < extracted.length &&
+      extracted[i + 1].short === curr.short &&
+      extracted[i + 1].kind === curr.kind &&
+      extracted[i + 1].idx < 8
+    ) {
+      let endI = i + 1;
+      while (
+        endI < extracted.length &&
+        extracted[endI].short === curr.short &&
+        extracted[endI].kind === curr.kind &&
+        extracted[endI].idx < 8
+      ) {
+        endI++;
+      }
+      endI--;
+      const indices = [];
+      for (let k = i; k <= endI; k++) indices.push(extracted[k].idx);
+      units.push({
+        headIdx: curr.idx,
+        indices,
+        slotLabel: `Bulk Unit (Slots ${i + 1}–${endI + 1})`,
+        text: `${curr.text} [1 Combined Bulk Unit]`,
+        short: curr.short,
+        isLab: curr.isLab,
+        kind: curr.kind,
+        isCustomExtra: false
+      });
+      i = endI + 1;
+    } else {
+      units.push({
+        headIdx: curr.idx,
+        indices: [curr.idx],
+        slotLabel: curr.slotLabel,
+        text: curr.text,
+        short: curr.short,
+        isLab: curr.isLab,
+        kind: curr.kind,
+        isCustomExtra: curr.isCustomExtra
+      });
+      i++;
+    }
+  }
+  return { dow, isOff: false, wkType, units };
+}
+
+function renderDailyInspector(statsMap, targetPct) {
+  const dObj = new Date(selectedCalDate + "T00:00:00");
+  const wkType = getWeekType(selectedCalDate);
+  const examLabel = getExamPeriodName(selectedCalDate);
+
+  document.getElementById("inspected-date-title").textContent = dObj.toDateString();
+  document.getElementById("inspected-date-meta").textContent =
+    `Schedule Status: ${examLabel ? examLabel : wkType} | Your Batch: ${currentUser.batch}`;
+
+  const container = document.getElementById("daily-slots-container");
+  const slot7Box = document.getElementById("slot7-editor-box");
+  const quickBtns = document.getElementById("day-quick-bunk-btns");
+
+  if (isBeforeTermStart(selectedCalDate)) {
+    container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">No Regular Lectures (Classes started on 07th September 2026)</div>`;
+    slot7Box.classList.add("hidden");
+    quickBtns.classList.add("hidden");
+    return;
+  }
+
+  if (HOLIDAYS[selectedCalDate]) {
+    container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">Official Holiday: ${HOLIDAYS[selectedCalDate]} (No Regular Lectures)</div>`;
+    slot7Box.classList.add("hidden");
+    quickBtns.classList.add("hidden");
+    return;
+  }
+
+  if (examLabel) {
+    container.innerHTML = `<div class="bg-purple-950/80 border border-purple-400 text-purple-100 p-4 rounded-xl text-xs font-bold leading-relaxed"><b>${examLabel}:</b> Regular timetable lectures are paused during official college examinations, so this date does not inflate or alter your lecture attendance calculations.</div>`;
+    slot7Box.classList.add("hidden");
+    quickBtns.classList.add("hidden");
+    return;
+  }
+
+  const { isOff, units } = getMergedDaySlots(selectedCalDate);
+  if (isOff) {
+    container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">Weekend (Saturday / Sunday) — No Regular Lectures</div>`;
+    slot7Box.classList.add("hidden");
+    quickBtns.classList.add("hidden");
+    return;
+  }
+
+  slot7Box.classList.remove("hidden");
+  quickBtns.classList.remove("hidden");
+  document.getElementById("slot7-input").value = currentUser.slot7Map[selectedCalDate] || "";
+
+  const dayTicks = currentUser.dailyTicks[selectedCalDate] || {};
+
+  container.innerHTML = units.map((u, uIdx) => {
+    const isTicked = u.indices.some(i => Boolean(dayTicks[i]));
+    const st = u.short ? statsMap[u.short] : null;
+    let statusHtml = `<span class="text-slate-400">Non-Credit / Free Slot (Editable in 4–5 PM box below)</span>`;
+    if (u.text.includes("BREAK")) {
+      statusHtml = `<span class="text-slate-400">Official Break</span>`;
+    } else if (st) {
+      if (u.isCustomExtra) {
+        statusHtml = isTicked
+          ? `<span class="text-amber-300 font-bold">+1 Added to ${u.short} Unattended (Missed: ${st.unattended}/${st.total} | ${st.pct}%)</span>`
+          : `<span class="text-emerald-400 font-bold">+1 Added to ${u.short} Extra Attended (Extra: ${st.personalExtra} | ${st.pct}%)</span>`;
+      } else if (st.needed > 0) {
+        statusHtml = `<span class="text-amber-300 font-bold">Missed: ${st.unattended}/${st.total} | Need ${st.needed} for ${targetPct}% (${st.pct}%)</span>`;
+      } else {
+        statusHtml = `<span class="text-emerald-400 font-bold">Missed: ${st.unattended}/${st.total} | Safe: Bunk ${st.safeBunks} (${st.pct}%)</span>`;
+      }
+    }
+
+    const labBadge = u.isLab ? `<span class="batch-badge ml-1">YOUR ${currentUser.batch.toUpperCase()} LAB</span>` : "";
+    const canTick = Boolean(u.short);
+
+    return `
+      <div class="flex items-center justify-between gap-2.5 bg-slate-900 border ${isTicked ? 'border-amber-500/60 bg-amber-950/20' : 'border-slate-800'} rounded-xl px-3.5 py-2.5 text-xs">
+        <div class="flex items-center gap-3">
+          ${canTick ? `
+            <input type="checkbox" ${isTicked ? "checked" : ""}
+              onchange="toggleDailyUnitTick('${selectedCalDate}', ${uIdx}, this.checked)"
+              class="w-4 h-4 rounded accent-amber-400 cursor-pointer shrink-0" />
+          ` : `<span class="w-4 h-4 inline-block shrink-0"></span>`}
+          <div>
+            <div class="font-extrabold text-white">${u.text} ${labBadge}</div>
+            <div class="text-[11px] text-slate-400 font-medium mt-0.5">${u.slotLabel} &bull; ${statusHtml}</div>
+          </div>
+        </div>
+        ${canTick ? `<span class="text-[10px] font-black ${isTicked ? 'text-amber-400' : 'text-emerald-400'}">${isTicked ? 'MISSED (+1 UNATTENDED)' : (u.isCustomExtra ? 'ATTENDED (+1 EXTRA)' : 'ATTENDED')}</span>` : ''}
+      </div>
+    `;
+  }).join("");
+}
+
+window.toggleDailyUnitTick = function(isoDate, unitIdx, isChecked) {
+  if (isNonInstructionalDay(isoDate)) return;
+  const { units } = getMergedDaySlots(isoDate);
+  const unit = units[unitIdx];
+  if (!unit || !unit.short) return;
+
+  if (!currentUser.dailyTicks[isoDate]) currentUser.dailyTicks[isoDate] = {};
+  const dayTicks = currentUser.dailyTicks[isoDate];
+  unit.indices.forEach(i => { dayTicks[i] = isChecked; });
+
+  recomputeDayBadge(isoDate, units, dayTicks);
+  persistCurrentUser();
+  renderAll();
+};
+
+function applyPresetBunkMode(mode) {
+  if (isNonInstructionalDay(selectedCalDate)) return;
+  const { isOff, units } = getMergedDaySlots(selectedCalDate);
+  if (isOff) return;
+  if (!currentUser.dailyTicks[selectedCalDate]) currentUser.dailyTicks[selectedCalDate] = {};
+  const dayTicks = currentUser.dailyTicks[selectedCalDate];
+
+  units.forEach(u => {
+    if (u.short) {
+      let shouldTick = false;
+      if (mode === "FULL") shouldTick = true;
+      else if (mode === "AM" && u.headIdx <= 4) shouldTick = true;
+      else if (mode === "PM" && u.headIdx >= 5) shouldTick = true;
+      else if (mode === "CLEAR") shouldTick = false;
+
+      u.indices.forEach(i => { dayTicks[i] = shouldTick; });
+    }
+  });
+
+  if (mode === "CLEAR") {
+    delete currentUser.dailyTicks[selectedCalDate];
+    delete currentUser.dailyLogs[selectedCalDate];
+  } else {
+    recomputeDayBadge(selectedCalDate, units, dayTicks);
+  }
+  persistCurrentUser();
+  renderAll();
+}
+
+function recomputeDayBadge(isoDate, units, dayTicks) {
+  if (isNonInstructionalDay(isoDate)) {
+    delete currentUser.dailyLogs[isoDate];
+    return;
+  }
+  const creditUnits = units.filter(u => Boolean(u.short));
+  const missedShorts = [];
+  let tickedCount = 0;
+
+  creditUnits.forEach(u => {
+    if (u.indices.some(i => Boolean(dayTicks[i]))) {
+      tickedCount++;
+      if (!missedShorts.includes(u.short)) missedShorts.push(u.short);
+    }
+  });
+
+  if (tickedCount === 0) {
+    delete currentUser.dailyLogs[isoDate];
+  } else if (creditUnits.length > 0 && tickedCount >= creditUnits.length) {
+    currentUser.dailyLogs[isoDate] = "F";
+  } else {
+    currentUser.dailyLogs[isoDate] = missedShorts.join(", ");
+  }
+}
+
+function renderTimetableSection(statsMap, targetPct) {
+  const grid = ttWeekTab === "Odd" ? ODD_GRID : EVEN_GRID;
+  const batchLetter = currentUser.batch.slice(-1).toUpperCase();
+  const courses = SEMESTER_DATA[currentSem];
+
+  const daySlots = grid[ttSelectedDay];
+  let cardsHtml = "";
+  let i = 0;
+  while (i < TIME_SLOTS.length) {
+    const raw = daySlots[i];
+    const { text, isLab } = extractBatchEntry(raw, batchLetter);
+    const short = matchSubjectShort(text, courses);
+    const kind = getSessionKind(text);
+    let span = 1;
+    if (short && i < 8) {
+      while (
+        i + span < 8 &&
+        matchSubjectShort(extractBatchEntry(daySlots[i + span], batchLetter).text, courses) === short &&
+        getSessionKind(extractBatchEntry(daySlots[i + span], batchLetter).text) === kind
+      ) {
+        span++;
+      }
+    }
+
+    const st = short ? statsMap[short] : null;
+    let cardClass = "cell-blue";
+    let meta = "Non-Credit / Extra Slot";
+    if (raw.includes("BREAK")) {
+      cardClass = "cell-red";
+      meta = "Official Break";
+    } else if (st) {
+      cardClass = st.pct >= targetPct ? "cell-green" : "cell-yellow";
+      meta = `Attendance: <b>${st.pct}%</b> | Missed: <b>${st.unattended}/${st.total}</b> | Extra: <b>${st.personalExtra}</b> | ${st.needed > 0 ? `Need ${st.needed} for ${targetPct}%` : `Safe (Bunk ${st.safeBunks})`}`;
+    }
+
+    const slotText = span > 1 ? `Slots ${i + 1}–${i + span} [1 Combined Bulk Unit]` : TIME_SLOTS[i];
+    const labBadge = isLab ? `<span class="batch-badge ml-1.5">YOUR ${currentUser.batch.toUpperCase()} LAB</span>` : "";
+
+    cardsHtml += `
+      <div class="${cardClass} rounded-2xl p-4 border border-slate-700 flex items-center justify-between gap-3 shadow-md">
+        <div>
+          <div class="text-[11px] font-black uppercase tracking-wider text-sky-300">${slotText}</div>
+          <div class="text-sm sm:text-base font-black mt-1">${text} ${labBadge}</div>
+          <div class="text-xs mt-1.5 opacity-90 font-medium">${meta}</div>
+        </div>
+      </div>
+    `;
+    i += span;
+  }
+  document.getElementById("tt-cards-output").innerHTML = cardsHtml;
+
+  const days = ["MON", "TUE", "WED", "THR", "FRI"];
+  const skip = { MON: {}, TUE: {}, WED: {}, THR: {}, FRI: {} };
+  const spanMap = { MON: {}, TUE: {}, WED: {}, THR: {}, FRI: {} };
+
+  days.forEach(d => {
+    let s = 0;
+    while (s < TIME_SLOTS.length) {
+      const { text } = extractBatchEntry(grid[d][s], batchLetter);
+      const sf = matchSubjectShort(text, courses);
+      const kind = getSessionKind(text);
+      if (sf && s < 8) {
+        let sp = 1;
+        while (
+          s + sp < 8 &&
+          matchSubjectShort(extractBatchEntry(grid[d][s + sp], batchLetter).text, courses) === sf &&
+          getSessionKind(extractBatchEntry(grid[d][s + sp], batchLetter).text) === kind
+        ) {
+          skip[d][s + sp] = true;
+          sp++;
+        }
+        spanMap[d][s] = sp;
+        s += sp;
+      } else {
+        spanMap[d][s] = 1;
+        s++;
+      }
+    }
+  });
+
+  let tableHtml = `<div class="tt-scroll"><table class="tt-table"><thead><tr><th class="tt-sticky-col">TIME SLOT</th>`;
+  days.forEach(d => { tableHtml += `<th>${d}</th>`; });
+  tableHtml += `</tr></thead><tbody>`;
+
+  TIME_SLOTS.forEach((slotName, sIdx) => {
+    tableHtml += `<tr><td class="tt-sticky-col">${slotName}</td>`;
+    days.forEach(d => {
+      if (skip[d][sIdx]) return;
+      const raw = grid[d][sIdx];
+      const { text, isLab } = extractBatchEntry(raw, batchLetter);
+      const sf = matchSubjectShort(text, courses);
+      const rSpan = spanMap[d][sIdx] || 1;
+      const st = sf ? statsMap[sf] : null;
+
+      let cls = "cell-blue";
+      let sub = "";
+      if (raw.includes("BREAK")) {
+        cls = "cell-red";
+      } else if (st) {
+        cls = st.pct >= targetPct ? "cell-green" : "cell-yellow";
+        sub = `<div class="text-[11px] mt-1.5 opacity-95 font-medium">Att: ${st.pct}% | Missed: ${st.unattended}/${st.total}</div>`;
+      }
+
+      const bulkTag = rSpan > 1 ? `<div class="text-[10px] text-sky-300 font-black">[1 Combined Bulk Unit (${rSpan} Hrs)]</div>` : "";
+      const labTag = isLab ? `<div class="mt-1.5"><span class="batch-badge">YOUR ${currentUser.batch.toUpperCase()} LAB</span></div>` : "";
+      tableHtml += `<td class="${cls}" ${rSpan > 1 ? `rowspan="${rSpan}"` : ""}><div>${text}</div>${bulkTag}${labTag}${sub}</td>`;
+    });
+    tableHtml += `</tr>`;
+  });
+  tableHtml += `</tbody></table></div>`;
+  document.getElementById("tt-grid-output").innerHTML = tableHtml;
+}
+
+function getDefaultDateForMonth(ym) {
+  return ym === "2026-09" ? SEM1_START_DATE : `${ym}-01`;
+}
+
+function setupEventListeners() {
+  document.getElementById("btn-toggle-login-pw").addEventListener("click", () => {
+    const inp = document.getElementById("login-password");
+    const btn = document.getElementById("btn-toggle-login-pw");
+    if (inp.type === "password") { inp.type = "text"; btn.textContent = "Hide"; }
+    else { inp.type = "password"; btn.textContent = "Show"; }
+  });
+
+  document.getElementById("btn-toggle-sync-box").addEventListener("click", () => {
+    document.getElementById("sync-drawer").classList.toggle("hidden");
+  });
+  document.getElementById("btn-close-sync").addEventListener("click", () => {
+    document.getElementById("sync-drawer").classList.add("hidden");
+  });
+
+  document.getElementById("btn-save-backend-url").addEventListener("click", () => {
+    const val = document.getElementById("backend-url-input").value.trim().replace(/\/+$/, "");
+    if (val) {
+      localStorage.setItem("att_custom_backend_url", val);
+      document.getElementById("backend-sync-msg").textContent = `Backend URL saved: ${val}`;
+      syncWithFastAPIBackend("pull", true);
+    }
+  });
+
+  document.getElementById("btn-backend-push").addEventListener("click", () => {
+    syncWithFastAPIBackend("push", true);
+  });
+
+  document.getElementById("btn-backend-pull").addEventListener("click", () => {
+    syncWithFastAPIBackend("pull", true);
+  });
+
+  document.getElementById("btn-copy-code").addEventListener("click", () => {
+    const codeStr = btoa(unescape(encodeURIComponent(JSON.stringify(currentUser))));
+    navigator.clipboard.writeText(codeStr).catch(() => {});
+    document.getElementById("manual-sync-input").value = codeStr;
+    document.getElementById("manual-sync-msg").textContent = "Sync Code copied to clipboard! Paste it on your other device.";
+  });
+
+  document.getElementById("btn-import-code").addEventListener("click", () => {
+    const rawCode = document.getElementById("manual-sync-input").value.trim();
+    const msgEl = document.getElementById("manual-sync-msg");
+    if (!rawCode) return;
+    try {
+      const decoded = JSON.parse(decodeURIComponent(escape(atob(rawCode))));
+      if (decoded && decoded.semData) {
+        currentUser = decoded;
+        purgeNonInstructionalDates(currentUser);
+        persistCurrentUser();
+        enterDashboard();
+        msgEl.textContent = "Account synced and loaded on this device!";
+      }
+    } catch (e) {
+      msgEl.textContent = "Invalid Sync Code.";
+    }
+  });
+
+  document.getElementById("login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById("login-error");
+    const submitBtn = document.getElementById("btn-login-submit");
+    errEl.classList.add("hidden");
+
+    const email = document.getElementById("login-email").value.trim().toLowerCase();
+    const pw = document.getElementById("login-password").value.trim();
+    const name = document.getElementById("login-name").value.trim();
+    const branch = document.getElementById("login-branch").value;
+    const batch = document.getElementById("login-batch").value;
+    const remember = document.getElementById("login-remember").checked;
+
+    if (!email.endsWith("@gmail.com")) {
+      errEl.textContent = "Please enter a valid @gmail.com address.";
+      errEl.classList.remove("hidden");
+      return;
+    }
+
+    const emailDigest = await saltedHash(email);
+    const pwDigest = await saltedHash(pw);
+    const isAdminEmail = (emailDigest === ADMIN_EMAIL_SALTSHA256);
+
+    if (isAdminEmail && pwDigest !== ADMIN_PW_SALTSHA256) {
+      errEl.textContent = "Invalid credentials.";
+      errEl.classList.remove("hidden");
+      return;
+    }
+
+    const db = getAllUsersDB();
+    let candidateUser = null;
+
+    if (db[email]) {
+      if (db[email].passwordHash && db[email].passwordHash !== pwDigest && !isAdminEmail) {
+        errEl.textContent = "Incorrect password for this account.";
+        errEl.classList.remove("hidden");
+        return;
+      }
+      candidateUser = db[email];
+      candidateUser.passwordHash = pwDigest;
+      if (name) candidateUser.name = name;
+    } else {
+      candidateUser = {
+        email,
+        name: name || (isAdminEmail ? "Admin" : "Student"),
+        branch,
+        batch,
+        passwordHash: pwDigest,
+        targetPct: 75,
+        semData: {},
+        dailyLogs: {},
+        dailyTicks: {},
+        slot7Map: {}
+      };
+    }
+
+    ensureUserSemData(candidateUser);
+    submitBtn.textContent = "Syncing with Cloud Server...";
+
+    try {
+      const res = await fetch(`${getBackendUrl()}/api/sync/pull`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          passwordHash: pwDigest,
+          profile: candidateUser
+        })
+      });
+      if (res.status === 401 && !isAdminEmail) {
+        submitBtn.textContent = "Login / Register & Sync Dashboard";
+        errEl.textContent = "Incorrect password for this Gmail account on the cloud server.";
+        errEl.classList.remove("hidden");
+        return;
+      }
+      if (res.ok) {
+        const remoteData = await res.json();
+        if (remoteData.found && remoteData.profile && remoteData.profile.semData) {
+          candidateUser = remoteData.profile;
+          purgeNonInstructionalDates(candidateUser);
+          if (name) candidateUser.name = name;
+        }
+      }
+    } catch (err) {
+      if (!db[email] && !name && !isAdminEmail) {
+        submitBtn.textContent = "Login / Register & Sync Dashboard";
+        errEl.textContent = "Please enter your Full Name for first-time registration.";
+        errEl.classList.remove("hidden");
+        return;
+      }
+    }
+
+    submitBtn.textContent = "Login / Register & Sync Dashboard";
+    currentUser = candidateUser;
+    isCurrentUserAdmin = isAdminEmail;
+    currentUser.lastLogin = new Date().toLocaleString("en-IN");
+    persistCurrentUser();
+    fetchGlobalExtrasFromBackend();
+
+    if (remember) {
+      localStorage.setItem("att_remembered_user_v9", email);
+    } else {
+      localStorage.removeItem("att_remembered_user_v9");
+    }
+    enterDashboard();
+  });
+
+  // Month Navigation
+  document.getElementById("cal-month-select").addEventListener("change", (e) => {
+    selectedCalDate = getDefaultDateForMonth(e.target.value);
+    syncTimetableToDate(selectedCalDate);
+    renderAll();
+  });
+  document.getElementById("btn-prev-month").addEventListener("click", () => {
+    const sel = document.getElementById("cal-month-select");
+    const idx = MONTHS_LIST.indexOf(sel.value);
+    if (idx > 0) {
+      sel.value = MONTHS_LIST[idx - 1];
+      selectedCalDate = getDefaultDateForMonth(sel.value);
+      syncTimetableToDate(selectedCalDate);
+      renderAll();
+    }
+  });
+  document.getElementById("btn-next-month").addEventListener("click", () => {
+    const sel = document.getElementById("cal-month-select");
+    const idx = MONTHS_LIST.indexOf(sel.value);
+    if (idx < MONTHS_LIST.length - 1) {
+      sel.value = MONTHS_LIST[idx + 1];
+      selectedCalDate = getDefaultDateForMonth(sel.value);
+      syncTimetableToDate(selectedCalDate);
+      renderAll();
+    }
+  });
+
+  document.getElementById("btn-day-full-bunk").addEventListener("click", () => applyPresetBunkMode("FULL"));
+  document.getElementById("btn-day-am-bunk").addEventListener("click", () => applyPresetBunkMode("AM"));
+  document.getElementById("btn-day-pm-bunk").addEventListener("click", () => applyPresetBunkMode("PM"));
+  document.getElementById("btn-day-clear-bunk").addEventListener("click", () => applyPresetBunkMode("CLEAR"));
+
+  document.getElementById("dash-semester").addEventListener("change", (e) => {
+    currentSem = e.target.value;
+    renderAll();
+  });
+  document.getElementById("dash-batch").addEventListener("change", (e) => {
+    currentUser.batch = e.target.value;
+    document.getElementById("student-meta").innerHTML =
+      `<b>Branch:</b> ${currentUser.branch} &nbsp;|&nbsp; <b>Batch:</b> ${currentUser.batch} &nbsp;|&nbsp; <b>Account:</b> ${currentUser.email}`;
+    persistCurrentUser();
+    renderAll();
+  });
+
+  document.getElementById("btn-reset-sem").addEventListener("click", () => {
+    SEMESTER_DATA[currentSem].forEach(c => {
+      currentUser.semData[currentSem][c.code] = {
+        unattended: 0,
+        extra: 0,
+        manualUnattended: 0,
+        manualExtra: 0,
+        imp: c.imp
+      };
+    });
+    currentUser.dailyLogs = {};
+    currentUser.dailyTicks = {};
+    currentUser.slot7Map = {};
+    persistCurrentUser();
+    renderAll();
+  });
+
+  document.getElementById("btn-logout").addEventListener("click", () => {
+    localStorage.removeItem("att_remembered_user_v9");
+    currentUser = null;
+    isCurrentUserAdmin = false;
+    document.getElementById("app-view").classList.add("hidden");
+    document.getElementById("login-view").classList.remove("hidden");
+  });
+
+  document.querySelectorAll(".target-pill").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentUser.targetPct = parseInt(btn.dataset.target);
+      document.getElementById("custom-target-input").value = currentUser.targetPct;
+      persistCurrentUser();
+      renderAll();
+    });
+  });
+
+  document.getElementById("custom-target-input").addEventListener("change", (e) => {
+    const val = Math.max(75, Math.min(100, parseInt(e.target.value) || 75));
+    e.target.value = val;
+    currentUser.targetPct = val;
+    persistCurrentUser();
+    renderAll();
+  });
+
+  function updateSlot7ForSelectedDate(rawInput) {
+    if (isNonInstructionalDay(selectedCalDate)) return;
+    const val = rawInput.trim();
+    const courses = SEMESTER_DATA[currentSem];
+    const newShort = val ? matchSubjectShort(val, courses) : null;
+    if (val && !newShort) {
+      alert("Unrecognized subject short-form. Type eg, ap, cp, fem-i, ec, be&de, ws-i, or uhv (lowercase or uppercase).");
+      return;
+    }
+
+    if (newShort) {
+      currentUser.slot7Map[selectedCalDate] = newShort;
+    } else {
+      delete currentUser.slot7Map[selectedCalDate];
+      if (currentUser.dailyTicks[selectedCalDate]) {
+        delete currentUser.dailyTicks[selectedCalDate][8];
+      }
+    }
+
+    const { units } = getMergedDaySlots(selectedCalDate);
+    recomputeDayBadge(selectedCalDate, units, currentUser.dailyTicks[selectedCalDate] || {});
+    persistCurrentUser();
+    renderAll();
+  }
+
+  document.getElementById("btn-save-slot7").addEventListener("click", () => {
+    updateSlot7ForSelectedDate(document.getElementById("slot7-input").value);
+  });
+  document.getElementById("btn-clear-slot7").addEventListener("click", () => {
+    document.getElementById("slot7-input").value = "";
+    updateSlot7ForSelectedDate("");
+  });
+
+  document.getElementById("btn-tt-even").addEventListener("click", () => switchTtTab("Even"));
+  document.getElementById("btn-tt-odd").addEventListener("click", () => switchTtTab("Odd"));
+  document.getElementById("btn-tt-img").addEventListener("click", () => switchTtTab("Img"));
+
+  document.getElementById("btn-mode-cards").addEventListener("click", () => switchTtMode("cards"));
+  document.getElementById("btn-mode-grid").addEventListener("click", () => switchTtMode("grid"));
+
+  document.querySelectorAll(".day-pill").forEach(btn => {
+    btn.addEventListener("click", () => {
+      ttSelectedDay = btn.dataset.day;
+      updateTimetableTabButtons();
+      renderAll();
+    });
+  });
+
+  document.getElementById("tt-file-input").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      localStorage.setItem("att_saved_tt_img", ev.target.result);
+      loadSavedTimetableImage();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById("paste-zone").addEventListener("paste", (e) => {
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    let found = false;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") === 0) {
+        found = true;
+        const blob = items[i].getAsFile();
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          localStorage.setItem("att_saved_tt_img", ev.target.result);
+          document.getElementById("paste-status").textContent = "Image pasted and saved!";
+          loadSavedTimetableImage();
+        };
+        reader.readAsDataURL(blob);
+        break;
+      }
+    }
+    if (!found) {
+      document.getElementById("paste-status").textContent = "Clipboard does not contain an image!";
+    }
+  });
+
+  document.getElementById("btn-remove-img").addEventListener("click", () => {
+    localStorage.removeItem("att_saved_tt_img");
+    loadSavedTimetableImage();
+  });
+
+  document.getElementById("btn-broadcast-extra").addEventListener("click", async () => {
+    if (!isCurrentUserAdmin) return;
+    const code = document.getElementById("admin-course-select").value;
+    const count = Math.max(0, parseInt(document.getElementById("admin-extra-count").value) || 0);
+    const extras = getAdminGlobalExtras();
+    extras[code] = count;
+    saveAdminGlobalExtras(extras);
+
+    try {
+      await fetch(`${getBackendUrl()}/api/global-extras`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminEmailHash: ADMIN_EMAIL_SALTSHA256,
+          adminPwHash: ADMIN_PW_SALTSHA256,
+          extras
+        })
+      });
+    } catch (e) {}
+
+    document.getElementById("admin-broadcast-status").textContent =
+      `Broadcasted ${count} extra lecture(s) for ${code} to all other students!`;
+    renderAll();
+  });
+
+  switchTtMode(ttViewMode);
+}
+
+function populateAdminPanel() {
+  const sel = document.getElementById("admin-course-select");
+  sel.innerHTML = "";
+  SEMESTER_DATA[currentSem].forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.code;
+    opt.textContent = `${c.short} - ${c.name} (${c.code})`;
+    sel.appendChild(opt);
+  });
+  const db = getAllUsersDB();
+  const logEl = document.getElementById("admin-visitor-log");
+  const rows = Object.values(db).map((u, idx) =>
+    `${idx + 1}. <b>${u.name}</b> (${u.email}) — ${u.branch} [${u.batch}] — Last: ${u.lastLogin || 'N/A'}`
+  );
+  logEl.innerHTML = rows.length ? rows.join("<br>") : "No students recorded yet.";
+}
+
+function switchTtTab(tab) {
+  ttWeekTab = tab;
+  updateTimetableTabButtons();
+
+  if (tab === "Img") {
+    document.getElementById("tt-schedule-container").classList.add("hidden");
+    document.getElementById("tt-image-container").classList.remove("hidden");
+  } else {
+    document.getElementById("tt-schedule-container").classList.remove("hidden");
+    document.getElementById("tt-image-container").classList.add("hidden");
+    renderAll();
+  }
+}
+
+function switchTtMode(mode) {
+  ttViewMode = mode;
+  document.getElementById("btn-mode-cards").className = mode === "cards" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-sky-600 text-white" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+  document.getElementById("btn-mode-grid").className = mode === "grid" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-sky-600 text-white" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+
+  if (mode === "cards") {
+    document.getElementById("tt-day-pills").classList.remove("hidden");
+    document.getElementById("tt-cards-output").classList.remove("hidden");
+    document.getElementById("tt-grid-output").classList.add("hidden");
+  } else {
+    document.getElementById("tt-day-pills").classList.add("hidden");
+    document.getElementById("tt-cards-output").classList.add("hidden");
+    document.getElementById("tt-grid-output").classList.remove("hidden");
+  }
+}
+
+function loadSavedTimetableImage() {
+  const dataUrl = localStorage.getItem("att_saved_tt_img");
+  const imgEl = document.getElementById("tt-saved-preview");
+  const rmBtn = document.getElementById("btn-remove-img");
+  if (dataUrl) {
+    imgEl.src = dataUrl;
+    imgEl.classList.remove("hidden");
+    rmBtn.classList.remove("hidden");
+  } else {
+    imgEl.src = "";
+    imgEl.classList.add("hidden");
+    rmBtn.classList.add("hidden");
+  }
+}
+</script>
+</body>
+</html>
