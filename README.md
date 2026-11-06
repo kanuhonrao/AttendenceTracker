@@ -8,3 +8,4 @@ This code's frontend was designed using circular from the website.
 it's backend was designed using render.com and python 
 
 You could always make this better by either forking the repo or by communicating with me about this 
+with my LinkedIn - Kanishka Honrao
