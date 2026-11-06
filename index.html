@@ -261,7 +261,7 @@
       </div>
     </div>
 
-    <!-- SECTIONS 1 & 4: SUBJECT UNATTENDED & EXTRA LECTURES INPUT (100% LINKED WITH CALENDAR) -->
+    <!-- SECTIONS 1 & 4: SUBJECT UNATTENDED & EXTRA LECTURES INPUT -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
       <div class="missed-banner text-sm sm:text-xl">ENTER HOW MANY LECTURES YOU HAVE MISSED</div>
       <div class="bg-sky-950/60 border border-sky-500/40 text-sky-200 text-xs sm:text-sm font-bold px-4 py-3 rounded-xl text-center">
@@ -294,17 +294,17 @@
       </div>
     </div>
 
-    <!-- SECTION 3: INTERACTIVE CALENDAR WITH LOCKED MONTH NAVIGATION BAR & DAILY EVEN/ODD TIMETABLE INSPECTOR -->
+    <!-- SECTION 3: INTERACTIVE CALENDAR WITH EVEN, ODD, MSE, PRAC, ESE NAMING CONVENTIONS -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
       <h2 class="text-base sm:text-lg font-black text-white">3. Interactive Calendar &amp; Daily Even/Odd Timetable Absentee Marker</h2>
 
       <!-- Color Legend -->
       <div class="flex flex-wrap gap-3 text-xs font-bold bg-slate-800/60 p-3.5 rounded-xl border border-slate-700">
-        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-red-500 inline-block"></span> Red: Holiday &amp; Weekend</span>
-        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-purple-600 border border-purple-400 inline-block"></span> Purple ('MSE' / 'PRAC' / 'ESE'): Official Exams (No Regular Lectures)</span>
-        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-emerald-500 inline-block"></span> Green: Past Attended (0 Missed)</span>
-        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-amber-400 inline-block"></span> Yellow: Unattended ('F' = Full Bunk / Short-Form = Partial)</span>
-        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-blue-500 inline-block"></span> Blue: Working Lecture Day ('EVEN' / 'ODD')</span>
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-red-500 inline-block"></span> Red ('HOL' / 'WKND'): Holiday &amp; Weekend</span>
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-purple-600 border border-purple-400 inline-block"></span> Purple ('MSE' / 'PRAC' / 'ESE'): Midsem, Practical &amp; Endsem Exams</span>
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-emerald-500 inline-block"></span> Green ('ATT'): Past Attended (0 Missed)</span>
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-amber-400 inline-block"></span> Yellow ('F' / Short-Form): Unattended</span>
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-blue-500 inline-block"></span> Blue ('EVEN' / 'ODD'): Working Lecture Day</span>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -454,7 +454,6 @@
 
 <script>
 // 1. ZERO PLAINTEXT URLS OR KEYS IN SOURCE CODE:
-// Obfuscated byte array for Cloud Realtime Endpoint (No plaintext URL exposed to GitHub scrapers)
 const _FB_MASK = [90, 61, 19, 108, 24, 73, 210, 44];
 const _FB_ENC_BYTES = [
   50, 73, 103, 28, 107, 115, 253, 3, 59, 73, 103, 9, 118, 45, 179, 66,
@@ -468,14 +467,13 @@ function _getCloudEndpoint() {
   return _FB_ENC_BYTES.map((b, i) => String.fromCharCode(b ^ _FB_MASK[i % _FB_MASK.length])).join("");
 }
 
-// XSS Sanitizer to prevent HTML/Script injection in any user-supplied string
 function escapeHTML(str) {
   return String(str || "").replace(/[&<>"']/g, (ch) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   }[ch]));
 }
 
-// 2. SEMESTER I INSTRUCTIONAL LECTURE WINDOW & EXAM PERIODS (WITH MSE, PRAC, ESE SHORT CODES)
+// 2. SEMESTER I INSTRUCTIONAL LECTURE WINDOW & EXAM PERIODS (MSE, PRAC, ESE)
 const SEM1_START_DATE = "2026-09-07";
 const SEM1_LAST_INSTRUCTION_DATE = "2026-12-04";
 const SEM1_END_DATE = "2026-12-23";
@@ -631,7 +629,6 @@ async function decryptProfileData(encRecord, email, passwordHash) {
   return JSON.parse(new TextDecoder().decode(plainBuf));
 }
 
-// --- INVISIBLE REAL-TIME FIREBASE SYNC ENGINE (ZERO BUTTONS NEEDED) ---
 function setSyncPill(text, isOnline = true) {
   const pill = document.getElementById("sync-status-pill");
   if (!pill) return;
@@ -674,7 +671,6 @@ async function pullFromFirebaseSilent(email, passwordHash) {
   }
 }
 
-// Opens a persistent real-time Server-Sent Events (SSE) stream to Firebase so changes on PC appear on Android in <200ms!
 async function startRealtimeCloudListener() {
   if (liveEventSource) {
     liveEventSource.close();
@@ -710,7 +706,6 @@ async function startRealtimeCloudListener() {
   } catch (e) {}
 }
 
-// Re-sync automatically when switching back to the browser tab or regaining internet
 window.addEventListener("online", () => {
   if (currentUser) pushToFirebaseSilent();
 });
@@ -746,20 +741,27 @@ function isBeforeTermStart(isoDate) {
   return currentSem === "Semester I" && isoDate < SEM1_START_DATE;
 }
 
-// Returns { label, code } for MSE, PRAC, ESE exam dates
+function isAfterTermEnd(isoDate) {
+  return currentSem === "Semester I" && isoDate > SEM1_END_DATE;
+}
+
+// Returns exact { label, code } for MSE, PRAC, ESE exam dates
 function getExamPeriodInfo(isoDate) {
   if (currentSem !== "Semester I") return null;
   for (const [start, end, label, code] of EXAM_PERIODS) {
     if (isoDate >= start && isoDate <= end) return { label, code };
   }
-  if (isoDate > SEM1_LAST_INSTRUCTION_DATE) {
-    return { label: "End-Semester Examination / Prep Period", code: "ESE" };
-  }
   return null;
 }
 
 function isNonInstructionalDay(isoDate) {
-  return isBeforeTermStart(isoDate) || Boolean(HOLIDAYS[isoDate]) || Boolean(getExamPeriodInfo(isoDate));
+  return (
+    isBeforeTermStart(isoDate) ||
+    isAfterTermEnd(isoDate) ||
+    (currentSem === "Semester I" && isoDate > SEM1_LAST_INSTRUCTION_DATE) ||
+    Boolean(HOLIDAYS[isoDate]) ||
+    Boolean(getExamPeriodInfo(isoDate))
+  );
 }
 
 function computeSem1WorkingDaysSummary() {
@@ -1017,7 +1019,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     isCurrentUserAdmin = (emailDigest === ADMIN_EMAIL_SALTSHA256);
     enterDashboard();
 
-    // Pull latest encrypted cloud record & start live real-time listener automatically
     const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
     if (remote && remote.semData) {
       currentUser = remote;
@@ -1389,13 +1390,15 @@ function renderCalendarGrid() {
 
   for (let d = 1; d <= daysInMonth; d++) {
     const iso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    const dow = (startOffset + d - 1) % 7;
+    const dow = (startOffset + d - 1) % 7; // Mon=0 .. Sat=5, Sun=6
+    const isSunday = dow === 6;
     const isWeekend = dow >= 5;
     const isHoliday = Boolean(HOLIDAYS[iso]);
     const isPreTerm = isBeforeTermStart(iso);
+    const isPostTerm = isAfterTermEnd(iso);
     const examInfo = getExamPeriodInfo(iso);
-    const bunkVal = (isPreTerm || examInfo) ? "" : (currentUser.dailyLogs[iso] || "");
-    const extraSlot7 = (isPreTerm || examInfo) ? "" : (currentUser.slot7Map[iso] || "");
+    const bunkVal = (isPreTerm || isPostTerm || examInfo) ? "" : (currentUser.dailyLogs[iso] || "");
+    const extraSlot7 = (isPreTerm || isPostTerm || examInfo) ? "" : (currentUser.slot7Map[iso] || "");
     const isSelected = iso === selectedCalDate;
 
     let bg = "bg-blue-600 text-white border-blue-400";
@@ -1404,12 +1407,19 @@ function renderCalendarGrid() {
     if (isHoliday || isPreTerm) {
       bg = "bg-red-600 text-white border-red-400";
       sub = "HOL";
-    } else if (isWeekend) {
+    } else if (isSunday) {
       bg = "bg-red-600/90 text-white border-red-400";
       sub = "WKND";
     } else if (examInfo) {
+      // Priority for MSE (19-24 Oct), PRAC (07-12 Dec), and ESE (14-23 Dec) including Saturday exam days!
       bg = "bg-purple-600 text-white border-purple-400";
-      sub = examInfo.code; // Shows MSE, PRAC, or ESE directly on the calendar tile!
+      sub = examInfo.code; // Shows MSE, PRAC, or ESE
+    } else if (isWeekend) {
+      bg = "bg-red-600/90 text-white border-red-400";
+      sub = "WKND";
+    } else if (isPostTerm) {
+      bg = "bg-red-600/80 text-white border-red-400";
+      sub = "HOL";
     } else if (bunkVal) {
       bg = "bg-amber-400 text-slate-950 border-amber-200";
       sub = escapeHTML(bunkVal);
@@ -1536,7 +1546,7 @@ function renderDailyInspector(statsMap, targetPct) {
 
   document.getElementById("inspected-date-title").textContent = dObj.toDateString();
   document.getElementById("inspected-date-meta").textContent =
-    `Schedule Status: ${examInfo ? examInfo.label : wkType} | Your Batch: ${currentUser.batch}`;
+    `Schedule Status: ${examInfo ? `${examInfo.label}` : wkType} | Your Batch: ${currentUser.batch}`;
 
   const container = document.getElementById("daily-slots-container");
   const slot7Box = document.getElementById("slot7-editor-box");
@@ -1557,7 +1567,14 @@ function renderDailyInspector(statsMap, targetPct) {
   }
 
   if (examInfo) {
-    container.innerHTML = `<div class="bg-purple-950/80 border border-purple-400 text-purple-100 p-4 rounded-xl text-xs font-bold leading-relaxed"><b>${examInfo.label} [${examInfo.code}]:</b> Regular timetable lectures are paused during official college examinations, so this date does not inflate or alter your lecture attendance calculations.</div>`;
+    container.innerHTML = `<div class="bg-purple-950/80 border border-purple-400 text-purple-100 p-4 rounded-xl text-xs font-bold leading-relaxed"><b>${examInfo.label}:</b> Regular timetable lectures are paused during official college examinations, so this date does not inflate or alter your lecture attendance calculations.</div>`;
+    slot7Box.classList.add("hidden");
+    quickBtns.classList.add("hidden");
+    return;
+  }
+
+  if (isAfterTermEnd(selectedCalDate)) {
+    container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">Term Completed (Semester I ended on 23rd December 2026)</div>`;
     slot7Box.classList.add("hidden");
     quickBtns.classList.add("hidden");
     return;
@@ -1844,7 +1861,6 @@ function setupEventListeners() {
     const db = getAllUsersDB();
     let candidateUser = null;
 
-    // 1. Check Firebase Cloud first so logging in on PC or Android automatically pulls your account
     const cloudProfile = await pullFromFirebaseSilent(email, pwDigest);
     if (cloudProfile && cloudProfile.semData) {
       candidateUser = cloudProfile;
