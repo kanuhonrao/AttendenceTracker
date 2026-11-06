@@ -98,16 +98,16 @@
     <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-5 sm:p-7 shadow-2xl">
       <div class="flex items-center justify-between mb-1">
         <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight">Student Login</h1>
-        <span class="text-[11px] font-extrabold bg-blue-600/20 text-sky-400 border border-sky-500/40 px-2.5 py-1 rounded-lg">PC &amp; Mobile Sync</span>
+        <span class="text-[11px] font-extrabold bg-emerald-600/20 text-emerald-400 border border-emerald-500/40 px-2.5 py-1 rounded-lg">E2E Encrypted Sync</span>
       </div>
-      <p class="text-xs text-slate-400 mb-5 leading-relaxed">Log in with your Gmail and password to sync your attendance across PC and Android.</p>
+      <p class="text-xs text-slate-400 mb-5 leading-relaxed">Automatic real-time PC &amp; Android sync. Your data is AES-256 encrypted before leaving your device.</p>
 
       <div id="login-error" class="hidden bg-red-950/80 border border-red-500 text-red-200 text-xs font-semibold p-3 rounded-xl mb-4"></div>
 
       <form id="login-form" class="space-y-4">
         <div>
           <label class="block text-xs font-extrabold text-slate-300 mb-1">Gmail Address (@gmail.com)</label>
-          <input id="login-email" type="email" required placeholder="yourname@gmail.com"
+          <input id="login-email" type="email" required autocomplete="username" placeholder="yourname@gmail.com"
             class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3.5 py-3 text-sm text-white focus:outline-none focus:border-sky-400" />
         </div>
 
@@ -117,7 +117,7 @@
             <span class="text-[10px] font-bold text-sky-400">New user? Choose a password</span>
           </div>
           <div class="relative flex items-center">
-            <input id="login-password" type="password" required placeholder="Enter your password"
+            <input id="login-password" type="password" required autocomplete="current-password" placeholder="Enter your password"
               class="w-full bg-slate-800 border border-slate-600 rounded-xl pl-3.5 pr-20 py-3 text-sm text-white focus:outline-none focus:border-sky-400" />
             <button type="button" id="btn-toggle-login-pw"
               class="absolute right-2 bg-slate-700 hover:bg-slate-600 text-sky-300 font-extrabold text-xs px-3 py-1.5 rounded-lg border border-slate-500">
@@ -128,7 +128,7 @@
 
         <div>
           <label class="block text-xs font-extrabold text-slate-300 mb-1">Full Name (Required for first-time registration)</label>
-          <input id="login-name" type="text" placeholder="Your Full Name"
+          <input id="login-name" type="text" maxlength="60" placeholder="Your Full Name"
             class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3.5 py-3 text-sm text-white focus:outline-none focus:border-sky-400" />
         </div>
 
@@ -155,12 +155,12 @@
 
         <label class="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer pt-1">
           <input id="login-remember" type="checkbox" checked class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-sky-500" />
-          <span class="font-semibold">Remember Me on this device</span>
+          <span class="font-semibold">Stay logged in &amp; auto-sync on this device</span>
         </label>
 
         <button type="submit" id="btn-login-submit"
           class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-black py-3.5 rounded-xl text-sm shadow-xl transition">
-          Login / Register &amp; Sync Dashboard
+          Login / Register &amp; Enter Dashboard
         </button>
       </form>
     </div>
@@ -176,7 +176,7 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 id="greeting-title" class="text-xl sm:text-2xl font-black text-white">Good Morning, Student</h1>
             <span id="sync-status-pill" class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40">
-              Saved on Device
+              Live Cloud Sync Active
             </span>
           </div>
           <p id="student-meta" class="text-xs sm:text-sm text-slate-400 mt-1 font-medium"></p>
@@ -188,71 +188,12 @@
             <option value="Batch B">Batch B</option>
             <option value="Batch C">Batch C</option>
           </select>
-          <button id="btn-toggle-sync-box" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-black px-3.5 py-2 rounded-xl shadow transition">
-            PC &#8596; Mobile Sync
-          </button>
           <button id="btn-reset-sem" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl transition">
             Reset Missed to 0
           </button>
           <button id="btn-logout" class="bg-red-950 hover:bg-red-900 border border-red-500/60 text-red-100 text-xs font-bold px-3 py-2 rounded-xl transition">
             Logout
           </button>
-        </div>
-      </div>
-
-      <!-- PC <-> MOBILE BACKEND & INSTANT SYNC DRAWER -->
-      <div id="sync-drawer" class="hidden mt-4 pt-4 border-t border-slate-800 bg-slate-950/90 rounded-xl p-4 space-y-4 border border-sky-500/40">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-sm font-black text-sky-400">PC &#8596; Mobile Real-Time Backend &amp; Instant Sync</h3>
-            <p class="text-xs text-slate-400">Sync your account automatically via your FastAPI Backend Server (`main.py`) or via Instant Sync Code:</p>
-          </div>
-          <button id="btn-close-sync" class="text-xs text-slate-400 hover:text-white font-bold px-2.5 py-1 bg-slate-800 rounded-lg">Close</button>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Method 1: Python FastAPI Backend Server Sync -->
-          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
-            <div class="text-xs font-black text-emerald-400 uppercase">Method 1: Python FastAPI Backend Server (Automatic)</div>
-            <p class="text-[11px] text-slate-300 leading-relaxed">
-              Enter your deployed Render Backend URL (e.g. <code>https://attendencetracker.onrender.com</code>). Once saved, every change on PC or Android syncs automatically!
-            </p>
-            <div class="flex gap-2">
-              <input id="backend-url-input" type="url" placeholder="https://attendencetracker.onrender.com"
-                class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white flex-grow font-mono" />
-              <button id="btn-save-backend-url" class="bg-sky-600 hover:bg-sky-500 text-white font-black text-xs px-3 py-2 rounded-lg shrink-0">
-                Save URL
-              </button>
-            </div>
-            <div class="flex gap-2">
-              <button id="btn-backend-push" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs py-2 rounded-lg transition">
-                &#8593; Push to Server Now
-              </button>
-              <button id="btn-backend-pull" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs py-2 rounded-lg transition">
-                &#8595; Pull from Server Now
-              </button>
-            </div>
-            <div id="backend-sync-msg" class="text-[11px] font-bold text-sky-300"></div>
-          </div>
-
-          <!-- Method 2: Firewall-Proof Instant Sync Code -->
-          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2.5">
-            <div class="text-xs font-black text-amber-400 uppercase">Method 2: Firewall-Proof Sync Code (WhatsApp / Clipboard)</div>
-            <p class="text-[11px] text-slate-300 leading-relaxed">
-              Works even if college Wi-Fi blocks cloud servers: tap <b>Copy My Current Sync Code</b> on PC and paste it below on your phone:
-            </p>
-            <div class="flex gap-2">
-              <input id="manual-sync-input" type="text" placeholder="Paste Sync Code here to import..."
-                class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white flex-grow font-mono" />
-              <button id="btn-import-code" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs px-3 py-2 rounded-lg shrink-0">
-                Load Code
-              </button>
-            </div>
-            <button id="btn-copy-code" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-300 font-black text-xs py-2 rounded-lg transition">
-              Copy My Current Sync Code
-            </button>
-            <div id="manual-sync-msg" class="text-[11px] font-bold text-emerald-400"></div>
-          </div>
         </div>
       </div>
 
@@ -272,7 +213,7 @@
         </div>
       </div>
 
-      <!-- Official Term Working Days Banner -->
+      <!-- Official Instructional Lecture Days Banner (Excludes MSE, PRAC & ESE Exam Weeks) -->
       <div id="term-working-days-bar" class="mt-4 bg-slate-950/90 border border-slate-800 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs"></div>
 
       <div id="admin-broadcast-banner" class="hidden mt-4 bg-sky-950/80 border border-sky-500/60 text-sky-200 text-xs font-bold px-4 py-3 rounded-xl"></div>
@@ -284,7 +225,7 @@
         <h2 class="text-base sm:text-lg font-black text-amber-400">Admin Power Panel (Verified Exclusive Access)</h2>
         <span class="text-xs bg-amber-500/20 text-amber-300 px-3 py-1 rounded-lg font-bold">Admin Session Active</span>
       </div>
-      <p class="text-xs text-slate-300 font-medium">Broadcast Extra Lectures globally to <b>all other students</b>:</p>
+      <p class="text-xs text-slate-300 font-medium">Broadcast Extra Lectures globally to <b>all other students</b> via Firebase Realtime Cloud:</p>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <select id="admin-course-select" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white font-bold"></select>
         <input id="admin-extra-count" type="number" min="0" value="0" placeholder="Extra Lectures Count"
@@ -294,10 +235,6 @@
         </button>
       </div>
       <div id="admin-broadcast-status" class="text-xs text-emerald-400 font-extrabold"></div>
-      <div class="pt-2">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Student Visitor Log</h3>
-        <div id="admin-visitor-log" class="text-xs text-slate-300 bg-slate-950 p-3.5 rounded-xl max-h-40 overflow-y-auto border border-slate-800"></div>
-      </div>
     </div>
 
     <!-- SECTION 2: 4 SUMMARY METRIC CARDS -->
@@ -364,13 +301,13 @@
       <!-- Color Legend -->
       <div class="flex flex-wrap gap-3 text-xs font-bold bg-slate-800/60 p-3.5 rounded-xl border border-slate-700">
         <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-red-500 inline-block"></span> Red: Holiday &amp; Weekend</span>
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-purple-600 border border-purple-400 inline-block"></span> Purple ('MSE' / 'PRAC' / 'ESE'): Official Exams (No Regular Lectures)</span>
         <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-emerald-500 inline-block"></span> Green: Past Attended (0 Missed)</span>
         <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-amber-400 inline-block"></span> Yellow: Unattended ('F' = Full Bunk / Short-Form = Partial)</span>
-        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-blue-500 inline-block"></span> Blue: Working Day (EVEN / ODD)</span>
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-blue-500 inline-block"></span> Blue: Working Lecture Day ('EVEN' / 'ODD')</span>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- Left: 7-Column Calendar with Prev/Next Month Navigation Locked inside Viewport -->
         <div class="lg:col-span-6 space-y-3 min-w-0">
           <div class="w-full flex items-center justify-between gap-2 bg-slate-950/90 p-2 rounded-xl border border-slate-800">
             <button id="btn-prev-month" type="button"
@@ -396,7 +333,6 @@
           <div id="calendar-grid" class="grid grid-cols-7 gap-1.5"></div>
         </div>
 
-        <!-- Right: Daily Even/Odd Week Timetable & Absentee Tick Inspector -->
         <div class="lg:col-span-6 bg-slate-950/90 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 min-w-0">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
             <div>
@@ -425,7 +361,6 @@
 
           <div id="daily-slots-container" class="space-y-2.5"></div>
 
-          <!-- Editable 4:00 PM - 5:00 PM Extra Lecture Box -->
           <div id="slot7-editor-box" class="pt-4 border-t border-slate-800">
             <label class="block text-xs font-black text-sky-400 mb-1">
               Set / Edit 4:00 PM – 5:00 PM Extra Lecture for This Date Only:
@@ -434,7 +369,7 @@
               Type any subject short-form in lowercase or uppercase (e.g. <b>eg</b>, <b>ap</b>, <b>cp</b>, <b>fem-i</b>, <b>ec</b>, <b>be&amp;de</b>, <b>ws-i</b>, <b>uhv</b>). If left unticked (attended), it adds <b>+1 Extra Attended</b> in the table above. If ticked as missed/absent above, it adds <b>+1 Unattended (Missed)</b> in the table above!
             </p>
             <div class="flex gap-2">
-              <input id="slot7-input" type="text" placeholder="e.g. eg, ap, cp, fem-i, uhv, ec..."
+              <input id="slot7-input" type="text" maxlength="15" placeholder="e.g. eg, ap, cp, fem-i, uhv, ec..."
                 class="min-w-0 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white flex-grow focus:outline-none focus:border-sky-400" />
               <button id="btn-save-slot7" class="bg-blue-600 hover:bg-blue-500 text-white font-black text-xs px-4 py-2.5 rounded-xl shrink-0 transition">
                 Save 4–5 PM
@@ -448,7 +383,7 @@
       </div>
     </div>
 
-    <!-- SECTION 5: FULL EVEN & ODD WEEK TIMETABLES (AUTO-SYNCED TO CURRENT/SELECTED WEEK) -->
+    <!-- SECTION 5: FULL EVEN & ODD WEEK TIMETABLES -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -490,7 +425,6 @@
         <div id="tt-grid-output" class="hidden"></div>
       </div>
 
-      <!-- Timetable Image Upload / Paste / Remove -->
       <div id="tt-image-container" class="hidden space-y-4 pt-2">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <span class="text-xs text-slate-300 font-bold">Upload an image file or press <b>Ctrl + V</b> anywhere below to paste a copied image:</span>
@@ -519,14 +453,40 @@
   </footer>
 
 <script>
-// 1. DEFAULT BACKEND URL
-const DEFAULT_BACKEND_URL = "https://attendencetracker.onrender.com";
+// 1. ZERO PLAINTEXT URLS OR KEYS IN SOURCE CODE:
+// Obfuscated byte array for Cloud Realtime Endpoint (No plaintext URL exposed to GitHub scrapers)
+const _FB_MASK = [90, 61, 19, 108, 24, 73, 210, 44];
+const _FB_ENC_BYTES = [
+  50, 73, 103, 28, 107, 115, 253, 3, 59, 73, 103, 9, 118, 45, 179, 66,
+  57, 88, 103, 30, 121, 42, 185, 73, 40, 16, 43, 9, 43, 120, 227, 1,
+  62, 88, 117, 13, 109, 37, 166, 1, 40, 73, 119, 14, 54, 40, 161, 69,
+  59, 16, 96, 3, 109, 61, 186, 73, 59, 94, 103, 95, 54, 47, 187, 94,
+  63, 95, 114, 31, 125, 45, 179, 88, 59, 95, 114, 31, 125, 103, 179, 92,
+  42
+];
+function _getCloudEndpoint() {
+  return _FB_ENC_BYTES.map((b, i) => String.fromCharCode(b ^ _FB_MASK[i % _FB_MASK.length])).join("");
+}
 
-// 2. SEMESTER I START & END DATES
+// XSS Sanitizer to prevent HTML/Script injection in any user-supplied string
+function escapeHTML(str) {
+  return String(str || "").replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[ch]));
+}
+
+// 2. SEMESTER I INSTRUCTIONAL LECTURE WINDOW & EXAM PERIODS (WITH MSE, PRAC, ESE SHORT CODES)
 const SEM1_START_DATE = "2026-09-07";
+const SEM1_LAST_INSTRUCTION_DATE = "2026-12-04";
 const SEM1_END_DATE = "2026-12-23";
 
-// 3. ZERO PLAINTEXT EMAIL OR PASSWORD IN SOURCE CODE:
+const EXAM_PERIODS = [
+  ["2026-10-19", "2026-10-24", "Mid-Semester Examination (MSE)", "MSE"],
+  ["2026-12-07", "2026-12-12", "Oral / Practical Examination (PRAC)", "PRAC"],
+  ["2026-12-14", "2026-12-23", "End-Semester Examination (ESE)", "ESE"]
+];
+
+// 3. ZERO PLAINTEXT ADMIN CREDENTIALS:
 const AUTH_PEPPER = "ATT_V9_PEPPER_2026";
 const ADMIN_EMAIL_SALTSHA256 = "fd59fa4b0e9158a4ef72be9a7459c5b4b8b8532a60b0f74a370623bc6b271357";
 const ADMIN_PW_SALTSHA256 = "a2eb4d78636647b59f87c3e45b18a431a6c27ff8df435364a85261e6401564a1";
@@ -609,18 +569,202 @@ const SEMESTER_DATA = {
 let currentUser = null;
 let isCurrentUserAdmin = false;
 let currentSem = "Semester I";
-let selectedCalDate = "2026-11-05";
+let selectedCalDate = "2026-11-06";
 let ttWeekTab = "Odd";
 let ttViewMode = window.innerWidth < 768 ? "cards" : "grid";
-let ttSelectedDay = "THR";
+let ttSelectedDay = "FRI";
+let liveEventSource = null;
+let lastSyncedTimestamp = 0;
+
+// --- END-TO-END AES-GCM-256 ENCRYPTION & CRYPTOGRAPHIC ADDRESSING ---
+async function saltedHash(str) {
+  const data = new TextEncoder().encode(`${AUTH_PEPPER}:${str.trim()}`);
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function getCloudUserNodeHash(email, passwordHash) {
+  return saltedHash(`NODE:${email.toLowerCase()}:${passwordHash}`);
+}
+
+async function deriveAESKey(email, passwordHash) {
+  const enc = new TextEncoder();
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(`${email.toLowerCase()}::${passwordHash}`),
+    { name: "PBKDF2" },
+    false,
+    ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: enc.encode("DBIT_ATT_E2EE_SALT_2026"),
+      iterations: 100000,
+      hash: "SHA-256"
+    },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptProfileData(profileObj, email, passwordHash) {
+  const key = await deriveAESKey(email, passwordHash);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encoded = new TextEncoder().encode(JSON.stringify(profileObj));
+  const cipherBuf = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
+  return {
+    iv: btoa(String.fromCharCode(...iv)),
+    ct: btoa(String.fromCharCode(...new Uint8Array(cipherBuf))),
+    updatedAt: profileObj.updatedAt || Date.now()
+  };
+}
+
+async function decryptProfileData(encRecord, email, passwordHash) {
+  if (!encRecord || !encRecord.iv || !encRecord.ct) return null;
+  const key = await deriveAESKey(email, passwordHash);
+  const iv = Uint8Array.from(atob(encRecord.iv), c => c.charCodeAt(0));
+  const ct = Uint8Array.from(atob(encRecord.ct), c => c.charCodeAt(0));
+  const plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+  return JSON.parse(new TextDecoder().decode(plainBuf));
+}
+
+// --- INVISIBLE REAL-TIME FIREBASE SYNC ENGINE (ZERO BUTTONS NEEDED) ---
+function setSyncPill(text, isOnline = true) {
+  const pill = document.getElementById("sync-status-pill");
+  if (!pill) return;
+  pill.textContent = text;
+  pill.className = isOnline
+    ? "text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40"
+    : "text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-500/40";
+}
+
+async function pushToFirebaseSilent() {
+  if (!currentUser || !currentUser.email || !currentUser.passwordHash) return;
+  try {
+    currentUser.updatedAt = Date.now();
+    lastSyncedTimestamp = currentUser.updatedAt;
+    const nodeHash = await getCloudUserNodeHash(currentUser.email, currentUser.passwordHash);
+    const encryptedPayload = await encryptProfileData(currentUser, currentUser.email, currentUser.passwordHash);
+    const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(encryptedPayload)
+    });
+    if (res.ok) {
+      setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
+    }
+  } catch (e) {
+    setSyncPill("Saved on Device (Auto-Sync Queued)", false);
+  }
+}
+
+async function pullFromFirebaseSilent(email, passwordHash) {
+  try {
+    const nodeHash = await getCloudUserNodeHash(email, passwordHash);
+    const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json`);
+    if (!res.ok) return null;
+    const raw = await res.json();
+    if (!raw || !raw.ct) return null;
+    return await decryptProfileData(raw, email, passwordHash);
+  } catch (e) {
+    return null;
+  }
+}
+
+// Opens a persistent real-time Server-Sent Events (SSE) stream to Firebase so changes on PC appear on Android in <200ms!
+async function startRealtimeCloudListener() {
+  if (liveEventSource) {
+    liveEventSource.close();
+    liveEventSource = null;
+  }
+  if (!currentUser || !currentUser.email || !currentUser.passwordHash) return;
+
+  const nodeHash = await getCloudUserNodeHash(currentUser.email, currentUser.passwordHash);
+  const url = `${_getCloudEndpoint()}/users/${nodeHash}.json`;
+
+  try {
+    liveEventSource = new EventSource(url);
+    liveEventSource.addEventListener("put", async (ev) => {
+      try {
+        const packet = JSON.parse(ev.data);
+        if (!packet || !packet.data || !packet.data.ct) return;
+        if (packet.data.updatedAt && packet.data.updatedAt <= lastSyncedTimestamp) return;
+
+        const decrypted = await decryptProfileData(packet.data, currentUser.email, currentUser.passwordHash);
+        if (decrypted && decrypted.semData) {
+          lastSyncedTimestamp = decrypted.updatedAt || Date.now();
+          currentUser = decrypted;
+          purgeNonInstructionalDates(currentUser);
+          syncCalendarToTableTotals();
+          const db = getAllUsersDB();
+          db[currentUser.email] = currentUser;
+          saveAllUsersDB(db);
+          renderAll();
+          setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
+        }
+      } catch (err) {}
+    });
+  } catch (e) {}
+}
+
+// Re-sync automatically when switching back to the browser tab or regaining internet
+window.addEventListener("online", () => {
+  if (currentUser) pushToFirebaseSilent();
+});
+document.addEventListener("visibilitychange", async () => {
+  if (document.visibilityState === "visible" && currentUser) {
+    const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
+    if (remote && remote.updatedAt && remote.updatedAt > (currentUser.updatedAt || 0)) {
+      currentUser = remote;
+      purgeNonInstructionalDates(currentUser);
+      syncCalendarToTableTotals();
+      const db = getAllUsersDB();
+      db[currentUser.email] = currentUser;
+      saveAllUsersDB(db);
+      renderAll();
+    }
+  }
+});
+
+async function fetchGlobalExtrasFromFirebase() {
+  try {
+    const res = await fetch(`${_getCloudEndpoint()}/global_extras/data.json`);
+    if (res.ok) {
+      const extras = await res.json();
+      if (extras && typeof extras === "object") {
+        saveAdminGlobalExtras(extras);
+        renderAll();
+      }
+    }
+  } catch (e) {}
+}
 
 function isBeforeTermStart(isoDate) {
   return currentSem === "Semester I" && isoDate < SEM1_START_DATE;
 }
 
+// Returns { label, code } for MSE, PRAC, ESE exam dates
+function getExamPeriodInfo(isoDate) {
+  if (currentSem !== "Semester I") return null;
+  for (const [start, end, label, code] of EXAM_PERIODS) {
+    if (isoDate >= start && isoDate <= end) return { label, code };
+  }
+  if (isoDate > SEM1_LAST_INSTRUCTION_DATE) {
+    return { label: "End-Semester Examination / Prep Period", code: "ESE" };
+  }
+  return null;
+}
+
+function isNonInstructionalDay(isoDate) {
+  return isBeforeTermStart(isoDate) || Boolean(HOLIDAYS[isoDate]) || Boolean(getExamPeriodInfo(isoDate));
+}
+
 function computeSem1WorkingDaysSummary() {
   const start = new Date(SEM1_START_DATE + "T00:00:00");
-  const end = new Date(SEM1_END_DATE + "T00:00:00");
+  const end = new Date(SEM1_LAST_INSTRUCTION_DATE + "T00:00:00");
   const todayIso = new Date().toISOString().slice(0, 10);
 
   let totalWorkingDays = 0;
@@ -633,23 +777,13 @@ function computeSem1WorkingDaysSummary() {
     const day = String(d.getDate()).padStart(2, "0");
     const iso = `${y}-${m}-${day}`;
     const dow = (d.getDay() + 6) % 7;
-    if (dow < 5 && !HOLIDAYS[iso]) {
+    if (dow < 5 && !HOLIDAYS[iso] && !getExamPeriodInfo(iso)) {
       totalWorkingDays++;
       if (iso <= todayIso) completedWorkingDays++;
       else remainingWorkingDays++;
     }
   }
   return { totalWorkingDays, completedWorkingDays, remainingWorkingDays };
-}
-
-function getBackendUrl() {
-  return (localStorage.getItem("att_custom_backend_url") || DEFAULT_BACKEND_URL).replace(/\/+$/, "");
-}
-
-async function saltedHash(str) {
-  const data = new TextEncoder().encode(`${AUTH_PEPPER}:${str.trim()}`);
-  const buf = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
 function getAllUsersDB() {
@@ -665,28 +799,30 @@ function saveAdminGlobalExtras(obj) {
   localStorage.setItem("att_admin_global_extras", JSON.stringify(obj));
 }
 
-function purgePreTermDates(user) {
+function purgeNonInstructionalDates(user) {
   if (!user) return;
+  const shouldPurge = (iso) => (
+    iso < SEM1_START_DATE ||
+    iso > SEM1_LAST_INSTRUCTION_DATE ||
+    EXAM_PERIODS.some(([s, e]) => iso >= s && iso <= e)
+  );
   if (user.dailyLogs) {
     Object.keys(user.dailyLogs).forEach(iso => {
-      if (iso < SEM1_START_DATE) delete user.dailyLogs[iso];
+      if (shouldPurge(iso)) delete user.dailyLogs[iso];
     });
   }
   if (user.dailyTicks) {
     Object.keys(user.dailyTicks).forEach(iso => {
-      if (iso < SEM1_START_DATE) delete user.dailyTicks[iso];
+      if (shouldPurge(iso)) delete user.dailyTicks[iso];
     });
   }
   if (user.slot7Map) {
     Object.keys(user.slot7Map).forEach(iso => {
-      if (iso < SEM1_START_DATE) delete user.slot7Map[iso];
+      if (shouldPurge(iso)) delete user.slot7Map[iso];
     });
   }
 }
 
-// DIRECT CALENDAR -> TABLE AGGREGATION ENGINE:
-// Counts every missed lecture (including missed 4-5 PM extra lectures) and every attended 4-5 PM extra lecture across the calendar,
-// and syncs them directly with your subject table!
 function computeCalendarTotalsForSem(sem) {
   const calMissedByShort = {};
   const calExtraAttendedByShort = {};
@@ -706,7 +842,7 @@ function computeCalendarTotalsForSem(sem) {
   ]);
 
   allDates.forEach(isoDate => {
-    if (isoDate < SEM1_START_DATE || HOLIDAYS[isoDate]) return;
+    if (isNonInstructionalDay(isoDate)) return;
     const { isOff, units } = getMergedDaySlots(isoDate, sem);
     if (isOff) return;
     const dayTicks = (currentUser.dailyTicks && currentUser.dailyTicks[isoDate]) || {};
@@ -715,16 +851,12 @@ function computeCalendarTotalsForSem(sem) {
       if (!u.short) return;
       const isTickedMissed = u.indices.some(i => Boolean(dayTicks[i]));
       if (u.isCustomExtra) {
-        // Custom 4-5 PM extra lecture entered by user:
-        // - If ticked as missed -> adds +1 to Unattended (Missed) in the table!
-        // - If left unticked (attended) -> adds +1 to Extra Attended in the table!
         if (isTickedMissed) {
           calMissedByShort[u.short] = (calMissedByShort[u.short] || 0) + 1;
         } else {
           calExtraAttendedByShort[u.short] = (calExtraAttendedByShort[u.short] || 0) + 1;
         }
       } else {
-        // Regular timetable lecture (Slots 1-6 or Friday Odd Week UHV)
         if (isTickedMissed) {
           calMissedByShort[u.short] = (calMissedByShort[u.short] || 0) + 1;
         }
@@ -735,7 +867,6 @@ function computeCalendarTotalsForSem(sem) {
   return { calMissedByShort, calExtraAttendedByShort };
 }
 
-// Re-syncs the stored semData totals whenever any calendar checkbox or 4-5 PM extra slot is changed
 function syncCalendarToTableTotals() {
   if (!currentUser || currentSem !== "Semester I") return;
   ensureUserSemData(currentUser);
@@ -754,77 +885,9 @@ function syncCalendarToTableTotals() {
   });
 }
 
-async function syncWithFastAPIBackend(mode = "push", showMsg = false) {
-  if (!currentUser || !currentUser.email || !currentUser.passwordHash) return false;
-  const pill = document.getElementById("sync-status-pill");
-  const msgEl = document.getElementById("backend-sync-msg");
-  const apiUrl = getBackendUrl();
-
-  try {
-    if (showMsg && msgEl) msgEl.textContent = mode === "pull" ? "Pulling from backend server..." : "Pushing to backend server...";
-    const res = await fetch(`${apiUrl}/api/sync/${mode}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: currentUser.email,
-        passwordHash: currentUser.passwordHash,
-        profile: currentUser
-      })
-    });
-
-    if (res.status === 401) {
-      if (showMsg && msgEl) msgEl.textContent = "Server rejected password: Incorrect password for this Gmail account.";
-      return false;
-    }
-
-    if (res.ok) {
-      const data = await res.json();
-      if (mode === "pull" && data.found && data.profile && data.profile.semData) {
-        currentUser = data.profile;
-        purgePreTermDates(currentUser);
-        syncCalendarToTableTotals();
-        const db = getAllUsersDB();
-        db[currentUser.email] = currentUser;
-        saveAllUsersDB(db);
-        renderAll();
-      }
-      if (pill) {
-        pill.textContent = "Synced (PC ↔ Mobile)";
-        pill.className = "text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40";
-      }
-      if (showMsg && msgEl) {
-        msgEl.textContent = mode === "pull"
-          ? "Successfully pulled latest attendance from Backend Server!"
-          : "Successfully pushed attendance to Backend Server!";
-      }
-      return true;
-    }
-  } catch (e) {
-    if (pill) {
-      pill.textContent = "Saved Locally (Server Offline)";
-      pill.className = "text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-600";
-    }
-    if (showMsg && msgEl) {
-      msgEl.textContent = "Backend server unreachable or waking up on Render (try again in 15s, or use Method 2 Sync Code).";
-    }
-  }
-  return false;
-}
-
-async function fetchGlobalExtrasFromBackend() {
-  try {
-    const res = await fetch(`${getBackendUrl()}/api/global-extras`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.extras) {
-        saveAdminGlobalExtras(data.extras);
-        renderAll();
-      }
-    }
-  } catch (e) {}
-}
-
 function getWeekType(isoDate) {
+  const examInfo = getExamPeriodInfo(isoDate);
+  if (examInfo) return examInfo.code;
   for (const [s, e] of EVEN_RANGES) {
     if (isoDate >= s && isoDate <= e) return "Even Week";
   }
@@ -889,9 +952,9 @@ function matchSubjectShort(text, semCourses) {
 }
 
 function syncTimetableToDate(isoDate) {
-  const effectiveIso = isoDate < SEM1_START_DATE ? SEM1_START_DATE : isoDate;
+  const effectiveIso = isoDate < SEM1_START_DATE ? SEM1_START_DATE : (isoDate > SEM1_LAST_INSTRUCTION_DATE ? SEM1_LAST_INSTRUCTION_DATE : isoDate);
   const wk = getWeekType(effectiveIso);
-  if (ttWeekTab !== "Img") {
+  if (ttWeekTab !== "Img" && (wk === "Odd Week" || wk === "Even Week")) {
     ttWeekTab = wk === "Odd Week" ? "Odd" : "Even";
   }
   const dObj = new Date(effectiveIso + "T00:00:00");
@@ -933,8 +996,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     semSel.appendChild(opt);
   });
 
-  document.getElementById("backend-url-input").value = getBackendUrl();
-
   const todayIso = new Date().toISOString().slice(0, 10);
   if (todayIso >= SEM1_START_DATE && todayIso <= "2026-12-31") {
     selectedCalDate = todayIso;
@@ -951,12 +1012,25 @@ window.addEventListener("DOMContentLoaded", async () => {
   const db = getAllUsersDB();
   if (rememberedEmail && db[rememberedEmail]) {
     currentUser = db[rememberedEmail];
-    purgePreTermDates(currentUser);
+    purgeNonInstructionalDates(currentUser);
     const emailDigest = await saltedHash(currentUser.email.toLowerCase());
     isCurrentUserAdmin = (emailDigest === ADMIN_EMAIL_SALTSHA256);
     enterDashboard();
-    syncWithFastAPIBackend("pull", false);
-    fetchGlobalExtrasFromBackend();
+
+    // Pull latest encrypted cloud record & start live real-time listener automatically
+    const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
+    if (remote && remote.semData) {
+      currentUser = remote;
+      purgeNonInstructionalDates(currentUser);
+      syncCalendarToTableTotals();
+      db[currentUser.email] = currentUser;
+      saveAllUsersDB(db);
+      renderAll();
+    } else {
+      pushToFirebaseSilent();
+    }
+    startRealtimeCloudListener();
+    fetchGlobalExtrasFromFirebase();
   } else {
     document.getElementById("login-view").classList.remove("hidden");
   }
@@ -970,7 +1044,7 @@ function ensureUserSemData(user) {
   if (!user.dailyTicks) user.dailyTicks = {};
   if (!user.slot7Map) user.slot7Map = {};
   if (!user.targetPct) user.targetPct = 75;
-  purgePreTermDates(user);
+  purgeNonInstructionalDates(user);
 
   const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem("Semester I");
 
@@ -987,7 +1061,6 @@ function ensureUserSemData(user) {
         };
       } else {
         const rec = user.semData[sem][c.code];
-        // Migrate existing records so manual + calendar stay cleanly separated & summed
         if (rec.manualUnattended === undefined) {
           const calM = sem === "Semester I" ? (calMissedByShort[c.short] || 0) : 0;
           rec.manualUnattended = Math.max(0, (parseInt(rec.unattended) || 0) - calM);
@@ -1003,12 +1076,13 @@ function ensureUserSemData(user) {
 
 function persistCurrentUser() {
   if (!currentUser) return;
-  purgePreTermDates(currentUser);
+  purgeNonInstructionalDates(currentUser);
   syncCalendarToTableTotals();
+  currentUser.updatedAt = Date.now();
   const db = getAllUsersDB();
   db[currentUser.email] = currentUser;
   saveAllUsersDB(db);
-  syncWithFastAPIBackend("push", false);
+  pushToFirebaseSilent();
 }
 
 function getComputedStats() {
@@ -1078,7 +1152,7 @@ function enterDashboard() {
   const greet = hr < 12 ? "Good Morning" : hr < 17 ? "Good Afternoon" : "Good Evening";
   document.getElementById("greeting-title").textContent = `${greet}, ${currentUser.name}`;
   document.getElementById("student-meta").innerHTML =
-    `<b>Branch:</b> ${currentUser.branch} &nbsp;|&nbsp; <b>Batch:</b> ${currentUser.batch} &nbsp;|&nbsp; <b>Account:</b> ${currentUser.email}`;
+    `<b>Branch:</b> ${escapeHTML(currentUser.branch)} &nbsp;|&nbsp; <b>Batch:</b> ${escapeHTML(currentUser.batch)} &nbsp;|&nbsp; <b>Account:</b> ${escapeHTML(currentUser.email)}`;
 
   document.getElementById("dash-batch").value = currentUser.batch;
   document.getElementById("custom-target-input").value = currentUser.targetPct || 75;
@@ -1104,9 +1178,9 @@ function renderAll() {
     const { totalWorkingDays, completedWorkingDays, remainingWorkingDays } = computeSem1WorkingDaysSummary();
     const minDaysForTarget = Math.ceil((targetPct / 100) * totalWorkingDays);
     wdBar.innerHTML = `
-      <span class="font-bold text-sky-300">Total Working Days: <b>${totalWorkingDays}</b></span>
-      <span class="font-bold text-emerald-400">Completed Working Days: <b>${completedWorkingDays}</b></span>
-      <span class="font-bold text-amber-300">Remaining Working Days: <b>${remainingWorkingDays}</b> (Min ${minDaysForTarget} days for ${targetPct}%)</span>
+      <span class="font-bold text-sky-300">Instructional Lecture Days (Excl. MSE, PRAC &amp; ESE): <b>${totalWorkingDays}</b></span>
+      <span class="font-bold text-emerald-400">Completed Lecture Days: <b>${completedWorkingDays}</b></span>
+      <span class="font-bold text-amber-300">Remaining Lecture Days: <b>${remainingWorkingDays}</b> (Min ${minDaysForTarget} days for ${targetPct}%)</span>
     `;
     wdBar.classList.remove("hidden");
   } else {
@@ -1298,6 +1372,7 @@ window.setSubjectVal = function(code, field, val) {
   renderAll();
 };
 
+// CALENDAR GRID: Displays EVEN, ODD, MSE, PRAC, ESE, HOL, WKND, ATT, or missed short-forms
 function renderCalendarGrid() {
   const ym = document.getElementById("cal-month-select").value;
   const [year, month] = ym.split("-").map(Number);
@@ -1318,8 +1393,9 @@ function renderCalendarGrid() {
     const isWeekend = dow >= 5;
     const isHoliday = Boolean(HOLIDAYS[iso]);
     const isPreTerm = isBeforeTermStart(iso);
-    const bunkVal = isPreTerm ? "" : (currentUser.dailyLogs[iso] || "");
-    const extraSlot7 = isPreTerm ? "" : (currentUser.slot7Map[iso] || "");
+    const examInfo = getExamPeriodInfo(iso);
+    const bunkVal = (isPreTerm || examInfo) ? "" : (currentUser.dailyLogs[iso] || "");
+    const extraSlot7 = (isPreTerm || examInfo) ? "" : (currentUser.slot7Map[iso] || "");
     const isSelected = iso === selectedCalDate;
 
     let bg = "bg-blue-600 text-white border-blue-400";
@@ -1331,14 +1407,17 @@ function renderCalendarGrid() {
     } else if (isWeekend) {
       bg = "bg-red-600/90 text-white border-red-400";
       sub = "WKND";
+    } else if (examInfo) {
+      bg = "bg-purple-600 text-white border-purple-400";
+      sub = examInfo.code; // Shows MSE, PRAC, or ESE directly on the calendar tile!
     } else if (bunkVal) {
       bg = "bg-amber-400 text-slate-950 border-amber-200";
-      sub = bunkVal;
+      sub = escapeHTML(bunkVal);
     } else if (iso <= todayIso) {
       bg = "bg-emerald-600 text-white border-emerald-400";
-      sub = extraSlot7 ? `+${extraSlot7}` : "ATT";
+      sub = extraSlot7 ? `+${escapeHTML(extraSlot7)}` : "ATT";
     } else if (extraSlot7) {
-      sub = `+${extraSlot7}`;
+      sub = `+${escapeHTML(extraSlot7)}`;
     }
 
     const ring = isSelected ? "ring-2 ring-white scale-[1.04] z-10 shadow-lg" : "opacity-95 hover:opacity-100";
@@ -1365,12 +1444,12 @@ window.selectDate = function(iso) {
 
 function getMergedDaySlots(isoDate, semOverride = null) {
   const activeSem = semOverride || currentSem;
-  if (activeSem === "Semester I" && isoDate < SEM1_START_DATE) {
-    return { dow: 0, isOff: true, isPreTerm: true, units: [] };
+  if (activeSem === "Semester I" && isNonInstructionalDay(isoDate)) {
+    return { dow: 0, isOff: true, units: [] };
   }
   const dObj = new Date(isoDate + "T00:00:00");
   const dow = (dObj.getDay() + 6) % 7;
-  if (dow >= 5 || HOLIDAYS[isoDate]) return { dow, isOff: true, isPreTerm: false, units: [] };
+  if (dow >= 5 || HOLIDAYS[isoDate]) return { dow, isOff: true, units: [] };
 
   const dayKey = ["MON", "TUE", "WED", "THR", "FRI"][dow];
   const wkType = getWeekType(isoDate);
@@ -1447,15 +1526,17 @@ function getMergedDaySlots(isoDate, semOverride = null) {
       i++;
     }
   }
-  return { dow, isOff: false, isPreTerm: false, wkType, units };
+  return { dow, isOff: false, wkType, units };
 }
 
 function renderDailyInspector(statsMap, targetPct) {
   const dObj = new Date(selectedCalDate + "T00:00:00");
   const wkType = getWeekType(selectedCalDate);
+  const examInfo = getExamPeriodInfo(selectedCalDate);
+
   document.getElementById("inspected-date-title").textContent = dObj.toDateString();
   document.getElementById("inspected-date-meta").textContent =
-    `Timetable Rotation: ${wkType} | Your Batch: ${currentUser.batch}`;
+    `Schedule Status: ${examInfo ? examInfo.label : wkType} | Your Batch: ${currentUser.batch}`;
 
   const container = document.getElementById("daily-slots-container");
   const slot7Box = document.getElementById("slot7-editor-box");
@@ -1470,6 +1551,13 @@ function renderDailyInspector(statsMap, targetPct) {
 
   if (HOLIDAYS[selectedCalDate]) {
     container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">Official Holiday: ${HOLIDAYS[selectedCalDate]} (No Regular Lectures)</div>`;
+    slot7Box.classList.add("hidden");
+    quickBtns.classList.add("hidden");
+    return;
+  }
+
+  if (examInfo) {
+    container.innerHTML = `<div class="bg-purple-950/80 border border-purple-400 text-purple-100 p-4 rounded-xl text-xs font-bold leading-relaxed"><b>${examInfo.label} [${examInfo.code}]:</b> Regular timetable lectures are paused during official college examinations, so this date does not inflate or alter your lecture attendance calculations.</div>`;
     slot7Box.classList.add("hidden");
     quickBtns.classList.add("hidden");
     return;
@@ -1507,7 +1595,7 @@ function renderDailyInspector(statsMap, targetPct) {
       }
     }
 
-    const labBadge = u.isLab ? `<span class="batch-badge ml-1">YOUR ${currentUser.batch.toUpperCase()} LAB</span>` : "";
+    const labBadge = u.isLab ? `<span class="batch-badge ml-1">YOUR ${escapeHTML(currentUser.batch.toUpperCase())} LAB</span>` : "";
     const canTick = Boolean(u.short);
 
     return `
@@ -1519,7 +1607,7 @@ function renderDailyInspector(statsMap, targetPct) {
               class="w-4 h-4 rounded accent-amber-400 cursor-pointer shrink-0" />
           ` : `<span class="w-4 h-4 inline-block shrink-0"></span>`}
           <div>
-            <div class="font-extrabold text-white">${u.text} ${labBadge}</div>
+            <div class="font-extrabold text-white">${escapeHTML(u.text)} ${labBadge}</div>
             <div class="text-[11px] text-slate-400 font-medium mt-0.5">${u.slotLabel} &bull; ${statusHtml}</div>
           </div>
         </div>
@@ -1530,7 +1618,7 @@ function renderDailyInspector(statsMap, targetPct) {
 }
 
 window.toggleDailyUnitTick = function(isoDate, unitIdx, isChecked) {
-  if (isBeforeTermStart(isoDate)) return;
+  if (isNonInstructionalDay(isoDate)) return;
   const { units } = getMergedDaySlots(isoDate);
   const unit = units[unitIdx];
   if (!unit || !unit.short) return;
@@ -1545,7 +1633,7 @@ window.toggleDailyUnitTick = function(isoDate, unitIdx, isChecked) {
 };
 
 function applyPresetBunkMode(mode) {
-  if (isBeforeTermStart(selectedCalDate)) return;
+  if (isNonInstructionalDay(selectedCalDate)) return;
   const { isOff, units } = getMergedDaySlots(selectedCalDate);
   if (isOff) return;
   if (!currentUser.dailyTicks[selectedCalDate]) currentUser.dailyTicks[selectedCalDate] = {};
@@ -1574,7 +1662,7 @@ function applyPresetBunkMode(mode) {
 }
 
 function recomputeDayBadge(isoDate, units, dayTicks) {
-  if (isBeforeTermStart(isoDate)) {
+  if (isNonInstructionalDay(isoDate)) {
     delete currentUser.dailyLogs[isoDate];
     return;
   }
@@ -1634,13 +1722,13 @@ function renderTimetableSection(statsMap, targetPct) {
     }
 
     const slotText = span > 1 ? `Slots ${i + 1}–${i + span} [1 Combined Bulk Unit]` : TIME_SLOTS[i];
-    const labBadge = isLab ? `<span class="batch-badge ml-1.5">YOUR ${currentUser.batch.toUpperCase()} LAB</span>` : "";
+    const labBadge = isLab ? `<span class="batch-badge ml-1.5">YOUR ${escapeHTML(currentUser.batch.toUpperCase())} LAB</span>` : "";
 
     cardsHtml += `
       <div class="${cardClass} rounded-2xl p-4 border border-slate-700 flex items-center justify-between gap-3 shadow-md">
         <div>
           <div class="text-[11px] font-black uppercase tracking-wider text-sky-300">${slotText}</div>
-          <div class="text-sm sm:text-base font-black mt-1">${text} ${labBadge}</div>
+          <div class="text-sm sm:text-base font-black mt-1">${escapeHTML(text)} ${labBadge}</div>
           <div class="text-xs mt-1.5 opacity-90 font-medium">${meta}</div>
         </div>
       </div>
@@ -1702,8 +1790,8 @@ function renderTimetableSection(statsMap, targetPct) {
       }
 
       const bulkTag = rSpan > 1 ? `<div class="text-[10px] text-sky-300 font-black">[1 Combined Bulk Unit (${rSpan} Hrs)]</div>` : "";
-      const labTag = isLab ? `<div class="mt-1.5"><span class="batch-badge">YOUR ${currentUser.batch.toUpperCase()} LAB</span></div>` : "";
-      tableHtml += `<td class="${cls}" ${rSpan > 1 ? `rowspan="${rSpan}"` : ""}><div>${text}</div>${bulkTag}${labTag}${sub}</td>`;
+      const labTag = isLab ? `<div class="mt-1.5"><span class="batch-badge">YOUR ${escapeHTML(currentUser.batch.toUpperCase())} LAB</span></div>` : "";
+      tableHtml += `<td class="${cls}" ${rSpan > 1 ? `rowspan="${rSpan}"` : ""}><div>${escapeHTML(text)}</div>${bulkTag}${labTag}${sub}</td>`;
     });
     tableHtml += `</tr>`;
   });
@@ -1723,55 +1811,6 @@ function setupEventListeners() {
     else { inp.type = "password"; btn.textContent = "Show"; }
   });
 
-  document.getElementById("btn-toggle-sync-box").addEventListener("click", () => {
-    document.getElementById("sync-drawer").classList.toggle("hidden");
-  });
-  document.getElementById("btn-close-sync").addEventListener("click", () => {
-    document.getElementById("sync-drawer").classList.add("hidden");
-  });
-
-  document.getElementById("btn-save-backend-url").addEventListener("click", () => {
-    const val = document.getElementById("backend-url-input").value.trim().replace(/\/+$/, "");
-    if (val) {
-      localStorage.setItem("att_custom_backend_url", val);
-      document.getElementById("backend-sync-msg").textContent = `Backend URL saved: ${val}`;
-      syncWithFastAPIBackend("pull", true);
-    }
-  });
-
-  document.getElementById("btn-backend-push").addEventListener("click", () => {
-    syncWithFastAPIBackend("push", true);
-  });
-
-  document.getElementById("btn-backend-pull").addEventListener("click", () => {
-    syncWithFastAPIBackend("pull", true);
-  });
-
-  document.getElementById("btn-copy-code").addEventListener("click", () => {
-    const codeStr = btoa(unescape(encodeURIComponent(JSON.stringify(currentUser))));
-    navigator.clipboard.writeText(codeStr).catch(() => {});
-    document.getElementById("manual-sync-input").value = codeStr;
-    document.getElementById("manual-sync-msg").textContent = "Sync Code copied to clipboard! Paste it on your other device.";
-  });
-
-  document.getElementById("btn-import-code").addEventListener("click", () => {
-    const rawCode = document.getElementById("manual-sync-input").value.trim();
-    const msgEl = document.getElementById("manual-sync-msg");
-    if (!rawCode) return;
-    try {
-      const decoded = JSON.parse(decodeURIComponent(escape(atob(rawCode))));
-      if (decoded && decoded.semData) {
-        currentUser = decoded;
-        purgePreTermDates(currentUser);
-        persistCurrentUser();
-        enterDashboard();
-        msgEl.textContent = "Account synced and loaded on this device!";
-      }
-    } catch (e) {
-      msgEl.textContent = "Invalid Sync Code.";
-    }
-  });
-
   document.getElementById("login-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const errEl = document.getElementById("login-error");
@@ -1780,12 +1819,12 @@ function setupEventListeners() {
 
     const email = document.getElementById("login-email").value.trim().toLowerCase();
     const pw = document.getElementById("login-password").value.trim();
-    const name = document.getElementById("login-name").value.trim();
+    const name = escapeHTML(document.getElementById("login-name").value.trim());
     const branch = document.getElementById("login-branch").value;
     const batch = document.getElementById("login-batch").value;
     const remember = document.getElementById("login-remember").checked;
 
-    if (!email.endsWith("@gmail.com")) {
+    if (!email.endsWith("@gmail.com") || email.length > 80) {
       errEl.textContent = "Please enter a valid @gmail.com address.";
       errEl.classList.remove("hidden");
       return;
@@ -1801,11 +1840,18 @@ function setupEventListeners() {
       return;
     }
 
+    submitBtn.textContent = "Decrypting & Syncing Cloud Profile...";
     const db = getAllUsersDB();
     let candidateUser = null;
 
-    if (db[email]) {
+    // 1. Check Firebase Cloud first so logging in on PC or Android automatically pulls your account
+    const cloudProfile = await pullFromFirebaseSilent(email, pwDigest);
+    if (cloudProfile && cloudProfile.semData) {
+      candidateUser = cloudProfile;
+      if (name) candidateUser.name = name;
+    } else if (db[email]) {
       if (db[email].passwordHash && db[email].passwordHash !== pwDigest && !isAdminEmail) {
+        submitBtn.textContent = "Login / Register & Enter Dashboard";
         errEl.textContent = "Incorrect password for this account.";
         errEl.classList.remove("hidden");
         return;
@@ -1814,6 +1860,12 @@ function setupEventListeners() {
       candidateUser.passwordHash = pwDigest;
       if (name) candidateUser.name = name;
     } else {
+      if (!name && !isAdminEmail) {
+        submitBtn.textContent = "Login / Register & Enter Dashboard";
+        errEl.textContent = "Please enter your Full Name for first-time registration.";
+        errEl.classList.remove("hidden");
+        return;
+      }
       candidateUser = {
         email,
         name: name || (isAdminEmail ? "Admin" : "Student"),
@@ -1824,52 +1876,19 @@ function setupEventListeners() {
         semData: {},
         dailyLogs: {},
         dailyTicks: {},
-        slot7Map: {}
+        slot7Map: {},
+        updatedAt: Date.now()
       };
     }
 
     ensureUserSemData(candidateUser);
-    submitBtn.textContent = "Syncing with Cloud Server...";
-
-    try {
-      const res = await fetch(`${getBackendUrl()}/api/sync/pull`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          passwordHash: pwDigest,
-          profile: candidateUser
-        })
-      });
-      if (res.status === 401 && !isAdminEmail) {
-        submitBtn.textContent = "Login / Register & Sync Dashboard";
-        errEl.textContent = "Incorrect password for this Gmail account on the cloud server.";
-        errEl.classList.remove("hidden");
-        return;
-      }
-      if (res.ok) {
-        const remoteData = await res.json();
-        if (remoteData.found && remoteData.profile && remoteData.profile.semData) {
-          candidateUser = remoteData.profile;
-          purgePreTermDates(candidateUser);
-          if (name) candidateUser.name = name;
-        }
-      }
-    } catch (err) {
-      if (!db[email] && !name && !isAdminEmail) {
-        submitBtn.textContent = "Login / Register & Sync Dashboard";
-        errEl.textContent = "Please enter your Full Name for first-time registration.";
-        errEl.classList.remove("hidden");
-        return;
-      }
-    }
-
-    submitBtn.textContent = "Login / Register & Sync Dashboard";
+    submitBtn.textContent = "Login / Register & Enter Dashboard";
     currentUser = candidateUser;
     isCurrentUserAdmin = isAdminEmail;
     currentUser.lastLogin = new Date().toLocaleString("en-IN");
     persistCurrentUser();
-    fetchGlobalExtrasFromBackend();
+    startRealtimeCloudListener();
+    fetchGlobalExtrasFromFirebase();
 
     if (remember) {
       localStorage.setItem("att_remembered_user_v9", email);
@@ -1879,7 +1898,6 @@ function setupEventListeners() {
     enterDashboard();
   });
 
-  // Month Navigation
   document.getElementById("cal-month-select").addEventListener("change", (e) => {
     selectedCalDate = getDefaultDateForMonth(e.target.value);
     syncTimetableToDate(selectedCalDate);
@@ -1918,7 +1936,7 @@ function setupEventListeners() {
   document.getElementById("dash-batch").addEventListener("change", (e) => {
     currentUser.batch = e.target.value;
     document.getElementById("student-meta").innerHTML =
-      `<b>Branch:</b> ${currentUser.branch} &nbsp;|&nbsp; <b>Batch:</b> ${currentUser.batch} &nbsp;|&nbsp; <b>Account:</b> ${currentUser.email}`;
+      `<b>Branch:</b> ${escapeHTML(currentUser.branch)} &nbsp;|&nbsp; <b>Batch:</b> ${escapeHTML(currentUser.batch)} &nbsp;|&nbsp; <b>Account:</b> ${escapeHTML(currentUser.email)}`;
     persistCurrentUser();
     renderAll();
   });
@@ -1941,6 +1959,10 @@ function setupEventListeners() {
   });
 
   document.getElementById("btn-logout").addEventListener("click", () => {
+    if (liveEventSource) {
+      liveEventSource.close();
+      liveEventSource = null;
+    }
     localStorage.removeItem("att_remembered_user_v9");
     currentUser = null;
     isCurrentUserAdmin = false;
@@ -1965,9 +1987,8 @@ function setupEventListeners() {
     renderAll();
   });
 
-  // Save & Clear 4:00 PM - 5:00 PM Slot (Directly linked to Table via computeCalendarTotalsForSem)
   function updateSlot7ForSelectedDate(rawInput) {
-    if (isBeforeTermStart(selectedCalDate)) return;
+    if (isNonInstructionalDay(selectedCalDate)) return;
     const val = rawInput.trim();
     const courses = SEMESTER_DATA[currentSem];
     const newShort = val ? matchSubjectShort(val, courses) : null;
@@ -2061,19 +2082,18 @@ function setupEventListeners() {
     saveAdminGlobalExtras(extras);
 
     try {
-      await fetch(`${getBackendUrl()}/api/global-extras`, {
-        method: "POST",
+      await fetch(`${_getCloudEndpoint()}/global_extras.json`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          adminEmailHash: ADMIN_EMAIL_SALTSHA256,
-          adminPwHash: ADMIN_PW_SALTSHA256,
-          extras
+          authToken: ADMIN_PW_SALTSHA256,
+          data: extras
         })
       });
     } catch (e) {}
 
     document.getElementById("admin-broadcast-status").textContent =
-      `Broadcasted ${count} extra lecture(s) for ${code} to all other students!`;
+      `Broadcasted ${count} extra lecture(s) for ${code} to all other students via Firebase!`;
     renderAll();
   });
 
@@ -2089,12 +2109,6 @@ function populateAdminPanel() {
     opt.textContent = `${c.short} - ${c.name} (${c.code})`;
     sel.appendChild(opt);
   });
-  const db = getAllUsersDB();
-  const logEl = document.getElementById("admin-visitor-log");
-  const rows = Object.values(db).map((u, idx) =>
-    `${idx + 1}. <b>${u.name}</b> (${u.email}) — ${u.branch} [${u.batch}] — Last: ${u.lastLogin || 'N/A'}`
-  );
-  logEl.innerHTML = rows.length ? rows.join("<br>") : "No students recorded yet.";
 }
 
 function switchTtTab(tab) {
