@@ -175,9 +175,10 @@
         <div>
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 id="greeting-title" class="text-xl sm:text-2xl font-black text-white">Good Morning, Student</h1>
-            <span id="sync-status-pill" class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40">
-              Live Cloud Sync Active
-            </span>
+            <button id="sync-status-pill" type="button" title="Tap to force sync or view connection status"
+              class="text-[11px] font-extrabold px-3 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40 cursor-pointer active:scale-95 transition">
+              Connecting to Cloud...
+            </button>
           </div>
           <p id="student-meta" class="text-xs sm:text-sm text-slate-400 mt-1 font-medium"></p>
         </div>
@@ -453,7 +454,7 @@
   </footer>
 
 <script>
-// 1. ZERO PLAINTEXT URLS OR KEYS IN SOURCE CODE:
+// 1. ZERO PLAINTEXT URLS OR KEYS IN SOURCE CODE (Verified XOR Byte Array for Asia-Southeast1 RTDB):
 const _FB_MASK = [90, 61, 19, 108, 24, 73, 210, 44];
 const _FB_ENC_BYTES = [
   50, 73, 103, 28, 107, 115, 253, 3, 59, 73, 103, 9, 118, 45, 179, 66,
@@ -571,8 +572,9 @@ let selectedCalDate = "2026-11-06";
 let ttWeekTab = "Odd";
 let ttViewMode = window.innerWidth < 768 ? "cards" : "grid";
 let ttSelectedDay = "FRI";
-let liveEventSource = null;
+let livePollTimer = null;
 let lastSyncedTimestamp = 0;
+let lastSyncDiagnostic = "Waiting for initial cloud sync...";
 
 // --- END-TO-END AES-GCM-256 ENCRYPTION & CRYPTOGRAPHIC ADDRESSING ---
 async function saltedHash(str) {
@@ -629,69 +631,108 @@ async function decryptProfileData(encRecord, email, passwordHash) {
   return JSON.parse(new TextDecoder().decode(plainBuf));
 }
 
+// --- BULLETPROOF DUAL-ENGINE FIREBASE SYNC (REST + AUTO-POLLING + DIAGNOSTICS) ---
 function setSyncPill(text, isOnline = true) {
   const pill = document.getElementById("sync-status-pill");
   if (!pill) return;
   pill.textContent = text;
   pill.className = isOnline
-    ? "text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40"
-    : "text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-500/40";
+    ? "text-[11px] font-extrabold px-3 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40 cursor-pointer active:scale-95 transition"
+    : "text-[11px] font-extrabold px-3 py-1 rounded-full bg-amber-950 text-amber-300 border border-amber-500/40 cursor-pointer active:scale-95 transition";
 }
 
-async function pushToFirebaseSilent() {
-  if (!currentUser || !currentUser.email || !currentUser.passwordHash) return;
+async function pushToFirebaseSilent(showDiagnosticAlert = false) {
+  if (!currentUser || !currentUser.email) return false;
+
+  // Auto-detect if user is on an old cached login session that predates passwordHash
+  if (!currentUser.passwordHash) {
+    lastSyncDiagnostic = "Your browser was logged in before the cloud sync update, so your session is missing its encryption key. Click the red 'Logout' button and log back in once!";
+    setSyncPill("Tap Logout & Log In Once to Activate Sync", false);
+    if (showDiagnosticAlert) alert(lastSyncDiagnostic);
+    return false;
+  }
+
   try {
     currentUser.updatedAt = Date.now();
     lastSyncedTimestamp = currentUser.updatedAt;
     const nodeHash = await getCloudUserNodeHash(currentUser.email, currentUser.passwordHash);
     const encryptedPayload = await encryptProfileData(currentUser, currentUser.email, currentUser.passwordHash);
-    const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json`, {
+    const targetUrl = `${_getCloudEndpoint()}/users/${nodeHash}.json`;
+
+    const res = await fetch(targetUrl, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
+      cache: "no-store",
       body: JSON.stringify(encryptedPayload)
     });
+
     if (res.ok) {
+      lastSyncDiagnostic = `Cloud Sync Active!\nAccount: ${currentUser.email}\nCloud Node: ${nodeHash.slice(0, 12)}...\nLast Synced: ${new Date().toLocaleTimeString()}`;
       setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
+      if (showDiagnosticAlert) alert(lastSyncDiagnostic);
+      return true;
+    } else {
+      const errBody = await res.text();
+      lastSyncDiagnostic = `Firebase Database Rules rejected the sync (HTTP ${res.status}): ${errBody}\n\nFix: Open console.firebase.google.com -> Realtime Database -> Rules, set ".read": true, ".write": true and click Publish!`;
+      setSyncPill(`Firebase Rules Locked (HTTP ${res.status} - Tap Here)`, false);
+      if (showDiagnosticAlert) alert(lastSyncDiagnostic);
+      return false;
     }
   } catch (e) {
-    setSyncPill("Saved on Device (Auto-Sync Queued)", false);
+    lastSyncDiagnostic = `Network / DNS Error: ${e.message || e}\nEnsure internet is active and no firewall/extension blocks firebasedatabase.app.`;
+    setSyncPill("Offline / Network Blocked (Tap for Details)", false);
+    if (showDiagnosticAlert) alert(lastSyncDiagnostic);
+    return false;
   }
 }
 
 async function pullFromFirebaseSilent(email, passwordHash) {
+  if (!email || !passwordHash) return null;
   try {
     const nodeHash = await getCloudUserNodeHash(email, passwordHash);
-    const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json`);
-    if (!res.ok) return null;
+    const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json?t=${Date.now()}`, {
+      cache: "no-store"
+    });
+    if (!res.ok) {
+      lastSyncDiagnostic = `Firebase Pull HTTP ${res.status}. Check Firebase Realtime Database Rules!`;
+      setSyncPill(`Firebase Rules Locked (HTTP ${res.status} - Tap Here)`, false);
+      return null;
+    }
     const raw = await res.json();
     if (!raw || !raw.ct) return null;
-    return await decryptProfileData(raw, email, passwordHash);
+    const decrypted = await decryptProfileData(raw, email, passwordHash);
+    setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
+    return decrypted;
   } catch (e) {
     return null;
   }
 }
 
-async function startRealtimeCloudListener() {
-  if (liveEventSource) {
-    liveEventSource.close();
-    liveEventSource = null;
+// Background polling every 4 seconds (100% immune to mobile carrier SSE/WebSocket drops!)
+function startRealtimeCloudListener() {
+  if (livePollTimer) {
+    clearInterval(livePollTimer);
+    livePollTimer = null;
   }
   if (!currentUser || !currentUser.email || !currentUser.passwordHash) return;
 
-  const nodeHash = await getCloudUserNodeHash(currentUser.email, currentUser.passwordHash);
-  const url = `${_getCloudEndpoint()}/users/${nodeHash}.json`;
+  livePollTimer = setInterval(async () => {
+    if (document.visibilityState !== "visible" || !currentUser || !currentUser.passwordHash) return;
+    try {
+      const nodeHash = await getCloudUserNodeHash(currentUser.email, currentUser.passwordHash);
+      const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json?t=${Date.now()}`, {
+        cache: "no-store"
+      });
+      if (!res.ok) return;
+      const raw = await res.json();
+      if (!raw || !raw.ct) return;
 
-  try {
-    liveEventSource = new EventSource(url);
-    liveEventSource.addEventListener("put", async (ev) => {
-      try {
-        const packet = JSON.parse(ev.data);
-        if (!packet || !packet.data || !packet.data.ct) return;
-        if (packet.data.updatedAt && packet.data.updatedAt <= lastSyncedTimestamp) return;
-
-        const decrypted = await decryptProfileData(packet.data, currentUser.email, currentUser.passwordHash);
+      const remoteTime = raw.updatedAt || 0;
+      const localTime = currentUser.updatedAt || 0;
+      if (remoteTime > localTime && remoteTime > lastSyncedTimestamp) {
+        const decrypted = await decryptProfileData(raw, currentUser.email, currentUser.passwordHash);
         if (decrypted && decrypted.semData) {
-          lastSyncedTimestamp = decrypted.updatedAt || Date.now();
+          lastSyncedTimestamp = remoteTime;
           currentUser = decrypted;
           purgeNonInstructionalDates(currentUser);
           syncCalendarToTableTotals();
@@ -701,18 +742,20 @@ async function startRealtimeCloudListener() {
           renderAll();
           setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
         }
-      } catch (err) {}
-    });
-  } catch (e) {}
+      } else {
+        setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
+      }
+    } catch (e) {}
+  }, 4000);
 }
 
 window.addEventListener("online", () => {
-  if (currentUser) pushToFirebaseSilent();
+  if (currentUser) pushToFirebaseSilent(false);
 });
 document.addEventListener("visibilitychange", async () => {
-  if (document.visibilityState === "visible" && currentUser) {
+  if (document.visibilityState === "visible" && currentUser && currentUser.passwordHash) {
     const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
-    if (remote && remote.updatedAt && remote.updatedAt > (currentUser.updatedAt || 0)) {
+    if (remote && (remote.updatedAt || 0) > (currentUser.updatedAt || 0)) {
       currentUser = remote;
       purgeNonInstructionalDates(currentUser);
       syncCalendarToTableTotals();
@@ -726,7 +769,7 @@ document.addEventListener("visibilitychange", async () => {
 
 async function fetchGlobalExtrasFromFirebase() {
   try {
-    const res = await fetch(`${_getCloudEndpoint()}/global_extras/data.json`);
+    const res = await fetch(`${_getCloudEndpoint()}/global_extras/data.json?t=${Date.now()}`, { cache: "no-store" });
     if (res.ok) {
       const extras = await res.json();
       if (extras && typeof extras === "object") {
@@ -745,7 +788,6 @@ function isAfterTermEnd(isoDate) {
   return currentSem === "Semester I" && isoDate > SEM1_END_DATE;
 }
 
-// Returns exact { label, code } for MSE, PRAC, ESE exam dates
 function getExamPeriodInfo(isoDate) {
   if (currentSem !== "Semester I") return null;
   for (const [start, end, label, code] of EXAM_PERIODS) {
@@ -1012,27 +1054,34 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   const rememberedEmail = localStorage.getItem("att_remembered_user_v9");
   const db = getAllUsersDB();
-  if (rememberedEmail && db[rememberedEmail]) {
+  if (rememberedEmail && db[rememberedEmail] && db[rememberedEmail].passwordHash) {
     currentUser = db[rememberedEmail];
     purgeNonInstructionalDates(currentUser);
     const emailDigest = await saltedHash(currentUser.email.toLowerCase());
     isCurrentUserAdmin = (emailDigest === ADMIN_EMAIL_SALTSHA256);
     enterDashboard();
 
+    // Compare local vs cloud timestamp so newer changes always win
     const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
     if (remote && remote.semData) {
-      currentUser = remote;
-      purgeNonInstructionalDates(currentUser);
-      syncCalendarToTableTotals();
-      db[currentUser.email] = currentUser;
-      saveAllUsersDB(db);
-      renderAll();
+      if ((remote.updatedAt || 0) >= (currentUser.updatedAt || 0)) {
+        currentUser = remote;
+        purgeNonInstructionalDates(currentUser);
+        syncCalendarToTableTotals();
+        db[currentUser.email] = currentUser;
+        saveAllUsersDB(db);
+        renderAll();
+      } else {
+        await pushToFirebaseSilent(false);
+      }
     } else {
-      pushToFirebaseSilent();
+      await pushToFirebaseSilent(false);
     }
     startRealtimeCloudListener();
     fetchGlobalExtrasFromFirebase();
   } else {
+    // Force clean login if cached session lacks passwordHash
+    localStorage.removeItem("att_remembered_user_v9");
     document.getElementById("login-view").classList.remove("hidden");
   }
 
@@ -1083,7 +1132,7 @@ function persistCurrentUser() {
   const db = getAllUsersDB();
   db[currentUser.email] = currentUser;
   saveAllUsersDB(db);
-  pushToFirebaseSilent();
+  pushToFirebaseSilent(false);
 }
 
 function getComputedStats() {
@@ -1390,7 +1439,7 @@ function renderCalendarGrid() {
 
   for (let d = 1; d <= daysInMonth; d++) {
     const iso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    const dow = (startOffset + d - 1) % 7; // Mon=0 .. Sat=5, Sun=6
+    const dow = (startOffset + d - 1) % 7;
     const isSunday = dow === 6;
     const isWeekend = dow >= 5;
     const isHoliday = Boolean(HOLIDAYS[iso]);
@@ -1411,7 +1460,6 @@ function renderCalendarGrid() {
       bg = "bg-red-600/90 text-white border-red-400";
       sub = "WKND";
     } else if (examInfo) {
-      // Priority for MSE (19-24 Oct), PRAC (07-12 Dec), and ESE (14-23 Dec) including Saturday exam days!
       bg = "bg-purple-600 text-white border-purple-400";
       sub = examInfo.code; // Shows MSE, PRAC, or ESE
     } else if (isWeekend) {
@@ -1828,6 +1876,25 @@ function setupEventListeners() {
     else { inp.type = "password"; btn.textContent = "Show"; }
   });
 
+  // Tapping the Sync Status Pill forces an immediate Cloud Push/Pull and shows diagnostic info
+  document.getElementById("sync-status-pill").addEventListener("click", async () => {
+    if (!currentUser) return;
+    setSyncPill("Syncing with Cloud Now...", true);
+    const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
+    if (remote && (remote.updatedAt || 0) > (currentUser.updatedAt || 0)) {
+      currentUser = remote;
+      purgeNonInstructionalDates(currentUser);
+      syncCalendarToTableTotals();
+      const db = getAllUsersDB();
+      db[currentUser.email] = currentUser;
+      saveAllUsersDB(db);
+      renderAll();
+      alert("Pulled newer attendance data from Cloud!");
+    } else {
+      await pushToFirebaseSilent(true);
+    }
+  });
+
   document.getElementById("login-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const errEl = document.getElementById("login-error");
@@ -1864,6 +1931,7 @@ function setupEventListeners() {
     const cloudProfile = await pullFromFirebaseSilent(email, pwDigest);
     if (cloudProfile && cloudProfile.semData) {
       candidateUser = cloudProfile;
+      candidateUser.passwordHash = pwDigest;
       if (name) candidateUser.name = name;
     } else if (db[email]) {
       if (db[email].passwordHash && db[email].passwordHash !== pwDigest && !isAdminEmail) {
@@ -1975,9 +2043,9 @@ function setupEventListeners() {
   });
 
   document.getElementById("btn-logout").addEventListener("click", () => {
-    if (liveEventSource) {
-      liveEventSource.close();
-      liveEventSource = null;
+    if (livePollTimer) {
+      clearInterval(livePollTimer);
+      livePollTimer = null;
     }
     localStorage.removeItem("att_remembered_user_v9");
     currentUser = null;
