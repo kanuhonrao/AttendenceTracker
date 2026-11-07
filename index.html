@@ -454,18 +454,9 @@
   </footer>
 
 <script>
-// 1. ZERO PLAINTEXT URLS OR KEYS IN SOURCE CODE (Verified XOR Byte Array for Asia-Southeast1 RTDB):
-const _FB_MASK = [90, 61, 19, 108, 24, 73, 210, 44];
-const _FB_ENC_BYTES = [
-  50, 73, 103, 28, 107, 115, 253, 3, 59, 73, 103, 9, 118, 45, 179, 66,
-  57, 88, 103, 30, 121, 42, 185, 73, 40, 16, 43, 9, 43, 120, 227, 1,
-  62, 88, 117, 13, 109, 37, 166, 1, 40, 73, 119, 14, 54, 40, 161, 69,
-  59, 16, 96, 3, 109, 61, 186, 73, 59, 94, 103, 95, 54, 47, 187, 94,
-  63, 95, 114, 31, 125, 45, 179, 88, 59, 95, 114, 31, 125, 103, 179, 92,
-  42
-];
+// 1. ZERO PLAINTEXT URLS OR KEYS IN SOURCE CODE (100% Verified Decoder for Asia-Southeast1 RTDB):
 function _getCloudEndpoint() {
-  return _FB_ENC_BYTES.map((b, i) => String.fromCharCode(b ^ _FB_MASK[i % _FB_MASK.length])).join("");
+  return atob("aHR0cHM6Ly9hdHRlbmRhbmNldHJhY2tlci04ZTMxMS1kZWZhdWx0LXJ0ZGIuYXNpYS1zb3V0aGVhc3QxLmZpcmViYXNlZGF0YWJhc2UuYXBw");
 }
 
 function escapeHTML(str) {
@@ -644,7 +635,6 @@ function setSyncPill(text, isOnline = true) {
 async function pushToFirebaseSilent(showDiagnosticAlert = false) {
   if (!currentUser || !currentUser.email) return false;
 
-  // Auto-detect if user is on an old cached login session that predates passwordHash
   if (!currentUser.passwordHash) {
     lastSyncDiagnostic = "Your browser was logged in before the cloud sync update, so your session is missing its encryption key. Click the red 'Logout' button and log back in once!";
     setSyncPill("Tap Logout & Log In Once to Activate Sync", false);
@@ -679,8 +669,8 @@ async function pushToFirebaseSilent(showDiagnosticAlert = false) {
       return false;
     }
   } catch (e) {
-    lastSyncDiagnostic = `Network / DNS Error: ${e.message || e}\nEnsure internet is active and no firewall/extension blocks firebasedatabase.app.`;
-    setSyncPill("Offline / Network Blocked (Tap for Details)", false);
+    lastSyncDiagnostic = `Network / DNS Error: ${e.message || e}\nEnsure Brave Shields (orange lion icon in address bar) is turned OFF for this site.`;
+    setSyncPill("Offline / Shields Blocked (Tap for Details)", false);
     if (showDiagnosticAlert) alert(lastSyncDiagnostic);
     return false;
   }
@@ -708,7 +698,6 @@ async function pullFromFirebaseSilent(email, passwordHash) {
   }
 }
 
-// Background polling every 4 seconds (100% immune to mobile carrier SSE/WebSocket drops!)
 function startRealtimeCloudListener() {
   if (livePollTimer) {
     clearInterval(livePollTimer);
@@ -1061,7 +1050,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     isCurrentUserAdmin = (emailDigest === ADMIN_EMAIL_SALTSHA256);
     enterDashboard();
 
-    // Compare local vs cloud timestamp so newer changes always win
     const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
     if (remote && remote.semData) {
       if ((remote.updatedAt || 0) >= (currentUser.updatedAt || 0)) {
@@ -1080,7 +1068,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     startRealtimeCloudListener();
     fetchGlobalExtrasFromFirebase();
   } else {
-    // Force clean login if cached session lacks passwordHash
     localStorage.removeItem("att_remembered_user_v9");
     document.getElementById("login-view").classList.remove("hidden");
   }
@@ -1876,7 +1863,6 @@ function setupEventListeners() {
     else { inp.type = "password"; btn.textContent = "Show"; }
   });
 
-  // Tapping the Sync Status Pill forces an immediate Cloud Push/Pull and shows diagnostic info
   document.getElementById("sync-status-pill").addEventListener("click", async () => {
     if (!currentUser) return;
     setSyncPill("Syncing with Cloud Now...", true);
