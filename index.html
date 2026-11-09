@@ -183,7 +183,7 @@
           <p id="student-meta" class="text-xs sm:text-sm text-slate-400 mt-1 font-medium"></p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <!-- Dynamic Admin Button Slot (Injected only after cryptographic verification) -->
+          <!-- Dynamic Admin Button Slot -->
           <span id="admin-btn-mount"></span>
           <select id="dash-semester" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white"></select>
           <select id="dash-batch" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white">
@@ -222,7 +222,7 @@
       <div id="admin-broadcast-banner" class="hidden mt-4 bg-sky-950/80 border border-sky-500/60 text-sky-200 text-xs font-bold px-4 py-3 rounded-xl"></div>
     </div>
 
-    <!-- DYNAMIC ADMIN VAULT MOUNT (Empty in HTML source; decrypted & mounted in memory only when verified) -->
+    <!-- DYNAMIC ADMIN VAULT MOUNT (Injected in memory only when verified) -->
     <div id="admin-vault-mount"></div>
 
     <!-- SECTION 2: 4 SUMMARY METRIC CARDS -->
@@ -343,6 +343,9 @@
             </div>
           </div>
 
+          <!-- DIRECT 1-CLICK ADMIN HOLIDAY BAR FOR SELECTED CALENDAR DATE (Visible only to Admin) -->
+          <div id="inspector-admin-holiday-mount"></div>
+
           <p class="text-xs text-slate-300 leading-relaxed font-medium">
             Theory lectures and Labs/Tutorials are always kept separate. Continuous identical sessions (like Wednesday CP 3–4 or 2-hr Labs) merge into <b>1 Bulk Unit</b>. Tick the checkbox beside any class (including 4–5 PM UHV or extra lectures) you missed on this date—it immediately updates the <b>Unattended (Missed)</b> &amp; <b>Extra Attended</b> table above!
           </p>
@@ -435,9 +438,12 @@
     </div>
   </div>
 
-  <!-- FOOTER SUBHEADING (Triple-click anywhere on this footer as a secret admin unlock trigger!) -->
-  <footer id="secret-admin-footer" class="text-center mt-12 py-6 border-t border-slate-800 text-slate-200 font-black text-sm sm:text-base tracking-wide select-none cursor-pointer">
-    Designed and Created by Kanishka Maya Honrao
+  <!-- FOOTER SUBHEADING -->
+  <footer class="text-center mt-12 py-6 border-t border-slate-800 text-slate-200 font-black text-sm sm:text-base tracking-wide flex flex-col items-center gap-2">
+    <div>Designed and Created by Kanishka Maya Honrao</div>
+    <button id="btn-footer-admin-key" type="button" class="text-[10px] text-slate-600 hover:text-amber-400 font-bold transition">
+      &#9889; Admin Key
+    </button>
   </footer>
 
 <script>
@@ -463,7 +469,7 @@ const EXAM_PERIODS = [
   ["2026-12-14", "2026-12-23", "End-Semester Examination (ESE)", "ESE"]
 ];
 
-// 3. ZERO PLAINTEXT ADMIN CREDENTIALS (Supports BOTH of your Gmail accounts + Password with/without dot):
+// 3. ZERO PLAINTEXT ADMIN CREDENTIALS (Recognizes BOTH of your Gmail accounts automatically via Salted SHA-256):
 const AUTH_PEPPER = "ATT_V9_PEPPER_2026";
 const VALID_ADMIN_EMAIL_HASHES = new Set([
   "fd59fa4b0e9158a4ef72be9a7459c5b4b8b8532a60b0f74a370623bc6b271357",
@@ -521,7 +527,16 @@ function getAdminCustomHolidays() {
 function saveAdminCustomHolidays(obj) {
   localStorage.setItem("att_admin_custom_holidays", JSON.stringify(obj));
 }
+function getRemovedBaseHolidays() {
+  try { return JSON.parse(localStorage.getItem("att_admin_removed_holidays") || "{}"); } catch { return {}; }
+}
+function saveRemovedBaseHolidays(obj) {
+  localStorage.setItem("att_admin_removed_holidays", JSON.stringify(obj));
+}
+
 function getHolidayName(isoDate) {
+  const removed = getRemovedBaseHolidays();
+  if (removed[isoDate]) return null;
   const custom = getAdminCustomHolidays();
   return custom[isoDate] || BASE_HOLIDAYS[isoDate] || null;
 }
@@ -576,10 +591,10 @@ let currentUser = null;
 let isCurrentUserAdmin = false;
 let adminVaultMounted = false;
 let currentSem = "Semester I";
-let selectedCalDate = "2026-11-09";
+let selectedCalDate = "2026-11-11";
 let ttWeekTab = "Even";
 let ttViewMode = window.innerWidth < 768 ? "cards" : "grid";
-let ttSelectedDay = "MON";
+let ttSelectedDay = "WED";
 let livePollTimer = null;
 let lastSyncedTimestamp = 0;
 let lastSyncDiagnostic = "Waiting for initial cloud sync...";
@@ -591,21 +606,83 @@ async function saltedHash(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-async function checkIsAdminCredentials(emailStr, pwOrHashStr) {
+// Automatically grants Admin status if logged into either of your verified Gmail accounts OR if unlocked via Admin Key
+async function checkIsAdminAccount(emailStr) {
+  if (localStorage.getItem("att_admin_unlocked_v9") === ADMIN_CLOUD_TOKEN) return true;
   const emailClean = (emailStr || "").trim().toLowerCase();
   const emailDigest = await saltedHash(emailClean);
-  if (!VALID_ADMIN_EMAIL_HASHES.has(emailDigest)) return false;
-
-  if (VALID_ADMIN_PW_HASHES.has(pwOrHashStr)) return true;
-  const pwDigest = await saltedHash(pwOrHashStr || "");
-  return VALID_ADMIN_PW_HASHES.has(pwDigest);
+  return VALID_ADMIN_EMAIL_HASHES.has(emailDigest);
 }
+
+// Global function to declare or remove a holiday on any date and broadcast to Firebase
+window.adminDeclareHoliday = async function(isoDate, customReason) {
+  if (!isCurrentUserAdmin || !isoDate) return;
+  const reason = escapeHTML((customReason || "Declared Holiday").trim());
+  const custom = getAdminCustomHolidays();
+  const removed = getRemovedBaseHolidays();
+  custom[isoDate] = reason;
+  delete removed[isoDate];
+  saveAdminCustomHolidays(custom);
+  saveRemovedBaseHolidays(removed);
+
+  purgeNonInstructionalDates(currentUser);
+  persistCurrentUser();
+
+  try {
+    await fetch(`${_getCloudEndpoint()}/global_holidays.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        authToken: ADMIN_CLOUD_TOKEN,
+        data: custom,
+        removed
+      })
+    });
+  } catch (e) {}
+
+  const statusEl = document.getElementById("admin-holiday-status");
+  if (statusEl) {
+    statusEl.textContent = `Declared ${isoDate} (${reason}) as a holiday for all students!`;
+  }
+  renderAll();
+};
+
+window.adminRemoveHoliday = async function(isoDate) {
+  if (!isCurrentUserAdmin || !isoDate) return;
+  const custom = getAdminCustomHolidays();
+  const removed = getRemovedBaseHolidays();
+  delete custom[isoDate];
+  if (BASE_HOLIDAYS[isoDate]) {
+    removed[isoDate] = true;
+  }
+  saveAdminCustomHolidays(custom);
+  saveRemovedBaseHolidays(removed);
+
+  try {
+    await fetch(`${_getCloudEndpoint()}/global_holidays.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        authToken: ADMIN_CLOUD_TOKEN,
+        data: custom,
+        removed
+      })
+    });
+  } catch (e) {}
+
+  const statusEl = document.getElementById("admin-holiday-status");
+  if (statusEl) {
+    statusEl.textContent = `Removed holiday status for ${isoDate} (now a normal working day).`;
+  }
+  renderAll();
+};
 
 // Dynamically builds and mounts the Admin Power button & panel in memory only when verified
 function mountAdminVaultInMemory() {
   if (!isCurrentUserAdmin) {
     document.getElementById("admin-btn-mount").innerHTML = "";
     document.getElementById("admin-vault-mount").innerHTML = "";
+    document.getElementById("inspector-admin-holiday-mount").innerHTML = "";
     adminVaultMounted = false;
     return;
   }
@@ -626,19 +703,19 @@ function mountAdminVaultInMemory() {
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div>
           <h2 class="text-base sm:text-lg font-black text-amber-400">&#9889; Admin Power Panel (Verified Exclusive Access)</h2>
-          <p class="text-xs text-slate-400 mt-0.5">Cryptographically unlocked in memory. Changes broadcast globally to all students via Firebase.</p>
+          <p class="text-xs text-slate-400 mt-0.5">Declare or remove holidays on any date &amp; broadcast extra lectures globally to all students.</p>
         </div>
         <span class="text-xs bg-amber-500/20 text-amber-300 px-3 py-1 rounded-lg font-bold border border-amber-500/40">Admin Active</span>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
-          <div class="text-xs font-black uppercase tracking-wider text-red-400">1. Declare / Remove College Holiday (Global)</div>
+          <div class="text-xs font-black uppercase tracking-wider text-red-400">1. Declare / Remove College Holiday On Will (Global)</div>
           <p class="text-[11px] text-slate-300 leading-relaxed">
-            Pick any date to declare a holiday for all students. Turns the calendar tile Red (<code>HOL</code>), deducts 1 working day, and clears accidental absentee ticks:
+            Pick any date (or click a date on the calendar below) to declare it as a holiday or restore it to a working day for all students:
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <input id="admin-holiday-date" type="date" value="2026-11-11" min="2026-09-07" max="2026-12-23"
+            <input id="admin-holiday-date" type="date" value="${selectedCalDate}" min="2026-09-07" max="2026-12-23"
               class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-bold" />
             <input id="admin-holiday-name" type="text" maxlength="50" placeholder="Reason (e.g. Declared Holiday)"
               value="Declared Holiday"
@@ -647,11 +724,11 @@ function mountAdminVaultInMemory() {
           <div class="flex gap-2">
             <button id="btn-admin-add-holiday" type="button"
               class="flex-1 bg-red-600 hover:bg-red-500 text-white font-black text-xs py-2.5 px-3 rounded-xl shadow transition">
-              Declare Holiday for All Students
+              Declare Holiday
             </button>
             <button id="btn-admin-remove-holiday" type="button"
               class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs py-2.5 px-3 rounded-xl transition">
-              Remove Date
+              Remove Holiday (Make Working Day)
             </button>
           </div>
           <div id="admin-holiday-status" class="text-xs text-emerald-400 font-extrabold"></div>
@@ -695,57 +772,15 @@ function mountAdminVaultInMemory() {
     }
   });
 
-  document.getElementById("btn-admin-add-holiday").addEventListener("click", async () => {
-    if (!isCurrentUserAdmin) return;
+  document.getElementById("btn-admin-add-holiday").addEventListener("click", () => {
     const iso = document.getElementById("admin-holiday-date").value;
-    const reason = escapeHTML(document.getElementById("admin-holiday-name").value.trim() || "Declared Holiday");
-    if (!iso) return;
-
-    const custom = getAdminCustomHolidays();
-    custom[iso] = reason;
-    saveAdminCustomHolidays(custom);
-    purgeNonInstructionalDates(currentUser);
-    persistCurrentUser();
-
-    try {
-      await fetch(`${_getCloudEndpoint()}/global_holidays.json`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          authToken: ADMIN_CLOUD_TOKEN,
-          data: custom
-        })
-      });
-    } catch (e) {}
-
-    document.getElementById("admin-holiday-status").textContent =
-      `Declared ${iso} (${reason}) as a holiday for all students!`;
-    renderAll();
+    const reason = document.getElementById("admin-holiday-name").value;
+    window.adminDeclareHoliday(iso, reason);
   });
 
-  document.getElementById("btn-admin-remove-holiday").addEventListener("click", async () => {
-    if (!isCurrentUserAdmin) return;
+  document.getElementById("btn-admin-remove-holiday").addEventListener("click", () => {
     const iso = document.getElementById("admin-holiday-date").value;
-    if (!iso) return;
-
-    const custom = getAdminCustomHolidays();
-    delete custom[iso];
-    saveAdminCustomHolidays(custom);
-
-    try {
-      await fetch(`${_getCloudEndpoint()}/global_holidays.json`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          authToken: ADMIN_CLOUD_TOKEN,
-          data: custom
-        })
-      });
-    } catch (e) {}
-
-    document.getElementById("admin-holiday-status").textContent =
-      `Removed custom holiday override for ${iso}.`;
-    renderAll();
+    window.adminRemoveHoliday(iso);
   });
 
   document.getElementById("btn-broadcast-extra").addEventListener("click", async () => {
@@ -821,7 +856,6 @@ async function decryptProfileData(encRecord, email, passwordHash) {
   return JSON.parse(new TextDecoder().decode(plainBuf));
 }
 
-// --- BULLETPROOF DUAL-ENGINE FIREBASE SYNC (REST + AUTO-POLLING + DIAGNOSTICS) ---
 function setSyncPill(text, isOnline = true) {
   const pill = document.getElementById("sync-status-pill");
   if (!pill) return;
@@ -960,15 +994,18 @@ async function fetchGlobalConfigFromFirebase() {
   try {
     const [exRes, holRes] = await Promise.all([
       fetch(`${_getCloudEndpoint()}/global_extras/data.json?t=${Date.now()}`, { cache: "no-store" }),
-      fetch(`${_getCloudEndpoint()}/global_holidays/data.json?t=${Date.now()}`, { cache: "no-store" })
+      fetch(`${_getCloudEndpoint()}/global_holidays.json?t=${Date.now()}`, { cache: "no-store" })
     ]);
     if (exRes.ok) {
       const extras = await exRes.json();
       if (extras && typeof extras === "object") saveAdminGlobalExtras(extras);
     }
     if (holRes.ok) {
-      const hols = await holRes.json();
-      if (hols && typeof hols === "object") saveAdminCustomHolidays(hols);
+      const holPayload = await holRes.json();
+      if (holPayload && typeof holPayload === "object") {
+        if (holPayload.data) saveAdminCustomHolidays(holPayload.data);
+        if (holPayload.removed) saveRemovedBaseHolidays(holPayload.removed);
+      }
     }
     if (currentUser) {
       purgeNonInstructionalDates(currentUser);
@@ -1255,7 +1292,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (rememberedEmail && db[rememberedEmail] && db[rememberedEmail].passwordHash) {
     currentUser = db[rememberedEmail];
     purgeNonInstructionalDates(currentUser);
-    isCurrentUserAdmin = await checkIsAdminCredentials(currentUser.email, currentUser.passwordHash);
+    isCurrentUserAdmin = await checkIsAdminAccount(currentUser.email);
     enterDashboard();
 
     await fetchGlobalConfigFromFirebase();
@@ -1792,6 +1829,34 @@ function renderDailyInspector(statsMap, targetPct) {
   document.getElementById("inspected-date-meta").textContent =
     `Schedule Status: ${holidayLabel ? holidayLabel : (examInfo ? `${examInfo.label}` : wkType)} | Your Batch: ${currentUser.batch}`;
 
+  // Render Direct 1-Click Holiday Toggle inside the Calendar Inspector for Admin
+  const adminHolMount = document.getElementById("inspector-admin-holiday-mount");
+  if (isCurrentUserAdmin && adminHolMount) {
+    if (holidayLabel) {
+      adminHolMount.innerHTML = `
+        <div class="bg-amber-950/50 border border-amber-500/60 rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs">
+          <span class="font-bold text-amber-300">&#9889; Admin: ${selectedCalDate} is a Holiday (${escapeHTML(holidayLabel)})</span>
+          <button type="button" onclick="window.adminRemoveHoliday('${selectedCalDate}')"
+            class="bg-slate-800 hover:bg-slate-700 border border-amber-400 text-amber-300 font-black px-3 py-1.5 rounded-lg shrink-0 transition">
+            Remove Holiday (Make Working Day)
+          </button>
+        </div>
+      `;
+    } else {
+      adminHolMount.innerHTML = `
+        <div class="bg-red-950/50 border border-red-500/60 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span class="font-bold text-red-200">&#9889; Admin Quick Action for ${selectedCalDate}:</span>
+          <button type="button" onclick="window.adminDeclareHoliday('${selectedCalDate}', prompt('Holiday Name / Reason:', 'Declared Holiday') || 'Declared Holiday')"
+            class="bg-red-600 hover:bg-red-500 text-white font-black px-3 py-1.5 rounded-lg shadow shrink-0 transition">
+            Declare ${selectedCalDate} as Holiday
+          </button>
+        </div>
+      `;
+    }
+  } else if (adminHolMount) {
+    adminHolMount.innerHTML = "";
+  }
+
   const container = document.getElementById("daily-slots-container");
   const slot7Box = document.getElementById("slot7-editor-box");
   const quickBtns = document.getElementById("day-quick-bunk-btns");
@@ -2070,12 +2135,13 @@ function renderAdminCustomHolidaysBadges() {
   const custom = getAdminCustomHolidays();
   const entries = Object.entries(custom).sort(([a], [b]) => a.localeCompare(b));
   if (!entries.length) {
-    el.innerHTML = `<span class="text-slate-500">None added beyond base calendar (11 Nov 2026 is built-in).</span>`;
+    el.innerHTML = `<span class="text-slate-500">11 Nov 2026 is built-in. Click any date on the calendar below or pick a date above to add more!</span>`;
     return;
   }
   el.innerHTML = entries.map(([iso, reason]) => `
     <span class="inline-flex items-center gap-1.5 bg-red-950/80 border border-red-500/50 text-red-200 px-2.5 py-1 rounded-lg font-bold">
       ${escapeHTML(iso)}: ${escapeHTML(reason)}
+      <button type="button" onclick="window.adminRemoveHoliday('${escapeHTML(iso)}')" class="text-red-400 hover:text-white ml-1 font-black">&times;</button>
     </span>
   `).join("");
 }
@@ -2088,25 +2154,26 @@ function setupEventListeners() {
     else { inp.type = "password"; btn.textContent = "Show"; }
   });
 
-  // Secret Triple-Click Footer Trigger to unlock Admin Vault from any session
-  let footerClicks = 0;
-  let footerTimer = null;
-  document.getElementById("secret-admin-footer").addEventListener("click", async () => {
-    footerClicks++;
-    clearTimeout(footerTimer);
-    footerTimer = setTimeout(() => { footerClicks = 0; }, 900);
-    if (footerClicks >= 3) {
-      footerClicks = 0;
-      if (!currentUser) return;
-      const secretInput = prompt("Enter Admin Passkey:");
-      if (!secretInput) return;
-      const pwHash = await saltedHash(secretInput.trim());
-      if (VALID_ADMIN_PW_HASHES.has(pwHash)) {
-        isCurrentUserAdmin = true;
-        mountAdminVaultInMemory();
-        renderAll();
-        document.getElementById("admin-panel")?.scrollIntoView({ behavior: "smooth" });
-      }
+  // 1-Click Footer Admin Key Unlock
+  document.getElementById("btn-footer-admin-key").addEventListener("click", async () => {
+    if (!currentUser) return;
+    if (isCurrentUserAdmin) {
+      mountAdminVaultInMemory();
+      renderAll();
+      document.getElementById("admin-panel")?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+    const secretInput = prompt("Enter Admin Passkey:");
+    if (!secretInput) return;
+    const pwHash = await saltedHash(secretInput.trim());
+    if (VALID_ADMIN_PW_HASHES.has(pwHash)) {
+      localStorage.setItem("att_admin_unlocked_v9", ADMIN_CLOUD_TOKEN);
+      isCurrentUserAdmin = true;
+      mountAdminVaultInMemory();
+      renderAll();
+      document.getElementById("admin-panel")?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      alert("Invalid Admin Passkey.");
     }
   });
 
@@ -2151,13 +2218,6 @@ function setupEventListeners() {
     const emailDigest = await saltedHash(email);
     const pwDigest = await saltedHash(pw);
     const isAdminEmail = VALID_ADMIN_EMAIL_HASHES.has(emailDigest);
-    const isAdminPw = VALID_ADMIN_PW_HASHES.has(pwDigest);
-
-    if (isAdminEmail && !isAdminPw) {
-      errEl.textContent = "Invalid credentials.";
-      errEl.classList.remove("hidden");
-      return;
-    }
 
     submitBtn.textContent = "Decrypting & Syncing Cloud Profile...";
     const db = getAllUsersDB();
@@ -2203,7 +2263,10 @@ function setupEventListeners() {
     ensureUserSemData(candidateUser);
     submitBtn.textContent = "Login / Register & Enter Dashboard";
     currentUser = candidateUser;
-    isCurrentUserAdmin = (isAdminEmail && isAdminPw);
+    isCurrentUserAdmin = isAdminEmail || VALID_ADMIN_PW_HASHES.has(pwDigest);
+    if (isCurrentUserAdmin) {
+      localStorage.setItem("att_admin_unlocked_v9", ADMIN_CLOUD_TOKEN);
+    }
     currentUser.lastLogin = new Date().toLocaleString("en-IN");
     persistCurrentUser();
     startRealtimeCloudListener();
@@ -2284,6 +2347,7 @@ function setupEventListeners() {
       livePollTimer = null;
     }
     localStorage.removeItem("att_remembered_user_v9");
+    localStorage.removeItem("att_admin_unlocked_v9");
     currentUser = null;
     isCurrentUserAdmin = false;
     mountAdminVaultInMemory();
