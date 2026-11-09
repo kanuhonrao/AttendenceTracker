@@ -183,7 +183,7 @@
           <p id="student-meta" class="text-xs sm:text-sm text-slate-400 mt-1 font-medium"></p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <!-- Dynamic Admin Button Slot -->
+          <!-- Dynamic Admin Button Slot (Mounted ONLY when exact Admin Email + Password Hash match) -->
           <span id="admin-btn-mount"></span>
           <select id="dash-semester" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white"></select>
           <select id="dash-batch" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white">
@@ -222,7 +222,7 @@
       <div id="admin-broadcast-banner" class="hidden mt-4 bg-sky-950/80 border border-sky-500/60 text-sky-200 text-xs font-bold px-4 py-3 rounded-xl"></div>
     </div>
 
-    <!-- DYNAMIC ADMIN VAULT MOUNT (Injected in memory only when verified) -->
+    <!-- DYNAMIC ADMIN VAULT MOUNT (Injected in memory ONLY when exact Admin Email + Password Hash match) -->
     <div id="admin-vault-mount"></div>
 
     <!-- SECTION 2: 4 SUMMARY METRIC CARDS -->
@@ -343,7 +343,7 @@
             </div>
           </div>
 
-          <!-- DIRECT 1-CLICK ADMIN HOLIDAY BAR FOR SELECTED CALENDAR DATE (Visible only to Admin) -->
+          <!-- DIRECT 1-CLICK ADMIN HOLIDAY BAR FOR SELECTED CALENDAR DATE (Visible ONLY when logged in with Admin Email + Password) -->
           <div id="inspector-admin-holiday-mount"></div>
 
           <p class="text-xs text-slate-300 leading-relaxed font-medium">
@@ -439,11 +439,8 @@
   </div>
 
   <!-- FOOTER SUBHEADING -->
-  <footer class="text-center mt-12 py-6 border-t border-slate-800 text-slate-200 font-black text-sm sm:text-base tracking-wide flex flex-col items-center gap-2">
-    <div>Designed and Created by Kanishka Maya Honrao</div>
-    <button id="btn-footer-admin-key" type="button" class="text-[10px] text-slate-600 hover:text-amber-400 font-bold transition">
-      &#9889; Admin Key
-    </button>
+  <footer class="text-center mt-12 py-6 border-t border-slate-800 text-slate-200 font-black text-sm sm:text-base tracking-wide">
+    Designed and Created by Kanishka Maya Honrao
   </footer>
 
 <script>
@@ -469,18 +466,11 @@ const EXAM_PERIODS = [
   ["2026-12-14", "2026-12-23", "End-Semester Examination (ESE)", "ESE"]
 ];
 
-// 3. ZERO PLAINTEXT ADMIN CREDENTIALS (Recognizes BOTH of your Gmail accounts automatically via Salted SHA-256):
+// 3. STRICT DUAL-LOCK ADMIN VERIFICATION (Zero Plaintext Credentials in Code):
+// Requires BOTH the exact Admin Email SHA-256 AND the exact Admin Password SHA-256 to match simultaneously.
 const AUTH_PEPPER = "ATT_V9_PEPPER_2026";
-const VALID_ADMIN_EMAIL_HASHES = new Set([
-  "fd59fa4b0e9158a4ef72be9a7459c5b4b8b8532a60b0f74a370623bc6b271357",
-  "e0bf674863699672f298be165e651153e2524a7ef6d371333ebbd7c13222b238"
-]);
-const VALID_ADMIN_PW_HASHES = new Set([
-  "a2eb4d78636647b59f87c3e45b18a431a6c27ff8df435364a85261e6401564a1",
-  "508620c11cc0684003a2a17739bf58a8a7827d321c97074e95ca20856861686b",
-  "341e4d0758c9b07c8671ab4fc1be9e3121a9f199c7424e4c924136461586f861"
-]);
-const ADMIN_CLOUD_TOKEN = "a2eb4d78636647b59f87c3e45b18a431a6c27ff8df435364a85261e6401564a1";
+const STRICT_ADMIN_EMAIL_HASH = "fd59fa4b0e9158a4ef72be9a7459c5b4b8b8532a60b0f74a370623bc6b271357";
+const STRICT_ADMIN_PW_HASH = "a2eb4d78636647b59f87c3e45b18a431a6c27ff8df435364a85261e6401564a1";
 
 const TIME_SLOTS = [
   "1 (9:00 - 10:00)", "2 (10:00 - 11:00)", "Short Break (11:00 - 11:15)",
@@ -606,15 +596,14 @@ async function saltedHash(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-// Automatically grants Admin status if logged into either of your verified Gmail accounts OR if unlocked via Admin Key
-async function checkIsAdminAccount(emailStr) {
-  if (localStorage.getItem("att_admin_unlocked_v9") === ADMIN_CLOUD_TOKEN) return true;
-  const emailClean = (emailStr || "").trim().toLowerCase();
-  const emailDigest = await saltedHash(emailClean);
-  return VALID_ADMIN_EMAIL_HASHES.has(emailDigest);
+// STRICT VERIFICATION: Returns true ONLY when BOTH the exact email hash AND exact password hash match
+async function verifyStrictAdminSession(emailStr, passwordHashStr) {
+  if (!emailStr || !passwordHashStr) return false;
+  const emailDigest = await saltedHash(emailStr.trim().toLowerCase());
+  return (emailDigest === STRICT_ADMIN_EMAIL_HASH && passwordHashStr === STRICT_ADMIN_PW_HASH);
 }
 
-// Global function to declare or remove a holiday on any date and broadcast to Firebase
+// Global functions to declare or remove a holiday on any date and broadcast to Firebase
 window.adminDeclareHoliday = async function(isoDate, customReason) {
   if (!isCurrentUserAdmin || !isoDate) return;
   const reason = escapeHTML((customReason || "Declared Holiday").trim());
@@ -633,7 +622,7 @@ window.adminDeclareHoliday = async function(isoDate, customReason) {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        authToken: ADMIN_CLOUD_TOKEN,
+        authToken: STRICT_ADMIN_PW_HASH,
         data: custom,
         removed
       })
@@ -663,7 +652,7 @@ window.adminRemoveHoliday = async function(isoDate) {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        authToken: ADMIN_CLOUD_TOKEN,
+        authToken: STRICT_ADMIN_PW_HASH,
         data: custom,
         removed
       })
@@ -677,7 +666,7 @@ window.adminRemoveHoliday = async function(isoDate) {
   renderAll();
 };
 
-// Dynamically builds and mounts the Admin Power button & panel in memory only when verified
+// Dynamically builds and mounts the Admin Power button & panel in memory ONLY when strict verification passes
 function mountAdminVaultInMemory() {
   if (!isCurrentUserAdmin) {
     document.getElementById("admin-btn-mount").innerHTML = "";
@@ -796,7 +785,7 @@ function mountAdminVaultInMemory() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          authToken: ADMIN_CLOUD_TOKEN,
+          authToken: STRICT_ADMIN_PW_HASH,
           data: extras
         })
       });
@@ -1292,7 +1281,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (rememberedEmail && db[rememberedEmail] && db[rememberedEmail].passwordHash) {
     currentUser = db[rememberedEmail];
     purgeNonInstructionalDates(currentUser);
-    isCurrentUserAdmin = await checkIsAdminAccount(currentUser.email);
+    isCurrentUserAdmin = await verifyStrictAdminSession(currentUser.email, currentUser.passwordHash);
     enterDashboard();
 
     await fetchGlobalConfigFromFirebase();
@@ -1829,7 +1818,7 @@ function renderDailyInspector(statsMap, targetPct) {
   document.getElementById("inspected-date-meta").textContent =
     `Schedule Status: ${holidayLabel ? holidayLabel : (examInfo ? `${examInfo.label}` : wkType)} | Your Batch: ${currentUser.batch}`;
 
-  // Render Direct 1-Click Holiday Toggle inside the Calendar Inspector for Admin
+  // Render Direct 1-Click Holiday Toggle inside the Calendar Inspector ONLY for verified Admin
   const adminHolMount = document.getElementById("inspector-admin-holiday-mount");
   if (isCurrentUserAdmin && adminHolMount) {
     if (holidayLabel) {
@@ -2154,29 +2143,6 @@ function setupEventListeners() {
     else { inp.type = "password"; btn.textContent = "Show"; }
   });
 
-  // 1-Click Footer Admin Key Unlock
-  document.getElementById("btn-footer-admin-key").addEventListener("click", async () => {
-    if (!currentUser) return;
-    if (isCurrentUserAdmin) {
-      mountAdminVaultInMemory();
-      renderAll();
-      document.getElementById("admin-panel")?.scrollIntoView({ behavior: "smooth" });
-      return;
-    }
-    const secretInput = prompt("Enter Admin Passkey:");
-    if (!secretInput) return;
-    const pwHash = await saltedHash(secretInput.trim());
-    if (VALID_ADMIN_PW_HASHES.has(pwHash)) {
-      localStorage.setItem("att_admin_unlocked_v9", ADMIN_CLOUD_TOKEN);
-      isCurrentUserAdmin = true;
-      mountAdminVaultInMemory();
-      renderAll();
-      document.getElementById("admin-panel")?.scrollIntoView({ behavior: "smooth" });
-    } else {
-      alert("Invalid Admin Passkey.");
-    }
-  });
-
   document.getElementById("sync-status-pill").addEventListener("click", async () => {
     if (!currentUser) return;
     setSyncPill("Syncing with Cloud Now...", true);
@@ -2217,7 +2183,15 @@ function setupEventListeners() {
 
     const emailDigest = await saltedHash(email);
     const pwDigest = await saltedHash(pw);
-    const isAdminEmail = VALID_ADMIN_EMAIL_HASHES.has(emailDigest);
+    const isStrictAdminEmail = (emailDigest === STRICT_ADMIN_EMAIL_HASH);
+    const isStrictAdminPw = (pwDigest === STRICT_ADMIN_PW_HASH);
+
+    // If someone enters the Admin Gmail with any other password, reject immediately
+    if (isStrictAdminEmail && !isStrictAdminPw) {
+      errEl.textContent = "Invalid credentials.";
+      errEl.classList.remove("hidden");
+      return;
+    }
 
     submitBtn.textContent = "Decrypting & Syncing Cloud Profile...";
     const db = getAllUsersDB();
@@ -2229,7 +2203,7 @@ function setupEventListeners() {
       candidateUser.passwordHash = pwDigest;
       if (name) candidateUser.name = name;
     } else if (db[email]) {
-      if (db[email].passwordHash && db[email].passwordHash !== pwDigest && !isAdminEmail) {
+      if (db[email].passwordHash && db[email].passwordHash !== pwDigest && !(isStrictAdminEmail && isStrictAdminPw)) {
         submitBtn.textContent = "Login / Register & Enter Dashboard";
         errEl.textContent = "Incorrect password for this account.";
         errEl.classList.remove("hidden");
@@ -2239,7 +2213,7 @@ function setupEventListeners() {
       candidateUser.passwordHash = pwDigest;
       if (name) candidateUser.name = name;
     } else {
-      if (!name && !isAdminEmail) {
+      if (!name && !(isStrictAdminEmail && isStrictAdminPw)) {
         submitBtn.textContent = "Login / Register & Enter Dashboard";
         errEl.textContent = "Please enter your Full Name for first-time registration.";
         errEl.classList.remove("hidden");
@@ -2247,7 +2221,7 @@ function setupEventListeners() {
       }
       candidateUser = {
         email,
-        name: name || (isAdminEmail ? "Kanishka Maya Honrao" : "Student"),
+        name: name || ((isStrictAdminEmail && isStrictAdminPw) ? "Kanishka Maya Honrao" : "Student"),
         branch,
         batch,
         passwordHash: pwDigest,
@@ -2263,10 +2237,7 @@ function setupEventListeners() {
     ensureUserSemData(candidateUser);
     submitBtn.textContent = "Login / Register & Enter Dashboard";
     currentUser = candidateUser;
-    isCurrentUserAdmin = isAdminEmail || VALID_ADMIN_PW_HASHES.has(pwDigest);
-    if (isCurrentUserAdmin) {
-      localStorage.setItem("att_admin_unlocked_v9", ADMIN_CLOUD_TOKEN);
-    }
+    isCurrentUserAdmin = (isStrictAdminEmail && isStrictAdminPw);
     currentUser.lastLogin = new Date().toLocaleString("en-IN");
     persistCurrentUser();
     startRealtimeCloudListener();
@@ -2347,7 +2318,6 @@ function setupEventListeners() {
       livePollTimer = null;
     }
     localStorage.removeItem("att_remembered_user_v9");
-    localStorage.removeItem("att_admin_unlocked_v9");
     currentUser = null;
     isCurrentUserAdmin = false;
     mountAdminVaultInMemory();
