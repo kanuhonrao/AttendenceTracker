@@ -140,8 +140,8 @@
               <option value="Computer Engineering - Div II">Computer Engineering - Div II (Comps B)</option>
               <option value="Computer Engineering - Div III">Computer Engineering - Div III (Comps C)</option>
               <option value="Mechanical Engineering">Mechanical Engineering</option>
-              <option value="Electronics and Telecommunication">Electronics and Telecommunication</option>
               <option value="Information Technology">Information Technology</option>
+              <option value="Electronics and Telecommunication">Electronics and Telecommunication</option>
               <option value="Basic Sciences and Humanities">Basic Sciences and Humanities (FE)</option>
             </select>
           </div>
@@ -509,33 +509,25 @@ const IT_EVEN = {
   TUE: ["EC", "FEM-I", "SHORT BREAK", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "LUNCH BREAK", "BE&DE", "UHV", "FE Mentoring Slot"],
   WED: ["FEM-I", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "SHORT BREAK", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "LUNCH BREAK", "AP", "UHV", "Extra Lecture Slot 1"],
   THR: ["EG", "BE&DE", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "FEM-I", "EC", "Extra Lecture Slot 2"],
-  FRI: ["BE&DE", "EG", "SHORT BREAK", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "LUNCH BREAK", "BE&DE", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Extra Lecture Slot 3"]
+  FRI: ["BE&DE", "EG", "SHORT BREAK", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "BE&DE", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Extra Lecture Slot 3"]
 };
 
 const TIMETABLES_DB = {
   "Computer Engineering - Div I": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
   "Computer Engineering - Div II": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
-  "Computer Engineering - Div III": { EVEN: COMP3_EVEN, ODD: COMP3_EVEN }, // Using EVEN layout for ODD fallback currently
+  "Computer Engineering - Div III": { EVEN: COMP3_EVEN, ODD: COMP3_EVEN },
   "Mechanical Engineering": { EVEN: MECH_EVEN, ODD: MECH_ODD },
   "Information Technology": { EVEN: IT_EVEN, ODD: IT_ODD },
   "Electronics and Telecommunication": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
   "Basic Sciences and Humanities": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD }
 };
 
-// Base Official Holidays (Includes Wednesday, 11th November 2026)
+// Base Official Holidays
 const BASE_HOLIDAYS = {
-  "2026-09-14": "Ganeshotsav Break",
-  "2026-09-15": "Ganeshotsav Break",
-  "2026-09-16": "Ganeshotsav Break",
-  "2026-09-17": "Ganeshotsav Break",
-  "2026-09-18": "Ganeshotsav Break",
-  "2026-10-02": "Gandhi Jayanti",
-  "2026-10-20": "Dussehra",
-  "2026-11-07": "Diwali Break",
-  "2026-11-08": "Diwali Break",
-  "2026-11-09": "Diwali Break",
-  "2026-11-10": "Diwali Break",
-  "2026-11-11": "Declared Holiday (Diwali Break Extension)",
+  "2026-09-14": "Ganeshotsav Break", "2026-09-15": "Ganeshotsav Break", "2026-09-16": "Ganeshotsav Break",
+  "2026-09-17": "Ganeshotsav Break", "2026-09-18": "Ganeshotsav Break", "2026-10-02": "Gandhi Jayanti",
+  "2026-10-20": "Dussehra", "2026-11-07": "Diwali Break", "2026-11-08": "Diwali Break",
+  "2026-11-09": "Diwali Break", "2026-11-10": "Diwali Break", "2026-11-11": "Declared Holiday (Diwali Break Extension)",
   "2026-11-24": "Guru Nanak Jayanti"
 };
 
@@ -602,7 +594,6 @@ async function saltedHash(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-// Global functions to declare or remove a holiday on any date and broadcast to Firebase (Universal Access)
 window.universalDeclareHoliday = async function(isoDate, customReason) {
   if (!isoDate) return;
   const reason = escapeHTML((customReason || "Declared Holiday").trim());
@@ -612,25 +603,13 @@ window.universalDeclareHoliday = async function(isoDate, customReason) {
   delete removed[isoDate];
   saveGlobalCustomHolidays(custom);
   saveRemovedBaseHolidays(removed);
-
   purgeNonInstructionalDates(currentUser);
   persistCurrentUser();
-
   try {
     await fetch(`${_getCloudEndpoint()}/global_holidays.json`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        data: custom,
-        removed
-      })
+      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data: custom, removed })
     });
   } catch (e) {}
-
-  const statusEl = document.getElementById("global-holiday-status");
-  if (statusEl) {
-    statusEl.textContent = `Declared ${isoDate} (${reason}) as a holiday for all students!`;
-  }
   renderAll();
 };
 
@@ -639,44 +618,24 @@ window.universalRemoveHoliday = async function(isoDate) {
   const custom = getGlobalCustomHolidays();
   const removed = getRemovedBaseHolidays();
   delete custom[isoDate];
-  if (BASE_HOLIDAYS[isoDate]) {
-    removed[isoDate] = true;
-  }
+  if (BASE_HOLIDAYS[isoDate]) removed[isoDate] = true;
   saveGlobalCustomHolidays(custom);
   saveRemovedBaseHolidays(removed);
-
   try {
     await fetch(`${_getCloudEndpoint()}/global_holidays.json`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        data: custom,
-        removed
-      })
+      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data: custom, removed })
     });
   } catch (e) {}
-
-  const statusEl = document.getElementById("global-holiday-status");
-  if (statusEl) {
-    statusEl.textContent = `Removed holiday status for ${isoDate} (now a normal working day).`;
-  }
   renderAll();
 };
 
-// Mounts the Universal Power Panel automatically for everyone
 function mountUniversalVault() {
-  if (universalVaultMounted) {
-    populateUniversalPanel();
-    return;
-  }
-
+  if (universalVaultMounted) { populateUniversalPanel(); return; }
   document.getElementById("global-btn-mount").innerHTML = `
-    <button id="btn-toggle-power-panel" type="button"
-      class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black px-3.5 py-2 rounded-xl shadow-lg border border-amber-300 transition active:scale-95">
+    <button id="btn-toggle-power-panel" type="button" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black px-3.5 py-2 rounded-xl shadow-lg border border-amber-300 transition active:scale-95">
       &#9889; Global Tools
     </button>
   `;
-
   document.getElementById("global-vault-mount").innerHTML = `
     <div id="power-panel" class="hidden bg-slate-900 border-2 border-amber-500/80 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -685,29 +644,17 @@ function mountUniversalVault() {
           <p class="text-xs text-slate-400 mt-0.5">Declare holidays or broadcast extra lectures globally to all students.</p>
         </div>
       </div>
-
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
           <div class="text-xs font-black uppercase tracking-wider text-red-400">1. Declare / Remove College Holiday On Will</div>
-          <p class="text-[11px] text-slate-300 leading-relaxed">
-            Pick any date (or click a date on the calendar below) to declare it as a holiday or restore it to a working day for all students:
-          </p>
+          <p class="text-[11px] text-slate-300 leading-relaxed">Pick any date (or click a date on the calendar below) to declare it as a holiday or restore it to a working day for all students:</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <input id="global-holiday-date" type="date" value="${selectedCalDate}" min="2026-09-07" max="2026-12-23"
-              class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-bold" />
-            <input id="global-holiday-name" type="text" maxlength="50" placeholder="Reason (e.g. Declared Holiday)"
-              value="Declared Holiday"
-              class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-bold" />
+            <input id="global-holiday-date" type="date" value="${selectedCalDate}" min="2026-09-07" max="2026-12-23" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-bold" />
+            <input id="global-holiday-name" type="text" maxlength="50" placeholder="Reason (e.g. Declared Holiday)" value="Declared Holiday" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-bold" />
           </div>
           <div class="flex gap-2">
-            <button id="btn-global-add-holiday" type="button"
-              class="flex-1 bg-red-600 hover:bg-red-500 text-white font-black text-xs py-2.5 px-3 rounded-xl shadow transition">
-              Declare Holiday
-            </button>
-            <button id="btn-global-remove-holiday" type="button"
-              class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs py-2.5 px-3 rounded-xl transition">
-              Remove Holiday
-            </button>
+            <button id="btn-global-add-holiday" type="button" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-black text-xs py-2.5 px-3 rounded-xl shadow transition">Declare Holiday</button>
+            <button id="btn-global-remove-holiday" type="button" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs py-2.5 px-3 rounded-xl transition">Remove Holiday</button>
           </div>
           <div id="global-holiday-status" class="text-xs text-emerald-400 font-extrabold"></div>
           <div class="pt-2 border-t border-slate-800/80">
@@ -715,21 +662,14 @@ function mountUniversalVault() {
             <div id="global-custom-holidays-list" class="flex flex-wrap gap-1.5 text-[11px]"></div>
           </div>
         </div>
-
         <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
           <div class="text-xs font-black uppercase tracking-wider text-amber-400">2. Broadcast Extra Lectures to All Students</div>
-          <p class="text-[11px] text-slate-300 leading-relaxed">
-            Add college-wide extra lectures for any subject so all students automatically receive the attendance boost:
-          </p>
+          <p class="text-[11px] text-slate-300 leading-relaxed">Add college-wide extra lectures for any subject so all students automatically receive the attendance boost:</p>
           <div class="space-y-2.5">
             <select id="global-course-select" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white font-bold"></select>
             <div class="flex gap-2">
-              <input id="global-extra-count" type="number" min="0" value="0" placeholder="Extra Lectures Count"
-                class="w-28 bg-slate-800 border border-slate-600 rounded-xl px-3.5 py-2.5 text-sm text-white font-black text-center" />
-              <button id="btn-broadcast-extra" type="button"
-                class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs sm:text-sm transition">
-                Broadcast Extra Lectures
-              </button>
+              <input id="global-extra-count" type="number" min="0" value="0" placeholder="Extra Lectures Count" class="w-28 bg-slate-800 border border-slate-600 rounded-xl px-3.5 py-2.5 text-sm text-white font-black text-center" />
+              <button id="btn-broadcast-extra" type="button" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs sm:text-sm transition">Broadcast Extra Lectures</button>
             </div>
           </div>
           <div id="global-broadcast-status" class="text-xs text-emerald-400 font-extrabold"></div>
@@ -737,7 +677,6 @@ function mountUniversalVault() {
       </div>
     </div>
   `;
-
   universalVaultMounted = true;
   populateUniversalPanel();
 
@@ -745,41 +684,25 @@ function mountUniversalVault() {
     const panel = document.getElementById("power-panel");
     if (!panel) return;
     panel.classList.toggle("hidden");
-    if (!panel.classList.contains("hidden")) {
-      panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
+    if (!panel.classList.contains("hidden")) panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
-
   document.getElementById("btn-global-add-holiday").addEventListener("click", () => {
-    const iso = document.getElementById("global-holiday-date").value;
-    const reason = document.getElementById("global-holiday-name").value;
-    window.universalDeclareHoliday(iso, reason);
+    window.universalDeclareHoliday(document.getElementById("global-holiday-date").value, document.getElementById("global-holiday-name").value);
   });
-
   document.getElementById("btn-global-remove-holiday").addEventListener("click", () => {
-    const iso = document.getElementById("global-holiday-date").value;
-    window.universalRemoveHoliday(iso);
+    window.universalRemoveHoliday(document.getElementById("global-holiday-date").value);
   });
-
   document.getElementById("btn-broadcast-extra").addEventListener("click", async () => {
     const code = document.getElementById("global-course-select").value;
     const count = Math.max(0, parseInt(document.getElementById("global-extra-count").value) || 0);
     const extras = getGlobalExtras();
     extras[code] = count;
     saveGlobalExtras(extras);
-
     try {
       await fetch(`${_getCloudEndpoint()}/global_extras.json`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          data: extras
-        })
+        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data: extras })
       });
     } catch (e) {}
-
-    document.getElementById("global-broadcast-status").textContent =
-      `Broadcasted ${count} extra lecture(s) for ${code} to all other students via Firebase!`;
     renderAll();
   });
 }
@@ -790,24 +713,10 @@ async function getCloudUserNodeHash(email, passwordHash) {
 
 async function deriveAESKey(email, passwordHash) {
   const enc = new TextEncoder();
-  const baseKey = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(`${email.toLowerCase()}::${passwordHash}`),
-    { name: "PBKDF2" },
-    false,
-    ["deriveKey"]
-  );
+  const baseKey = await crypto.subtle.importKey("raw", enc.encode(`${email.toLowerCase()}::${passwordHash}`), { name: "PBKDF2" }, false, ["deriveKey"]);
   return crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt: enc.encode("DBIT_ATT_E2EE_SALT_2026"),
-      iterations: 100000,
-      hash: "SHA-256"
-    },
-    baseKey,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["encrypt", "decrypt"]
+    { name: "PBKDF2", salt: enc.encode("DBIT_ATT_E2EE_SALT_2026"), iterations: 100000, hash: "SHA-256" },
+    baseKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
   );
 }
 
@@ -816,11 +725,7 @@ async function encryptProfileData(profileObj, email, passwordHash) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const encoded = new TextEncoder().encode(JSON.stringify(profileObj));
   const cipherBuf = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
-  return {
-    iv: btoa(String.fromCharCode(...iv)),
-    ct: btoa(String.fromCharCode(...new Uint8Array(cipherBuf))),
-    updatedAt: profileObj.updatedAt || Date.now()
-  };
+  return { iv: btoa(String.fromCharCode(...iv)), ct: btoa(String.fromCharCode(...new Uint8Array(cipherBuf))), updatedAt: profileObj.updatedAt || Date.now() };
 }
 
 async function decryptProfileData(encRecord, email, passwordHash) {
@@ -843,44 +748,27 @@ function setSyncPill(text, isOnline = true) {
 
 async function pushToFirebaseSilent(showDiagnosticAlert = false) {
   if (!currentUser || !currentUser.email) return false;
-
   if (!currentUser.passwordHash) {
-    lastSyncDiagnostic = "Your browser was logged in before the cloud sync update, so your session is missing its encryption key. Click the red 'Logout' button and log back in once!";
     setSyncPill("Tap Logout & Log In Once to Activate Sync", false);
-    if (showDiagnosticAlert) alert(lastSyncDiagnostic);
     return false;
   }
-
   try {
     currentUser.updatedAt = Date.now();
     lastSyncedTimestamp = currentUser.updatedAt;
     const nodeHash = await getCloudUserNodeHash(currentUser.email, currentUser.passwordHash);
     const encryptedPayload = await encryptProfileData(currentUser, currentUser.email, currentUser.passwordHash);
-    const targetUrl = `${_getCloudEndpoint()}/users/${nodeHash}.json`;
-
-    const res = await fetch(targetUrl, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      cache: "no-store",
-      body: JSON.stringify(encryptedPayload)
+    const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json`, {
+      method: "PUT", headers: { "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify(encryptedPayload)
     });
-
     if (res.ok) {
-      lastSyncDiagnostic = `Cloud Sync Active!\nAccount: ${currentUser.email}\nCloud Node: ${nodeHash.slice(0, 12)}...\nLast Synced: ${new Date().toLocaleTimeString()}`;
       setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
-      if (showDiagnosticAlert) alert(lastSyncDiagnostic);
       return true;
     } else {
-      const errBody = await res.text();
-      lastSyncDiagnostic = `Firebase Database Rules rejected the sync (HTTP ${res.status}): ${errBody}`;
-      setSyncPill(`Firebase Rules Locked (HTTP ${res.status} - Tap Here)`, false);
-      if (showDiagnosticAlert) alert(lastSyncDiagnostic);
+      setSyncPill(`Firebase Rules Locked (HTTP ${res.status})`, false);
       return false;
     }
   } catch (e) {
-    lastSyncDiagnostic = `Network / DNS Error: ${e.message || e}\nEnsure Brave Shields (orange lion icon in address bar) is turned OFF for this site.`;
-    setSyncPill("Offline / Shields Blocked (Tap for Details)", false);
-    if (showDiagnosticAlert) alert(lastSyncDiagnostic);
+    setSyncPill("Offline / Shields Blocked", false);
     return false;
   }
 }
@@ -889,12 +777,9 @@ async function pullFromFirebaseSilent(email, passwordHash) {
   if (!email || !passwordHash) return null;
   try {
     const nodeHash = await getCloudUserNodeHash(email, passwordHash);
-    const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json?t=${Date.now()}`, {
-      cache: "no-store"
-    });
+    const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json?t=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) {
-      lastSyncDiagnostic = `Firebase Pull HTTP ${res.status}. Check Firebase Realtime Database Rules!`;
-      setSyncPill(`Firebase Rules Locked (HTTP ${res.status} - Tap Here)`, false);
+      setSyncPill(`Firebase Rules Locked (HTTP ${res.status})`, false);
       return null;
     }
     const raw = await res.json();
@@ -902,29 +787,20 @@ async function pullFromFirebaseSilent(email, passwordHash) {
     const decrypted = await decryptProfileData(raw, email, passwordHash);
     setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
     return decrypted;
-  } catch (e) {
-    return null;
-  }
+  } catch (e) { return null; }
 }
 
 function startRealtimeCloudListener() {
-  if (livePollTimer) {
-    clearInterval(livePollTimer);
-    livePollTimer = null;
-  }
+  if (livePollTimer) { clearInterval(livePollTimer); livePollTimer = null; }
   if (!currentUser || !currentUser.email || !currentUser.passwordHash) return;
-
   livePollTimer = setInterval(async () => {
     if (document.visibilityState !== "visible" || !currentUser || !currentUser.passwordHash) return;
     try {
       const nodeHash = await getCloudUserNodeHash(currentUser.email, currentUser.passwordHash);
-      const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json?t=${Date.now()}`, {
-        cache: "no-store"
-      });
+      const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json?t=${Date.now()}`, { cache: "no-store" });
       if (!res.ok) return;
       const raw = await res.json();
       if (!raw || !raw.ct) return;
-
       const remoteTime = raw.updatedAt || 0;
       const localTime = currentUser.updatedAt || 0;
       if (remoteTime > localTime && remoteTime > lastSyncedTimestamp) {
@@ -947,9 +823,7 @@ function startRealtimeCloudListener() {
   }, 4000);
 }
 
-window.addEventListener("online", () => {
-  if (currentUser) pushToFirebaseSilent(false);
-});
+window.addEventListener("online", () => { if (currentUser) pushToFirebaseSilent(false); });
 document.addEventListener("visibilitychange", async () => {
   if (document.visibilityState === "visible" && currentUser && currentUser.passwordHash) {
     fetchGlobalConfigFromFirebase();
@@ -985,21 +859,12 @@ async function fetchGlobalConfigFromFirebase() {
         if (holPayload.removed) saveRemovedBaseHolidays(holPayload.removed);
       }
     }
-    if (currentUser) {
-      purgeNonInstructionalDates(currentUser);
-      renderAll();
-    }
+    if (currentUser) { purgeNonInstructionalDates(currentUser); renderAll(); }
   } catch (e) {}
 }
 
-function isBeforeTermStart(isoDate) {
-  return currentSem === "Semester I" && isoDate < SEM1_START_DATE;
-}
-
-function isAfterTermEnd(isoDate) {
-  return currentSem === "Semester I" && isoDate > SEM1_END_DATE;
-}
-
+function isBeforeTermStart(isoDate) { return currentSem === "Semester I" && isoDate < SEM1_START_DATE; }
+function isAfterTermEnd(isoDate) { return currentSem === "Semester I" && isoDate > SEM1_END_DATE; }
 function getExamPeriodInfo(isoDate) {
   if (currentSem !== "Semester I") return null;
   for (const [start, end, label, code] of EXAM_PERIODS) {
@@ -1007,14 +872,11 @@ function getExamPeriodInfo(isoDate) {
   }
   return null;
 }
-
 function isNonInstructionalDay(isoDate) {
   return (
-    isBeforeTermStart(isoDate) ||
-    isAfterTermEnd(isoDate) ||
+    isBeforeTermStart(isoDate) || isAfterTermEnd(isoDate) ||
     (currentSem === "Semester I" && isoDate > SEM1_LAST_INSTRUCTION_DATE) ||
-    Boolean(getHolidayName(isoDate)) ||
-    Boolean(getExamPeriodInfo(isoDate))
+    Boolean(getHolidayName(isoDate)) || Boolean(getExamPeriodInfo(isoDate))
   );
 }
 
@@ -1022,107 +884,58 @@ function computeSem1WorkingDaysSummary() {
   const start = new Date(SEM1_START_DATE + "T00:00:00");
   const end = new Date(SEM1_LAST_INSTRUCTION_DATE + "T00:00:00");
   const todayIso = new Date().toISOString().slice(0, 10);
-
-  let totalWorkingDays = 0;
-  let completedWorkingDays = 0;
-  let remainingWorkingDays = 0;
+  let totalWorkingDays = 0; let completedWorkingDays = 0; let remainingWorkingDays = 0;
 
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const iso = `${y}-${m}-${day}`;
-    const dow = (d.getDay() + 6) % 7;
+    const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, "0"); const day = String(d.getDate()).padStart(2, "0");
+    const iso = `${y}-${m}-${day}`; const dow = (d.getDay() + 6) % 7;
     if (dow < 5 && !getHolidayName(iso) && !getExamPeriodInfo(iso)) {
       totalWorkingDays++;
-      if (iso <= todayIso) completedWorkingDays++;
-      else remainingWorkingDays++;
+      if (iso <= todayIso) completedWorkingDays++; else remainingWorkingDays++;
     }
   }
   return { totalWorkingDays, completedWorkingDays, remainingWorkingDays };
 }
 
-function getAllUsersDB() {
-  try { return JSON.parse(localStorage.getItem("att_users_db_v9") || "{}"); } catch { return {}; }
-}
-function saveAllUsersDB(db) {
-  localStorage.setItem("att_users_db_v9", JSON.stringify(db));
-}
-function getGlobalExtras() {
-  try { return JSON.parse(localStorage.getItem("att_global_extras") || "{}"); } catch { return {}; }
-}
-function saveGlobalExtras(obj) {
-  localStorage.setItem("att_global_extras", JSON.stringify(obj));
-}
+function getAllUsersDB() { try { return JSON.parse(localStorage.getItem("att_users_db_v9") || "{}"); } catch { return {}; } }
+function saveAllUsersDB(db) { localStorage.setItem("att_users_db_v9", JSON.stringify(db)); }
+function getGlobalExtras() { try { return JSON.parse(localStorage.getItem("att_global_extras") || "{}"); } catch { return {}; } }
+function saveGlobalExtras(obj) { localStorage.setItem("att_global_extras", JSON.stringify(obj)); }
 
 function purgeNonInstructionalDates(user) {
   if (!user) return;
   const shouldPurge = (iso) => (
-    iso < SEM1_START_DATE ||
-    iso > SEM1_LAST_INSTRUCTION_DATE ||
-    Boolean(getHolidayName(iso)) ||
-    EXAM_PERIODS.some(([s, e]) => iso >= s && iso <= e)
+    iso < SEM1_START_DATE || iso > SEM1_LAST_INSTRUCTION_DATE ||
+    Boolean(getHolidayName(iso)) || EXAM_PERIODS.some(([s, e]) => iso >= s && iso <= e)
   );
-  if (user.dailyLogs) {
-    Object.keys(user.dailyLogs).forEach(iso => {
-      if (shouldPurge(iso)) delete user.dailyLogs[iso];
-    });
-  }
-  if (user.dailyTicks) {
-    Object.keys(user.dailyTicks).forEach(iso => {
-      if (shouldPurge(iso)) delete user.dailyTicks[iso];
-    });
-  }
-  if (user.slot7Map) {
-    Object.keys(user.slot7Map).forEach(iso => {
-      if (shouldPurge(iso)) delete user.slot7Map[iso];
-    });
-  }
+  if (user.dailyLogs) Object.keys(user.dailyLogs).forEach(iso => { if (shouldPurge(iso)) delete user.dailyLogs[iso]; });
+  if (user.dailyTicks) Object.keys(user.dailyTicks).forEach(iso => { if (shouldPurge(iso)) delete user.dailyTicks[iso]; });
+  if (user.slot7Map) Object.keys(user.slot7Map).forEach(iso => { if (shouldPurge(iso)) delete user.slot7Map[iso]; });
 }
 
 function computeCalendarTotalsForSem(sem) {
-  const calMissedByShort = {};
-  const calExtraAttendedByShort = {};
-  const calExtraMissedByShort = {};
+  const calMissedByShort = {}; const calExtraAttendedByShort = {}; const calExtraMissedByShort = {};
   const courses = SEMESTER_DATA[sem] || [];
-  courses.forEach(c => {
-    calMissedByShort[c.short] = 0;
-    calExtraAttendedByShort[c.short] = 0;
-    calExtraMissedByShort[c.short] = 0;
-  });
+  courses.forEach(c => { calMissedByShort[c.short] = 0; calExtraAttendedByShort[c.short] = 0; calExtraMissedByShort[c.short] = 0; });
+  if (sem !== "Semester I" || !currentUser) return { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort };
 
-  if (sem !== "Semester I" || !currentUser) {
-    return { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort };
-  }
-
-  const allDates = new Set([
-    ...Object.keys(currentUser.dailyTicks || {}),
-    ...Object.keys(currentUser.slot7Map || {})
-  ]);
-
+  const allDates = new Set([...Object.keys(currentUser.dailyTicks || {}), ...Object.keys(currentUser.slot7Map || {})]);
   allDates.forEach(isoDate => {
     if (isNonInstructionalDay(isoDate)) return;
     const { isOff, units } = getMergedDaySlots(isoDate, sem);
     if (isOff) return;
     const dayTicks = (currentUser.dailyTicks && currentUser.dailyTicks[isoDate]) || {};
-
     units.forEach(u => {
       if (!u.short) return;
       const isTickedMissed = u.indices.some(i => Boolean(dayTicks[i]));
       if (u.isCustomExtra) {
-        if (isTickedMissed) {
-          calExtraMissedByShort[u.short] = (calExtraMissedByShort[u.short] || 0) + 1;
-        } else {
-          calExtraAttendedByShort[u.short] = (calExtraAttendedByShort[u.short] || 0) + 1;
-        }
+        if (isTickedMissed) calExtraMissedByShort[u.short] = (calExtraMissedByShort[u.short] || 0) + 1;
+        else calExtraAttendedByShort[u.short] = (calExtraAttendedByShort[u.short] || 0) + 1;
       } else {
-        if (isTickedMissed) {
-          calMissedByShort[u.short] = (calMissedByShort[u.short] || 0) + 1;
-        }
+        if (isTickedMissed) calMissedByShort[u.short] = (calMissedByShort[u.short] || 0) + 1;
       }
     });
   });
-
   return { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort };
 }
 
@@ -1134,12 +947,8 @@ function syncCalendarToTableTotals() {
 function getWeekType(isoDate) {
   const examInfo = getExamPeriodInfo(isoDate);
   if (examInfo) return examInfo.code;
-  for (const [s, e] of EVEN_RANGES) {
-    if (isoDate >= s && isoDate <= e) return "Even Week";
-  }
-  for (const [s, e] of ODD_RANGES) {
-    if (isoDate >= s && isoDate <= e) return "Odd Week";
-  }
+  for (const [s, e] of EVEN_RANGES) { if (isoDate >= s && isoDate <= e) return "Even Week"; }
+  for (const [s, e] of ODD_RANGES) { if (isoDate >= s && isoDate <= e) return "Odd Week"; }
   const d = new Date(isoDate + "T00:00:00");
   const dayNum = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
@@ -1158,9 +967,7 @@ function getSessionKind(entryText) {
 function extractBatchEntry(raw, batchLetter) {
   if (raw.includes("/") && (raw.includes("(A)") || raw.includes("(B)") || raw.includes("(C)"))) {
     const parts = raw.split("/").map(p => p.trim());
-    for (const p of parts) {
-      if (p.includes(`(${batchLetter})`)) return { text: p, isLab: true };
-    }
+    for (const p of parts) { if (p.includes(`(${batchLetter})`)) return { text: p, isLab: true }; }
   }
   return { text: raw, isLab: false };
 }
@@ -1168,31 +975,13 @@ function extractBatchEntry(raw, batchLetter) {
 function matchSubjectShort(text, semCourses) {
   if (!text) return null;
   const up = text.trim().toUpperCase();
-  if (!up) return null;
-
-  if (
-    up.includes("REMEDIAL LECTURE") ||
-    up.includes("MENTORING SLOT") ||
-    up.includes("EXTRA LECTURE SLOT") ||
-    up.includes("SHORT BREAK") ||
-    up.includes("LUNCH BREAK")
-  ) {
-    return null;
-  }
-
-  if (up.includes("WORKSHOP") || up.includes("WS-I") || up === "WS" || up === "WS1") {
-    return semCourses.some(c => c.short === "WS-I") ? "WS-I" : null;
-  }
-
-  for (const c of semCourses) {
-    if (up === c.short.toUpperCase() || up === c.code.toUpperCase()) return c.short;
-  }
-
+  if (!up || up.includes("REMEDIAL LECTURE") || up.includes("MENTORING SLOT") || up.includes("EXTRA LECTURE SLOT") || up.includes("SHORT BREAK") || up.includes("LUNCH BREAK")) return null;
+  if (up.includes("WORKSHOP") || up.includes("WS-I") || up === "WS" || up === "WS1") return semCourses.some(c => c.short === "WS-I") ? "WS-I" : null;
+  for (const c of semCourses) { if (up === c.short.toUpperCase() || up === c.code.toUpperCase()) return c.short; }
   const sorted = [...semCourses].sort((a, b) => b.short.length - a.short.length);
   for (const c of sorted) {
     const escaped = c.short.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(`(^|[^A-Z0-9&-])${escaped}($|[^A-Z0-9&-])`);
-    if (regex.test(up)) return c.short;
+    if (new RegExp(`(^|[^A-Z0-9&-])${escaped}($|[^A-Z0-9&-])`).test(up)) return c.short;
   }
   return null;
 }
@@ -1200,59 +989,33 @@ function matchSubjectShort(text, semCourses) {
 function syncTimetableToDate(isoDate) {
   const effectiveIso = isoDate < SEM1_START_DATE ? SEM1_START_DATE : (isoDate > SEM1_LAST_INSTRUCTION_DATE ? SEM1_LAST_INSTRUCTION_DATE : isoDate);
   const wk = getWeekType(effectiveIso);
-  if (ttWeekTab !== "Img" && (wk === "Odd Week" || wk === "Even Week")) {
-    ttWeekTab = wk === "Odd Week" ? "Odd" : "Even";
-  }
+  if (ttWeekTab !== "Img" && (wk === "Odd Week" || wk === "Even Week")) ttWeekTab = wk === "Odd Week" ? "Odd" : "Even";
   const dObj = new Date(effectiveIso + "T00:00:00");
   const dow = (dObj.getDay() + 6) % 7;
-  if (dow >= 0 && dow <= 4) {
-    ttSelectedDay = ["MON", "TUE", "WED", "THR", "FRI"][dow];
-  }
+  if (dow >= 0 && dow <= 4) ttSelectedDay = ["MON", "TUE", "WED", "THR", "FRI"][dow];
   updateTimetableTabButtons();
 }
 
 function updateTimetableTabButtons() {
-  document.getElementById("btn-tt-even").className = ttWeekTab === "Even"
-    ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white shadow"
-    : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
-  document.getElementById("btn-tt-odd").className = ttWeekTab === "Odd"
-    ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white shadow"
-    : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
-  document.getElementById("btn-tt-img").className = ttWeekTab === "Img"
-    ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white shadow"
-    : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
-
+  document.getElementById("btn-tt-even").className = ttWeekTab === "Even" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white shadow" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+  document.getElementById("btn-tt-odd").className = ttWeekTab === "Odd" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white shadow" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+  document.getElementById("btn-tt-img").className = ttWeekTab === "Img" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white shadow" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
   const autoBadge = document.getElementById("sec5-auto-badge");
-  if (autoBadge && ttWeekTab !== "Img") {
-    autoBadge.textContent = `Auto-Synced: ${ttWeekTab} Week (${ttSelectedDay})`;
-  }
-
+  if (autoBadge && ttWeekTab !== "Img") autoBadge.textContent = `Auto-Synced: ${ttWeekTab} Week (${ttSelectedDay})`;
   document.querySelectorAll(".day-pill").forEach(b => {
-    b.className = b.dataset.day === ttSelectedDay
-      ? "day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-blue-600 text-white"
-      : "day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300";
+    b.className = b.dataset.day === ttSelectedDay ? "day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-blue-600 text-white" : "day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300";
   });
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
   const semSel = document.getElementById("dash-semester");
   Object.keys(SEMESTER_DATA).forEach(s => {
-    const opt = document.createElement("option");
-    opt.value = s;
-    opt.textContent = s;
-    semSel.appendChild(opt);
+    const opt = document.createElement("option"); opt.value = s; opt.textContent = s; semSel.appendChild(opt);
   });
-
   const todayIso = new Date().toISOString().slice(0, 10);
-  if (todayIso >= SEM1_START_DATE && todayIso <= "2026-12-31") {
-    selectedCalDate = todayIso;
-  } else {
-    selectedCalDate = SEM1_START_DATE;
-  }
+  selectedCalDate = (todayIso >= SEM1_START_DATE && todayIso <= "2026-12-31") ? todayIso : SEM1_START_DATE;
   const ym = selectedCalDate.slice(0, 7);
-  if (MONTHS_LIST.includes(ym)) {
-    document.getElementById("cal-month-select").value = ym;
-  }
+  if (MONTHS_LIST.includes(ym)) document.getElementById("cal-month-select").value = ym;
   syncTimetableToDate(selectedCalDate);
 
   const rememberedEmail = localStorage.getItem("att_remembered_user_v9");
@@ -1261,7 +1024,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     currentUser = db[rememberedEmail];
     purgeNonInstructionalDates(currentUser);
     enterDashboard();
-
     await fetchGlobalConfigFromFirebase();
     const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
     if (remote && remote.semData) {
@@ -1272,18 +1034,12 @@ window.addEventListener("DOMContentLoaded", async () => {
         db[currentUser.email] = currentUser;
         saveAllUsersDB(db);
         renderAll();
-      } else {
-        await pushToFirebaseSilent(false);
-      }
-    } else {
-      await pushToFirebaseSilent(false);
-    }
+      } else await pushToFirebaseSilent(false);
+    } else await pushToFirebaseSilent(false);
     startRealtimeCloudListener();
   } else {
-    localStorage.removeItem("att_remembered_user_v9");
     document.getElementById("login-view").classList.remove("hidden");
   }
-
   setupEventListeners();
 });
 
@@ -1294,30 +1050,17 @@ function ensureUserSemData(user) {
   if (!user.slot7Map) user.slot7Map = {};
   if (!user.targetPct) user.targetPct = 75;
   purgeNonInstructionalDates(user);
-
   const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem("Semester I");
 
   Object.keys(SEMESTER_DATA).forEach(sem => {
     if (!user.semData[sem]) user.semData[sem] = {};
     SEMESTER_DATA[sem].forEach(c => {
       if (!user.semData[sem][c.code]) {
-        user.semData[sem][c.code] = {
-          unattended: 0,
-          extra: 0,
-          manualUnattended: 0,
-          manualExtra: 0,
-          imp: c.imp
-        };
+        user.semData[sem][c.code] = { unattended: 0, extra: 0, manualUnattended: 0, manualExtra: 0, imp: c.imp };
       } else {
         const rec = user.semData[sem][c.code];
-        if (rec.manualUnattended === undefined) {
-          const calM = sem === "Semester I" ? (calMissedByShort[c.short] || 0) : 0;
-          rec.manualUnattended = Math.max(0, (parseInt(rec.unattended) || 0) - calM);
-        }
-        if (rec.manualExtra === undefined) {
-          const calE = sem === "Semester I" ? (calExtraAttendedByShort[c.short] || 0) : 0;
-          rec.manualExtra = (parseInt(rec.extra) || 0) - calE;
-        }
+        if (rec.manualUnattended === undefined) rec.manualUnattended = Math.max(0, (parseInt(rec.unattended) || 0) - (sem === "Semester I" ? (calMissedByShort[c.short] || 0) : 0));
+        if (rec.manualExtra === undefined) rec.manualExtra = (parseInt(rec.extra) || 0) - (sem === "Semester I" ? (calExtraAttendedByShort[c.short] || 0) : 0);
       }
     });
   });
@@ -1336,7 +1079,6 @@ function persistCurrentUser() {
 
 function getComputedStats() {
   ensureUserSemData(currentUser);
-  syncCalendarToTableTotals();
   const courses = SEMESTER_DATA[currentSem];
   const userSem = currentUser.semData[currentSem];
   const globalExtras = getGlobalExtras();
@@ -1347,25 +1089,19 @@ function getComputedStats() {
   const statsMap = {};
   const list = courses.map(c => {
     const rec = userSem[c.code] || { unattended: 0, extra: 0, manualUnattended: 0, manualExtra: 0, imp: c.imp };
-    
-    // Calendar Base
     const calMissed = calMissedByShort[c.short] || 0;
     const calExtraAttended = calExtraAttendedByShort[c.short] || 0;
     const calExtraMissed = calExtraMissedByShort[c.short] || 0;
     
-    // Manual Base
     const manualMissed = Math.max(0, parseInt(rec.manualUnattended || 0));
     const manualExtra = parseInt(rec.manualExtra || 0);
 
     const manualExtraAttended = Math.max(0, manualExtra);
     const manualExtraMissed = Math.abs(Math.min(0, manualExtra));
-
     const adminExtra = Math.max(0, parseInt(globalExtras[c.code] || 0));
 
-    // Dynamic Expansion Logic
     const totalExtraAttended = calExtraAttended + manualExtraAttended + adminExtra;
     const totalExtraMissed = calExtraMissed + manualExtraMissed;
-
     const dynamicTotal = c.total + totalExtraAttended + totalExtraMissed;
     const unattended = calMissed + manualMissed + totalExtraMissed;
     
@@ -1376,36 +1112,13 @@ function getComputedStats() {
     const maxBunks = Math.max(0, dynamicTotal - reqTarget);
     const safeBunks = Math.max(0, maxBunks - unattended);
 
-    // Display bindings
     const displayUnattended = calMissed + manualMissed;
     const displayExtra = manualExtra;
 
-    const item = {
-      ...c,
-      imp: rec.imp || c.imp,
-      dynamicTotal,
-      unattended,
-      calMissed,
-      manualMissed,
-      calExtraAttended,
-      calExtraMissed,
-      manualExtra,
-      personalExtra: manualExtra,
-      displayUnattended,
-      displayExtra,
-      adminExtra,
-      totalExtra: totalExtraAttended,
-      effAttended,
-      pct,
-      reqTarget,
-      needed,
-      safeBunks,
-      isSafe: pct >= targetPct
-    };
+    const item = { ...c, imp: rec.imp || c.imp, dynamicTotal, unattended, calMissed, manualMissed, calExtraAttended, calExtraMissed, manualExtra, personalExtra: manualExtra, displayUnattended, displayExtra, adminExtra, totalExtra: totalExtraAttended, effAttended, pct, reqTarget, needed, safeBunks, isSafe: pct >= targetPct };
     statsMap[c.short] = item;
     return item;
   });
-
   return { list, statsMap, targetPct };
 }
 
@@ -1414,13 +1127,10 @@ function enterDashboard() {
   syncCalendarToTableTotals();
   document.getElementById("login-view").classList.add("hidden");
   document.getElementById("app-view").classList.remove("hidden");
-
   const hr = new Date().getHours();
   const greet = hr < 12 ? "Good Morning" : hr < 17 ? "Good Afternoon" : "Good Evening";
   document.getElementById("greeting-title").textContent = `${greet}, ${currentUser.name}`;
-  document.getElementById("student-meta").innerHTML =
-    `<b>Branch:</b> ${escapeHTML(currentUser.branch)} &nbsp;|&nbsp; <b>Batch:</b> ${escapeHTML(currentUser.batch)} &nbsp;|&nbsp; <b>Account:</b> ${escapeHTML(currentUser.email)}`;
-
+  document.getElementById("student-meta").innerHTML = `<b>Branch:</b> ${escapeHTML(currentUser.branch)} &nbsp;|&nbsp; <b>Batch:</b> ${escapeHTML(currentUser.batch)} &nbsp;|&nbsp; <b>Account:</b> ${escapeHTML(currentUser.email)}`;
   document.getElementById("dash-batch").value = currentUser.batch;
   document.getElementById("custom-target-input").value = currentUser.targetPct || 75;
 
@@ -1432,7 +1142,6 @@ function enterDashboard() {
 
 function renderAll() {
   const { list, statsMap, targetPct } = getComputedStats();
-
   const wdBar = document.getElementById("term-working-days-bar");
   if (currentSem === "Semester I") {
     const { totalWorkingDays, completedWorkingDays, remainingWorkingDays } = computeSem1WorkingDaysSummary();
@@ -1443,17 +1152,11 @@ function renderAll() {
       <span class="font-bold text-amber-300">Remaining Lecture Days: <b>${remainingWorkingDays}</b> (Min ${minDaysForTarget} days for ${targetPct}%)</span>
     `;
     wdBar.classList.remove("hidden");
-  } else {
-    wdBar.classList.add("hidden");
-  }
+  } else wdBar.classList.add("hidden");
 
   document.querySelectorAll(".target-pill").forEach(btn => {
     const val = parseInt(btn.dataset.target);
-    if (val === targetPct) {
-      btn.className = "target-pill px-3.5 py-2 rounded-xl text-xs font-black border bg-blue-600 border-sky-400 text-white shadow-md";
-    } else {
-      btn.className = "target-pill px-3.5 py-2 rounded-xl text-xs font-black border bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700";
-    }
+    btn.className = val === targetPct ? "target-pill px-3.5 py-2 rounded-xl text-xs font-black border bg-blue-600 border-sky-400 text-white shadow-md" : "target-pill px-3.5 py-2 rounded-xl text-xs font-black border bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700";
   });
 
   const totEff = list.reduce((a, b) => a + b.effAttended, 0);
@@ -1467,11 +1170,9 @@ function renderAll() {
   document.getElementById("metric-overall").textContent = `${overallPct}%`;
   const badgeEl = document.getElementById("metric-overall-badge");
   if (parseFloat(overallPct) >= targetPct) {
-    badgeEl.textContent = `Safe (>=${targetPct}%)`;
-    badgeEl.className = "text-[11px] font-black mt-1 text-emerald-400";
+    badgeEl.textContent = `Safe (>=${targetPct}%)`; badgeEl.className = "text-[11px] font-black mt-1 text-emerald-400";
   } else {
-    badgeEl.textContent = `Shortage (<${targetPct}%)`;
-    badgeEl.className = "text-[11px] font-black mt-1 text-amber-400";
+    badgeEl.textContent = `Shortage (<${targetPct}%)`; badgeEl.className = "text-[11px] font-black mt-1 text-amber-400";
   }
   document.getElementById("metric-unattended").textContent = `${totMissed} missed`;
   document.getElementById("metric-bunks-label").textContent = `Safe Bunks Left (${targetPct}%)`;
@@ -1483,14 +1184,9 @@ function renderAll() {
   if (totAdminEx > 0) {
     bannerEl.textContent = `Global Broadcast Active: ${totAdminEx} extra college-wide lecture(s) automatically added to your personal semester total!`;
     bannerEl.classList.remove("hidden");
-  } else {
-    bannerEl.classList.add("hidden");
-  }
+  } else bannerEl.classList.add("hidden");
 
-  if (universalVaultMounted) {
-    renderGlobalCustomHolidaysBadges();
-  }
-
+  if (universalVaultMounted) renderGlobalCustomHolidaysBadges();
   renderSubjectsUI(list, targetPct);
   renderCalendarGrid();
   renderDailyInspector(statsMap, targetPct);
@@ -1527,9 +1223,7 @@ function renderSubjectsUI(list, targetPct) {
             </div>
             <div class="flex items-center justify-between">
               <button onclick="stepSubject('${item.code}', 'unattended', -1)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-base transition">-</button>
-              <input type="number" min="0" max="${item.dynamicTotal}" value="${item.displayUnattended}"
-                onchange="setSubjectVal('${item.code}', 'unattended', this.value)"
-                class="w-12 bg-transparent text-center font-black text-sm text-amber-300 focus:outline-none" />
+              <input type="number" min="0" max="${item.dynamicTotal}" value="${item.displayUnattended}" onchange="setSubjectVal('${item.code}', 'unattended', this.value)" class="w-12 bg-transparent text-center font-black text-sm text-amber-300 focus:outline-none" />
               <button onclick="stepSubject('${item.code}', 'unattended', 1)" class="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-base transition">+</button>
             </div>
           </div>
@@ -1541,9 +1235,7 @@ function renderSubjectsUI(list, targetPct) {
             </div>
             <div class="flex items-center justify-between">
               <button onclick="stepSubject('${item.code}', 'extra', -1)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-base transition">-</button>
-              <input type="number" value="${item.displayExtra}"
-                onchange="setSubjectVal('${item.code}', 'extra', this.value)"
-                class="w-12 bg-transparent text-center font-black text-sm text-emerald-300 focus:outline-none" />
+              <input type="number" value="${item.displayExtra}" onchange="setSubjectVal('${item.code}', 'extra', this.value)" class="w-12 bg-transparent text-center font-black text-sm text-emerald-300 focus:outline-none" />
               <button onclick="stepSubject('${item.code}', 'extra', 1)" class="w-8 h-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-base transition">+</button>
             </div>
           </div>
@@ -1569,9 +1261,7 @@ function renderSubjectsUI(list, targetPct) {
         <td class="py-3 px-3 text-center">
           <div class="inline-flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-2 py-1">
             <button onclick="stepSubject('${item.code}', 'unattended', -1)" class="px-2 py-0.5 text-slate-300 hover:text-white font-black">-</button>
-            <input type="number" min="0" max="${item.dynamicTotal}" value="${item.displayUnattended}"
-              onchange="setSubjectVal('${item.code}', 'unattended', this.value)"
-              class="w-12 bg-transparent text-center font-black text-amber-300 focus:outline-none" />
+            <input type="number" min="0" max="${item.dynamicTotal}" value="${item.displayUnattended}" onchange="setSubjectVal('${item.code}', 'unattended', this.value)" class="w-12 bg-transparent text-center font-black text-amber-300 focus:outline-none" />
             <button onclick="stepSubject('${item.code}', 'unattended', 1)" class="px-2 py-0.5 text-sky-400 hover:text-sky-300 font-black">+</button>
           </div>
           <div class="text-[10px] text-amber-300/80 font-bold mt-0.5">Cal: ${item.calMissed} | Man: ${item.manualMissed}</div>
@@ -1579,9 +1269,7 @@ function renderSubjectsUI(list, targetPct) {
         <td class="py-3 px-3 text-center">
           <div class="inline-flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-2 py-1">
             <button onclick="stepSubject('${item.code}', 'extra', -1)" class="px-2 py-0.5 text-slate-300 hover:text-white font-black">-</button>
-            <input type="number" value="${item.displayExtra}"
-              onchange="setSubjectVal('${item.code}', 'extra', this.value)"
-              class="w-12 bg-transparent text-center font-black text-emerald-300 focus:outline-none" />
+            <input type="number" value="${item.displayExtra}" onchange="setSubjectVal('${item.code}', 'extra', this.value)" class="w-12 bg-transparent text-center font-black text-emerald-300 focus:outline-none" />
             <button onclick="stepSubject('${item.code}', 'extra', 1)" class="px-2 py-0.5 text-emerald-400 hover:text-emerald-300 font-black">+</button>
           </div>
           <div class="text-[10px] text-emerald-300/80 font-bold mt-0.5">Cal: ${item.calExtraAttended} | Man: ${item.manualExtra}</div>
@@ -1600,7 +1288,7 @@ function renderSubjectsUI(list, targetPct) {
 window.stepSubject = function(code, field, delta) {
   const rec = currentUser.semData[currentSem][code];
   const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
-  const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem(currentSem);
+  const { calMissedByShort } = computeCalendarTotalsForSem(currentSem);
   const calMissed = calMissedByShort[course.short] || 0;
   
   if (field === "unattended") {
@@ -1616,7 +1304,7 @@ window.stepSubject = function(code, field, delta) {
 window.setSubjectVal = function(code, field, val) {
   const rec = currentUser.semData[currentSem][code];
   const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
-  const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem(currentSem);
+  const { calMissedByShort } = computeCalendarTotalsForSem(currentSem);
   const calMissed = calMissedByShort[course.short] || 0;
   const num = parseInt(val) || 0;
 
@@ -1636,12 +1324,9 @@ function renderCalendarGrid() {
   const startOffset = (firstDay.getDay() + 6) % 7;
   const daysInMonth = new Date(year, month, 0).getDate();
   const todayIso = new Date().toISOString().slice(0, 10);
-
   const gridEl = document.getElementById("calendar-grid");
   let html = "";
-  for (let i = 0; i < startOffset; i++) {
-    html += `<div class="min-h-[54px] bg-slate-950/40 border border-slate-800/70 rounded-xl"></div>`;
-  }
+  for (let i = 0; i < startOffset; i++) html += `<div class="min-h-[54px] bg-slate-950/40 border border-slate-800/70 rounded-xl"></div>`;
 
   for (let d = 1; d <= daysInMonth; d++) {
     const iso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -1659,38 +1344,17 @@ function renderCalendarGrid() {
     let bg = "bg-blue-600 text-white border-blue-400";
     let sub = getWeekType(iso).split(" ")[0].toUpperCase();
 
-    if (isHoliday || isPreTerm) {
-      bg = "bg-red-600 text-white border-red-400";
-      sub = "HOL";
-    } else if (isSunday) {
-      bg = "bg-red-600/90 text-white border-red-400";
-      sub = "WKND";
-    } else if (examInfo) {
-      bg = "bg-purple-600 text-white border-purple-400";
-      sub = examInfo.code;
-    } else if (isWeekend) {
-      bg = "bg-red-600/90 text-white border-red-400";
-      sub = "WKND";
-    } else if (isPostTerm) {
-      bg = "bg-red-600/80 text-white border-red-400";
-      sub = "END";
-    } else if (bunkVal) {
-      bg = "bg-amber-400 text-slate-950 border-amber-200";
-      sub = escapeHTML(bunkVal);
-    } else if (iso <= todayIso) {
-      bg = "bg-emerald-600 text-white border-emerald-400";
-      sub = extraSlot7 ? `+${escapeHTML(extraSlot7)}` : "ATT";
-    } else if (extraSlot7) {
-      sub = `+${escapeHTML(extraSlot7)}`;
-    }
+    if (isHoliday || isPreTerm) { bg = "bg-red-600 text-white border-red-400"; sub = "HOL"; }
+    else if (isSunday) { bg = "bg-red-600/90 text-white border-red-400"; sub = "WKND"; }
+    else if (examInfo) { bg = "bg-purple-600 text-white border-purple-400"; sub = examInfo.code; }
+    else if (isWeekend) { bg = "bg-red-600/90 text-white border-red-400"; sub = "WKND"; }
+    else if (isPostTerm) { bg = "bg-red-600/80 text-white border-red-400"; sub = "END"; }
+    else if (bunkVal) { bg = "bg-amber-400 text-slate-950 border-amber-200"; sub = escapeHTML(bunkVal); }
+    else if (iso <= todayIso) { bg = "bg-emerald-600 text-white border-emerald-400"; sub = extraSlot7 ? `+${escapeHTML(extraSlot7)}` : "ATT"; }
+    else if (extraSlot7) { sub = `+${escapeHTML(extraSlot7)}`; }
 
     const ring = isSelected ? "ring-2 ring-white scale-[1.04] z-10 shadow-lg" : "opacity-95 hover:opacity-100";
-    html += `
-      <button onclick="selectDate('${iso}')" class="min-h-[54px] p-1 rounded-xl border ${bg} ${ring} flex flex-col items-center justify-center transition active:scale-95">
-        <span class="text-xs sm:text-sm font-black leading-none">${d}</span>
-        <span class="text-[9px] font-black mt-1 leading-tight truncate max-w-full px-0.5">${sub}</span>
-      </button>
-    `;
+    html += `<button onclick="selectDate('${iso}')" class="min-h-[54px] p-1 rounded-xl border ${bg} ${ring} flex flex-col items-center justify-center transition active:scale-95"><span class="text-xs sm:text-sm font-black leading-none">${d}</span><span class="text-[9px] font-black mt-1 leading-tight truncate max-w-full px-0.5">${sub}</span></button>`;
   }
   gridEl.innerHTML = html;
 }
@@ -1698,10 +1362,7 @@ function renderCalendarGrid() {
 window.selectDate = function(iso) {
   selectedCalDate = iso;
   const ym = iso.slice(0, 7);
-  const selEl = document.getElementById("cal-month-select");
-  if (MONTHS_LIST.includes(ym) && selEl.value !== ym) {
-    selEl.value = ym;
-  }
+  if (MONTHS_LIST.includes(ym)) document.getElementById("cal-month-select").value = ym;
   if (universalVaultMounted) {
     const holInput = document.getElementById("global-holiday-date");
     if (holInput) holInput.value = iso;
@@ -1712,9 +1373,7 @@ window.selectDate = function(iso) {
 
 function getMergedDaySlots(isoDate, semOverride = null) {
   const activeSem = semOverride || currentSem;
-  if (activeSem === "Semester I" && isNonInstructionalDay(isoDate)) {
-    return { dow: 0, isOff: true, units: [] };
-  }
+  if (activeSem === "Semester I" && isNonInstructionalDay(isoDate)) return { dow: 0, isOff: true, units: [] };
   const dObj = new Date(isoDate + "T00:00:00");
   const dow = (dObj.getDay() + 6) % 7;
   if (dow >= 5 || getHolidayName(isoDate)) return { dow, isOff: true, units: [] };
@@ -1730,69 +1389,25 @@ function getMergedDaySlots(isoDate, semOverride = null) {
   const savedSlot7 = (currentUser?.slot7Map && currentUser.slot7Map[isoDate]) || "";
 
   const extracted = rawSlots.map((raw, idx) => {
-    if (idx === 8 && savedSlot7) {
-      return {
-        idx,
-        slotLabel: TIME_SLOTS[idx],
-        text: `Extra Lecture: ${savedSlot7} (4–5 PM)`,
-        short: savedSlot7,
-        isLab: false,
-        kind: "extra",
-        isCustomExtra: true
-      };
-    }
+    if (idx === 8 && savedSlot7) return { idx, slotLabel: TIME_SLOTS[idx], text: `Extra Lecture: ${savedSlot7} (4–5 PM)`, short: savedSlot7, isLab: false, kind: "extra", isCustomExtra: true };
     const { text, isLab } = extractBatchEntry(raw, batchLetter);
-    const short = matchSubjectShort(text, courses);
-    const kind = getSessionKind(text);
-    return { idx, slotLabel: TIME_SLOTS[idx], text, short, isLab, kind, isCustomExtra: false };
+    return { idx, slotLabel: TIME_SLOTS[idx], text, short: matchSubjectShort(text, courses), isLab, kind: getSessionKind(text), isCustomExtra: false };
   });
 
   const units = [];
   let i = 0;
   while (i < extracted.length) {
     const curr = extracted[i];
-    if (
-      curr.short &&
-      curr.idx < 8 &&
-      i + 1 < extracted.length &&
-      extracted[i + 1].short === curr.short &&
-      extracted[i + 1].kind === curr.kind &&
-      extracted[i + 1].idx < 8
-    ) {
+    if (curr.short && curr.idx < 8 && i + 1 < extracted.length && extracted[i + 1].short === curr.short && extracted[i + 1].kind === curr.kind && extracted[i + 1].idx < 8) {
       let endI = i + 1;
-      while (
-        endI < extracted.length &&
-        extracted[endI].short === curr.short &&
-        extracted[endI].kind === curr.kind &&
-        extracted[endI].idx < 8
-      ) {
-        endI++;
-      }
+      while (endI < extracted.length && extracted[endI].short === curr.short && extracted[endI].kind === curr.kind && extracted[endI].idx < 8) endI++;
       endI--;
       const indices = [];
       for (let k = i; k <= endI; k++) indices.push(extracted[k].idx);
-      units.push({
-        headIdx: curr.idx,
-        indices,
-        slotLabel: `Bulk Unit (Slots ${i + 1}–${endI + 1})`,
-        text: `${curr.text} [1 Combined Bulk Unit]`,
-        short: curr.short,
-        isLab: curr.isLab,
-        kind: curr.kind,
-        isCustomExtra: false
-      });
+      units.push({ headIdx: curr.idx, indices, slotLabel: `Bulk Unit (Slots ${i + 1}–${endI + 1})`, text: `${curr.text} [1 Combined Bulk Unit]`, short: curr.short, isLab: curr.isLab, kind: curr.kind, isCustomExtra: false });
       i = endI + 1;
     } else {
-      units.push({
-        headIdx: curr.idx,
-        indices: [curr.idx],
-        slotLabel: curr.slotLabel,
-        text: curr.text,
-        short: curr.short,
-        isLab: curr.isLab,
-        kind: curr.kind,
-        isCustomExtra: curr.isCustomExtra
-      });
+      units.push({ headIdx: curr.idx, indices: [curr.idx], slotLabel: curr.slotLabel, text: curr.text, short: curr.short, isLab: curr.isLab, kind: curr.kind, isCustomExtra: curr.isCustomExtra });
       i++;
     }
   }
@@ -1806,8 +1421,7 @@ function renderDailyInspector(statsMap, targetPct) {
   const holidayLabel = getHolidayName(selectedCalDate);
 
   document.getElementById("inspected-date-title").textContent = dObj.toDateString();
-  document.getElementById("inspected-date-meta").textContent =
-    `Schedule Status: ${holidayLabel ? holidayLabel : (examInfo ? `${examInfo.label}` : wkType)} | Your Batch: ${currentUser.batch}`;
+  document.getElementById("inspected-date-meta").textContent = `Schedule Status: ${holidayLabel ? holidayLabel : (examInfo ? `${examInfo.label}` : wkType)} | Your Batch: ${currentUser.batch}`;
 
   const universalHolMount = document.getElementById("inspector-universal-holiday-mount");
   if (universalHolMount) {
@@ -1815,20 +1429,14 @@ function renderDailyInspector(statsMap, targetPct) {
       universalHolMount.innerHTML = `
         <div class="bg-amber-950/50 border border-amber-500/60 rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs">
           <span class="font-bold text-amber-300">&#9889; Global: ${selectedCalDate} is a Holiday (${escapeHTML(holidayLabel)})</span>
-          <button type="button" onclick="window.universalRemoveHoliday('${selectedCalDate}')"
-            class="bg-slate-800 hover:bg-slate-700 border border-amber-400 text-amber-300 font-black px-3 py-1.5 rounded-lg shrink-0 transition">
-            Remove Holiday (Make Working Day)
-          </button>
+          <button type="button" onclick="window.universalRemoveHoliday('${selectedCalDate}')" class="bg-slate-800 hover:bg-slate-700 border border-amber-400 text-amber-300 font-black px-3 py-1.5 rounded-lg shrink-0 transition">Remove Holiday</button>
         </div>
       `;
     } else {
       universalHolMount.innerHTML = `
         <div class="bg-red-950/50 border border-red-500/60 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
           <span class="font-bold text-red-200">&#9889; Universal Quick Action for ${selectedCalDate}:</span>
-          <button type="button" onclick="window.universalDeclareHoliday('${selectedCalDate}', prompt('Holiday Name / Reason:', 'Declared Holiday') || 'Declared Holiday')"
-            class="bg-red-600 hover:bg-red-500 text-white font-black px-3 py-1.5 rounded-lg shadow shrink-0 transition">
-            Declare ${selectedCalDate} as Holiday
-          </button>
+          <button type="button" onclick="window.universalDeclareHoliday('${selectedCalDate}', prompt('Holiday Name / Reason:', 'Declared Holiday') || 'Declared Holiday')" class="bg-red-600 hover:bg-red-500 text-white font-black px-3 py-1.5 rounded-lg shadow shrink-0 transition">Declare ${selectedCalDate} as Holiday</button>
         </div>
       `;
     }
@@ -1840,75 +1448,48 @@ function renderDailyInspector(statsMap, targetPct) {
 
   if (isBeforeTermStart(selectedCalDate)) {
     container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">No Regular Lectures (Classes started on 07th September 2026)</div>`;
-    slot7Box.classList.add("hidden");
-    quickBtns.classList.add("hidden");
-    return;
+    slot7Box.classList.add("hidden"); quickBtns.classList.add("hidden"); return;
   }
-
   if (holidayLabel) {
     container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">Official Holiday: ${escapeHTML(holidayLabel)} (No Regular Lectures)</div>`;
-    slot7Box.classList.add("hidden");
-    quickBtns.classList.add("hidden");
-    return;
+    slot7Box.classList.add("hidden"); quickBtns.classList.add("hidden"); return;
   }
-
   if (examInfo) {
     container.innerHTML = `<div class="bg-purple-950/80 border border-purple-400 text-purple-100 p-4 rounded-xl text-xs font-bold leading-relaxed"><b>${examInfo.label}:</b> Regular timetable lectures are paused during official college examinations, so this date does not inflate or alter your lecture attendance calculations.</div>`;
-    slot7Box.classList.add("hidden");
-    quickBtns.classList.add("hidden");
-    return;
+    slot7Box.classList.add("hidden"); quickBtns.classList.add("hidden"); return;
   }
-
   if (isAfterTermEnd(selectedCalDate)) {
     container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">Term Completed (Semester I ended on 23rd December 2026)</div>`;
-    slot7Box.classList.add("hidden");
-    quickBtns.classList.add("hidden");
-    return;
+    slot7Box.classList.add("hidden"); quickBtns.classList.add("hidden"); return;
   }
 
   const { isOff, units } = getMergedDaySlots(selectedCalDate);
   if (isOff) {
     container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">Weekend (Saturday / Sunday) — No Regular Lectures</div>`;
-    slot7Box.classList.add("hidden");
-    quickBtns.classList.add("hidden");
-    return;
+    slot7Box.classList.add("hidden"); quickBtns.classList.add("hidden"); return;
   }
 
-  slot7Box.classList.remove("hidden");
-  quickBtns.classList.remove("hidden");
+  slot7Box.classList.remove("hidden"); quickBtns.classList.remove("hidden");
   document.getElementById("slot7-input").value = currentUser.slot7Map[selectedCalDate] || "";
-
   const dayTicks = currentUser.dailyTicks[selectedCalDate] || {};
 
   container.innerHTML = units.map((u, uIdx) => {
     const isTicked = u.indices.some(i => Boolean(dayTicks[i]));
     const st = u.short ? statsMap[u.short] : null;
     let statusHtml = `<span class="text-slate-400">Non-Credit / Free Slot (Editable in 4–5 PM box below)</span>`;
-    if (u.text.includes("BREAK")) {
-      statusHtml = `<span class="text-slate-400">Official Break</span>`;
-    } else if (st) {
-      if (u.isCustomExtra) {
-        statusHtml = isTicked
-          ? `<span class="text-amber-300 font-bold">+1 Missed to ${u.short} (Missed: ${st.unattended}/${st.dynamicTotal} | ${st.pct}%)</span>`
-          : `<span class="text-emerald-400 font-bold">+1 Attended to ${u.short} (Extra: ${st.personalExtra} | ${st.pct}%)</span>`;
-      } else if (st.needed > 0) {
-        statusHtml = `<span class="text-amber-300 font-bold">Missed: ${st.unattended}/${st.dynamicTotal} | Need ${st.needed} for ${targetPct}% (${st.pct}%)</span>`;
-      } else {
-        statusHtml = `<span class="text-emerald-400 font-bold">Missed: ${st.unattended}/${st.dynamicTotal} | Safe: Bunk ${st.safeBunks} (${st.pct}%)</span>`;
-      }
+    if (u.text.includes("BREAK")) statusHtml = `<span class="text-slate-400">Official Break</span>`;
+    else if (st) {
+      if (u.isCustomExtra) statusHtml = isTicked ? `<span class="text-amber-300 font-bold">+1 Missed to ${u.short} (Missed: ${st.unattended}/${st.dynamicTotal} | ${st.pct}%)</span>` : `<span class="text-emerald-400 font-bold">+1 Attended to ${u.short} (Extra: ${st.personalExtra} | ${st.pct}%)</span>`;
+      else if (st.needed > 0) statusHtml = `<span class="text-amber-300 font-bold">Missed: ${st.unattended}/${st.dynamicTotal} | Need ${st.needed} for ${targetPct}% (${st.pct}%)</span>`;
+      else statusHtml = `<span class="text-emerald-400 font-bold">Missed: ${st.unattended}/${st.dynamicTotal} | Safe: Bunk ${st.safeBunks} (${st.pct}%)</span>`;
     }
-
     const labBadge = u.isLab ? `<span class="batch-badge ml-1">YOUR ${escapeHTML(currentUser.batch.toUpperCase())} LAB</span>` : "";
     const canTick = Boolean(u.short);
 
     return `
       <div class="flex items-center justify-between gap-2.5 bg-slate-900 border ${isTicked ? 'border-amber-500/60 bg-amber-950/20' : 'border-slate-800'} rounded-xl px-3.5 py-2.5 text-xs">
         <div class="flex items-center gap-3">
-          ${canTick ? `
-            <input type="checkbox" ${isTicked ? "checked" : ""}
-              onchange="toggleDailyUnitTick('${selectedCalDate}', ${uIdx}, this.checked)"
-              class="w-4 h-4 rounded accent-amber-400 cursor-pointer shrink-0" />
-          ` : `<span class="w-4 h-4 inline-block shrink-0"></span>`}
+          ${canTick ? `<input type="checkbox" ${isTicked ? "checked" : ""} onchange="toggleDailyUnitTick('${selectedCalDate}', ${uIdx}, this.checked)" class="w-4 h-4 rounded accent-amber-400 cursor-pointer shrink-0" />` : `<span class="w-4 h-4 inline-block shrink-0"></span>`}
           <div>
             <div class="font-extrabold text-white">${escapeHTML(u.text)} ${labBadge}</div>
             <div class="text-[11px] text-slate-400 font-medium mt-0.5">${u.slotLabel} &bull; ${statusHtml}</div>
@@ -1925,12 +1506,9 @@ window.toggleDailyUnitTick = function(isoDate, unitIdx, isChecked) {
   const { units } = getMergedDaySlots(isoDate);
   const unit = units[unitIdx];
   if (!unit || !unit.short) return;
-
   if (!currentUser.dailyTicks[isoDate]) currentUser.dailyTicks[isoDate] = {};
-  const dayTicks = currentUser.dailyTicks[isoDate];
-  unit.indices.forEach(i => { dayTicks[i] = isChecked; });
-
-  recomputeDayBadge(isoDate, units, dayTicks);
+  unit.indices.forEach(i => { currentUser.dailyTicks[isoDate][i] = isChecked; });
+  recomputeDayBadge(isoDate, units, currentUser.dailyTicks[isoDate]);
   persistCurrentUser();
   renderAll();
 };
@@ -1941,7 +1519,6 @@ function applyPresetBunkMode(mode) {
   if (isOff) return;
   if (!currentUser.dailyTicks[selectedCalDate]) currentUser.dailyTicks[selectedCalDate] = {};
   const dayTicks = currentUser.dailyTicks[selectedCalDate];
-
   units.forEach(u => {
     if (u.short) {
       let shouldTick = false;
@@ -1949,44 +1526,25 @@ function applyPresetBunkMode(mode) {
       else if (mode === "AM" && u.headIdx <= 4) shouldTick = true;
       else if (mode === "PM" && u.headIdx >= 5) shouldTick = true;
       else if (mode === "CLEAR") shouldTick = false;
-
       u.indices.forEach(i => { dayTicks[i] = shouldTick; });
     }
   });
-
-  if (mode === "CLEAR") {
-    delete currentUser.dailyTicks[selectedCalDate];
-    delete currentUser.dailyLogs[selectedCalDate];
-  } else {
-    recomputeDayBadge(selectedCalDate, units, dayTicks);
-  }
+  if (mode === "CLEAR") { delete currentUser.dailyTicks[selectedCalDate]; delete currentUser.dailyLogs[selectedCalDate]; }
+  else recomputeDayBadge(selectedCalDate, units, dayTicks);
   persistCurrentUser();
   renderAll();
 }
 
 function recomputeDayBadge(isoDate, units, dayTicks) {
-  if (isNonInstructionalDay(isoDate)) {
-    delete currentUser.dailyLogs[isoDate];
-    return;
-  }
+  if (isNonInstructionalDay(isoDate)) { delete currentUser.dailyLogs[isoDate]; return; }
   const creditUnits = units.filter(u => Boolean(u.short));
-  const missedShorts = [];
-  let tickedCount = 0;
-
+  const missedShorts = []; let tickedCount = 0;
   creditUnits.forEach(u => {
-    if (u.indices.some(i => Boolean(dayTicks[i]))) {
-      tickedCount++;
-      if (!missedShorts.includes(u.short)) missedShorts.push(u.short);
-    }
+    if (u.indices.some(i => Boolean(dayTicks[i]))) { tickedCount++; if (!missedShorts.includes(u.short)) missedShorts.push(u.short); }
   });
-
-  if (tickedCount === 0) {
-    delete currentUser.dailyLogs[isoDate];
-  } else if (creditUnits.length > 0 && tickedCount >= creditUnits.length) {
-    currentUser.dailyLogs[isoDate] = "F";
-  } else {
-    currentUser.dailyLogs[isoDate] = missedShorts.join(", ");
-  }
+  if (tickedCount === 0) delete currentUser.dailyLogs[isoDate];
+  else if (creditUnits.length > 0 && tickedCount >= creditUnits.length) currentUser.dailyLogs[isoDate] = "F";
+  else currentUser.dailyLogs[isoDate] = missedShorts.join(", ");
 }
 
 function renderTimetableSection(statsMap, targetPct) {
@@ -1997,8 +1555,7 @@ function renderTimetableSection(statsMap, targetPct) {
   const courses = SEMESTER_DATA[currentSem];
 
   const daySlots = grid[ttSelectedDay];
-  let cardsHtml = "";
-  let i = 0;
+  let cardsHtml = ""; let i = 0;
   while (i < TIME_SLOTS.length) {
     const raw = daySlots[i];
     const { text, isLab } = extractBatchEntry(raw, batchLetter);
@@ -2006,38 +1563,18 @@ function renderTimetableSection(statsMap, targetPct) {
     const kind = getSessionKind(text);
     let span = 1;
     if (short && i < 8) {
-      while (
-        i + span < 8 &&
-        matchSubjectShort(extractBatchEntry(daySlots[i + span], batchLetter).text, courses) === short &&
-        getSessionKind(extractBatchEntry(daySlots[i + span], batchLetter).text) === kind
-      ) {
-        span++;
-      }
+      while (i + span < 8 && matchSubjectShort(extractBatchEntry(daySlots[i + span], batchLetter).text, courses) === short && getSessionKind(extractBatchEntry(daySlots[i + span], batchLetter).text) === kind) span++;
     }
-
     const st = short ? statsMap[short] : null;
-    let cardClass = "cell-blue";
-    let meta = "Non-Credit / Extra Slot";
-    if (raw.includes("BREAK")) {
-      cardClass = "cell-red";
-      meta = "Official Break";
-    } else if (st) {
+    let cardClass = "cell-blue"; let meta = "Non-Credit / Extra Slot";
+    if (raw.includes("BREAK")) { cardClass = "cell-red"; meta = "Official Break"; }
+    else if (st) {
       cardClass = st.pct >= targetPct ? "cell-green" : "cell-yellow";
       meta = `Attendance: <b>${st.pct}%</b> | Missed: <b>${st.unattended}/${st.dynamicTotal}</b> | Extra: <b>${st.personalExtra}</b> | ${st.needed > 0 ? `Need ${st.needed} for ${targetPct}%` : `Safe (Bunk ${st.safeBunks})`}`;
     }
-
     const slotText = span > 1 ? `Slots ${i + 1}–${i + span} [1 Combined Bulk Unit]` : TIME_SLOTS[i];
     const labBadge = isLab ? `<span class="batch-badge ml-1.5">YOUR ${escapeHTML(currentUser.batch.toUpperCase())} LAB</span>` : "";
-
-    cardsHtml += `
-      <div class="${cardClass} rounded-2xl p-4 border border-slate-700 flex items-center justify-between gap-3 shadow-md">
-        <div>
-          <div class="text-[11px] font-black uppercase tracking-wider text-sky-300">${slotText}</div>
-          <div class="text-sm sm:text-base font-black mt-1">${escapeHTML(text)} ${labBadge}</div>
-          <div class="text-xs mt-1.5 opacity-90 font-medium">${meta}</div>
-        </div>
-      </div>
-    `;
+    cardsHtml += `<div class="${cardClass} rounded-2xl p-4 border border-slate-700 flex items-center justify-between gap-3 shadow-md"><div><div class="text-[11px] font-black uppercase tracking-wider text-sky-300">${slotText}</div><div class="text-sm sm:text-base font-black mt-1">${escapeHTML(text)} ${labBadge}</div><div class="text-xs mt-1.5 opacity-90 font-medium">${meta}</div></div></div>`;
     i += span;
   }
   document.getElementById("tt-cards-output").innerHTML = cardsHtml;
@@ -2054,20 +1591,11 @@ function renderTimetableSection(statsMap, targetPct) {
       const kind = getSessionKind(text);
       if (sf && s < 8) {
         let sp = 1;
-        while (
-          s + sp < 8 &&
-          matchSubjectShort(extractBatchEntry(grid[d][s + sp], batchLetter).text, courses) === sf &&
-          getSessionKind(extractBatchEntry(grid[d][s + sp], batchLetter).text) === kind
-        ) {
-          skip[d][s + sp] = true;
-          sp++;
+        while (s + sp < 8 && matchSubjectShort(extractBatchEntry(grid[d][s + sp], batchLetter).text, courses) === sf && getSessionKind(extractBatchEntry(grid[d][s + sp], batchLetter).text) === kind) {
+          skip[d][s + sp] = true; sp++;
         }
-        spanMap[d][s] = sp;
-        s += sp;
-      } else {
-        spanMap[d][s] = 1;
-        s++;
-      }
+        spanMap[d][s] = sp; s += sp;
+      } else { spanMap[d][s] = 1; s++; }
     }
   });
 
@@ -2085,15 +1613,12 @@ function renderTimetableSection(statsMap, targetPct) {
       const rSpan = spanMap[d][sIdx] || 1;
       const st = sf ? statsMap[sf] : null;
 
-      let cls = "cell-blue";
-      let sub = "";
-      if (raw.includes("BREAK")) {
-        cls = "cell-red";
-      } else if (st) {
+      let cls = "cell-blue"; let sub = "";
+      if (raw.includes("BREAK")) cls = "cell-red";
+      else if (st) {
         cls = st.pct >= targetPct ? "cell-green" : "cell-yellow";
         sub = `<div class="text-[11px] mt-1.5 opacity-95 font-medium">Att: ${st.pct}% | Missed: ${st.unattended}/${st.dynamicTotal}</div>`;
       }
-
       const bulkTag = rSpan > 1 ? `<div class="text-[10px] text-sky-300 font-black">[1 Combined Bulk Unit (${rSpan} Hrs)]</div>` : "";
       const labTag = isLab ? `<div class="mt-1.5"><span class="batch-badge">YOUR ${escapeHTML(currentUser.batch.toUpperCase())} LAB</span></div>` : "";
       tableHtml += `<td class="${cls}" ${rSpan > 1 ? `rowspan="${rSpan}"` : ""}><div>${escapeHTML(text)}</div>${bulkTag}${labTag}${sub}</td>`;
@@ -2104,52 +1629,11 @@ function renderTimetableSection(statsMap, targetPct) {
   document.getElementById("tt-grid-output").innerHTML = tableHtml;
 }
 
-function getDefaultDateForMonth(ym) {
-  return ym === "2026-09" ? SEM1_START_DATE : `${ym}-01`;
-}
-
-function renderGlobalCustomHolidaysBadges() {
-  const el = document.getElementById("global-custom-holidays-list");
-  if (!el) return;
-  const custom = getGlobalCustomHolidays();
-  const entries = Object.entries(custom).sort(([a], [b]) => a.localeCompare(b));
-  if (!entries.length) {
-    el.innerHTML = `<span class="text-slate-500">11 Nov 2026 is built-in. Click any date on the calendar below or pick a date above to add more!</span>`;
-    return;
-  }
-  el.innerHTML = entries.map(([iso, reason]) => `
-    <span class="inline-flex items-center gap-1.5 bg-red-950/80 border border-red-500/50 text-red-200 px-2.5 py-1 rounded-lg font-bold">
-      ${escapeHTML(iso)}: ${escapeHTML(reason)}
-      <button type="button" onclick="window.universalRemoveHoliday('${escapeHTML(iso)}')" class="text-red-400 hover:text-white ml-1 font-black">&times;</button>
-    </span>
-  `).join("");
-}
-
 function setupEventListeners() {
   document.getElementById("btn-toggle-login-pw").addEventListener("click", () => {
     const inp = document.getElementById("login-password");
-    const btn = document.getElementById("btn-toggle-login-pw");
-    if (inp.type === "password") { inp.type = "text"; btn.textContent = "Hide"; }
-    else { inp.type = "password"; btn.textContent = "Show"; }
-  });
-
-  document.getElementById("sync-status-pill").addEventListener("click", async () => {
-    if (!currentUser) return;
-    setSyncPill("Syncing with Cloud Now...", true);
-    await fetchGlobalConfigFromFirebase();
-    const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
-    if (remote && (remote.updatedAt || 0) > (currentUser.updatedAt || 0)) {
-      currentUser = remote;
-      purgeNonInstructionalDates(currentUser);
-      syncCalendarToTableTotals();
-      const db = getAllUsersDB();
-      db[currentUser.email] = currentUser;
-      saveAllUsersDB(db);
-      renderAll();
-      alert("Pulled newer attendance data from Cloud!");
-    } else {
-      await pushToFirebaseSilent(true);
-    }
+    if (inp.type === "password") { inp.type = "text"; document.getElementById("btn-toggle-login-pw").textContent = "Hide"; }
+    else { inp.type = "password"; document.getElementById("btn-toggle-login-pw").textContent = "Show"; }
   });
 
   document.getElementById("login-form").addEventListener("submit", async (e) => {
@@ -2166,13 +1650,11 @@ function setupEventListeners() {
     const remember = document.getElementById("login-remember").checked;
 
     if (!email.endsWith("@gmail.com") || email.length > 80) {
-      errEl.textContent = "Please enter a valid @gmail.com address.";
-      errEl.classList.remove("hidden");
-      return;
+      errEl.textContent = "Please enter a valid @gmail.com address."; errEl.classList.remove("hidden"); return;
     }
 
     const pwDigest = await saltedHash(pw);
-
+    
     submitBtn.textContent = "Decrypting & Syncing Cloud Profile...";
     const db = getAllUsersDB();
     let candidateUser = null;
@@ -2185,9 +1667,7 @@ function setupEventListeners() {
     } else if (db[email]) {
       if (db[email].passwordHash && db[email].passwordHash !== pwDigest) {
         submitBtn.textContent = "Login / Register & Enter Dashboard";
-        errEl.textContent = "Incorrect password for this account.";
-        errEl.classList.remove("hidden");
-        return;
+        errEl.textContent = "Incorrect password for this account."; errEl.classList.remove("hidden"); return;
       }
       candidateUser = db[email];
       candidateUser.passwordHash = pwDigest;
@@ -2195,23 +1675,9 @@ function setupEventListeners() {
     } else {
       if (!name) {
         submitBtn.textContent = "Login / Register & Enter Dashboard";
-        errEl.textContent = "Please enter your Full Name for first-time registration.";
-        errEl.classList.remove("hidden");
-        return;
+        errEl.textContent = "Please enter your Full Name for first-time registration."; errEl.classList.remove("hidden"); return;
       }
-      candidateUser = {
-        email,
-        name: name,
-        branch,
-        batch,
-        passwordHash: pwDigest,
-        targetPct: 75,
-        semData: {},
-        dailyLogs: {},
-        dailyTicks: {},
-        slot7Map: {},
-        updatedAt: Date.now()
-      };
+      candidateUser = { email, name: name, branch, batch, passwordHash: pwDigest, targetPct: 75, semData: {}, dailyLogs: {}, dailyTicks: {}, slot7Map: {}, updatedAt: Date.now() };
     }
 
     ensureUserSemData(candidateUser);
@@ -2222,38 +1688,21 @@ function setupEventListeners() {
     startRealtimeCloudListener();
     fetchGlobalConfigFromFirebase();
 
-    if (remember) {
-      localStorage.setItem("att_remembered_user_v9", email);
-    } else {
-      localStorage.removeItem("att_remembered_user_v9");
-    }
+    if (remember) localStorage.setItem("att_remembered_user_v9", email);
+    else localStorage.removeItem("att_remembered_user_v9");
     enterDashboard();
   });
 
   document.getElementById("cal-month-select").addEventListener("change", (e) => {
-    selectedCalDate = getDefaultDateForMonth(e.target.value);
-    syncTimetableToDate(selectedCalDate);
-    renderAll();
+    selectedCalDate = getDefaultDateForMonth(e.target.value); syncTimetableToDate(selectedCalDate); renderAll();
   });
   document.getElementById("btn-prev-month").addEventListener("click", () => {
-    const sel = document.getElementById("cal-month-select");
-    const idx = MONTHS_LIST.indexOf(sel.value);
-    if (idx > 0) {
-      sel.value = MONTHS_LIST[idx - 1];
-      selectedCalDate = getDefaultDateForMonth(sel.value);
-      syncTimetableToDate(selectedCalDate);
-      renderAll();
-    }
+    const sel = document.getElementById("cal-month-select"); const idx = MONTHS_LIST.indexOf(sel.value);
+    if (idx > 0) { sel.value = MONTHS_LIST[idx - 1]; selectedCalDate = getDefaultDateForMonth(sel.value); syncTimetableToDate(selectedCalDate); renderAll(); }
   });
   document.getElementById("btn-next-month").addEventListener("click", () => {
-    const sel = document.getElementById("cal-month-select");
-    const idx = MONTHS_LIST.indexOf(sel.value);
-    if (idx < MONTHS_LIST.length - 1) {
-      sel.value = MONTHS_LIST[idx + 1];
-      selectedCalDate = getDefaultDateForMonth(sel.value);
-      syncTimetableToDate(selectedCalDate);
-      renderAll();
-    }
+    const sel = document.getElementById("cal-month-select"); const idx = MONTHS_LIST.indexOf(sel.value);
+    if (idx < MONTHS_LIST.length - 1) { sel.value = MONTHS_LIST[idx + 1]; selectedCalDate = getDefaultDateForMonth(sel.value); syncTimetableToDate(selectedCalDate); renderAll(); }
   });
 
   document.getElementById("btn-day-full-bunk").addEventListener("click", () => applyPresetBunkMode("FULL"));
@@ -2261,214 +1710,69 @@ function setupEventListeners() {
   document.getElementById("btn-day-pm-bunk").addEventListener("click", () => applyPresetBunkMode("PM"));
   document.getElementById("btn-day-clear-bunk").addEventListener("click", () => applyPresetBunkMode("CLEAR"));
 
-  document.getElementById("dash-semester").addEventListener("change", (e) => {
-    currentSem = e.target.value;
-    if (universalVaultMounted) populateUniversalPanel();
-    renderAll();
-  });
-  document.getElementById("dash-batch").addEventListener("change", (e) => {
-    currentUser.batch = e.target.value;
-    document.getElementById("student-meta").innerHTML =
-      `<b>Branch:</b> ${escapeHTML(currentUser.branch)} &nbsp;|&nbsp; <b>Batch:</b> ${escapeHTML(currentUser.batch)} &nbsp;|&nbsp; <b>Account:</b> ${escapeHTML(currentUser.email)}`;
-    persistCurrentUser();
-    renderAll();
-  });
+  document.getElementById("dash-semester").addEventListener("change", (e) => { currentSem = e.target.value; if (universalVaultMounted) populateUniversalPanel(); renderAll(); });
+  document.getElementById("dash-batch").addEventListener("change", (e) => { currentUser.batch = e.target.value; document.getElementById("student-meta").innerHTML = `<b>Branch:</b> ${escapeHTML(currentUser.branch)} &nbsp;|&nbsp; <b>Batch:</b> ${escapeHTML(currentUser.batch)} &nbsp;|&nbsp; <b>Account:</b> ${escapeHTML(currentUser.email)}`; persistCurrentUser(); renderAll(); });
 
   document.getElementById("btn-reset-sem").addEventListener("click", () => {
-    SEMESTER_DATA[currentSem].forEach(c => {
-      currentUser.semData[currentSem][c.code] = {
-        unattended: 0,
-        extra: 0,
-        manualUnattended: 0,
-        manualExtra: 0,
-        imp: c.imp
-      };
-    });
-    currentUser.dailyLogs = {};
-    currentUser.dailyTicks = {};
-    currentUser.slot7Map = {};
-    persistCurrentUser();
-    renderAll();
+    SEMESTER_DATA[currentSem].forEach(c => { currentUser.semData[currentSem][c.code] = { unattended: 0, extra: 0, manualUnattended: 0, manualExtra: 0, imp: c.imp }; });
+    currentUser.dailyLogs = {}; currentUser.dailyTicks = {}; currentUser.slot7Map = {}; persistCurrentUser(); renderAll();
   });
 
   document.getElementById("btn-logout").addEventListener("click", () => {
-    if (livePollTimer) {
-      clearInterval(livePollTimer);
-      livePollTimer = null;
-    }
-    localStorage.removeItem("att_remembered_user_v9");
-    currentUser = null;
-    universalVaultMounted = false;
-    document.getElementById("global-btn-mount").innerHTML = "";
-    document.getElementById("global-vault-mount").innerHTML = "";
-    document.getElementById("inspector-universal-holiday-mount").innerHTML = "";
-    setSyncPill("Connecting to Cloud...", true);
-    document.getElementById("app-view").classList.add("hidden");
-    document.getElementById("login-view").classList.remove("hidden");
+    if (livePollTimer) { clearInterval(livePollTimer); livePollTimer = null; }
+    localStorage.removeItem("att_remembered_user_v9"); currentUser = null;
+    universalVaultMounted = false; document.getElementById("global-btn-mount").innerHTML = ""; document.getElementById("global-vault-mount").innerHTML = ""; document.getElementById("inspector-universal-holiday-mount").innerHTML = "";
+    setSyncPill("Connecting to Cloud...", true); document.getElementById("app-view").classList.add("hidden"); document.getElementById("login-view").classList.remove("hidden");
   });
 
   document.querySelectorAll(".target-pill").forEach(btn => {
-    btn.addEventListener("click", () => {
-      currentUser.targetPct = parseInt(btn.dataset.target);
-      document.getElementById("custom-target-input").value = currentUser.targetPct;
-      persistCurrentUser();
-      renderAll();
-    });
+    btn.addEventListener("click", () => { currentUser.targetPct = parseInt(btn.dataset.target); document.getElementById("custom-target-input").value = currentUser.targetPct; persistCurrentUser(); renderAll(); });
   });
 
   document.getElementById("custom-target-input").addEventListener("change", (e) => {
-    const val = Math.max(75, Math.min(100, parseInt(e.target.value) || 75));
-    e.target.value = val;
-    currentUser.targetPct = val;
-    persistCurrentUser();
-    renderAll();
+    const val = Math.max(75, Math.min(100, parseInt(e.target.value) || 75)); e.target.value = val; currentUser.targetPct = val; persistCurrentUser(); renderAll();
   });
 
-  function updateSlot7ForSelectedDate(rawInput) {
-    if (isNonInstructionalDay(selectedCalDate)) return;
-    const val = rawInput.trim();
-    const courses = SEMESTER_DATA[currentSem];
-    const newShort = val ? matchSubjectShort(val, courses) : null;
-    if (val && !newShort) {
-      alert("Unrecognized subject short-form. Type eg, ap, cp, fem-i, ec, be&de, ws-i, or uhv (lowercase or uppercase).");
-      return;
-    }
-
-    if (newShort) {
-      currentUser.slot7Map[selectedCalDate] = newShort;
-    } else {
-      delete currentUser.slot7Map[selectedCalDate];
-      if (currentUser.dailyTicks[selectedCalDate]) {
-        delete currentUser.dailyTicks[selectedCalDate][8];
-      }
-    }
-
-    const { units } = getMergedDaySlots(selectedCalDate);
-    recomputeDayBadge(selectedCalDate, units, currentUser.dailyTicks[selectedCalDate] || {});
-    persistCurrentUser();
-    renderAll();
-  }
-
   document.getElementById("btn-save-slot7").addEventListener("click", () => {
-    updateSlot7ForSelectedDate(document.getElementById("slot7-input").value);
+    const val = document.getElementById("slot7-input").value.trim();
+    const newShort = val ? matchSubjectShort(val, SEMESTER_DATA[currentSem]) : null;
+    if (val && !newShort) { alert("Unrecognized subject short-form."); return; }
+    if (newShort) currentUser.slot7Map[selectedCalDate] = newShort;
+    else { delete currentUser.slot7Map[selectedCalDate]; if (currentUser.dailyTicks[selectedCalDate]) delete currentUser.dailyTicks[selectedCalDate][8]; }
+    const { units } = getMergedDaySlots(selectedCalDate); recomputeDayBadge(selectedCalDate, units, currentUser.dailyTicks[selectedCalDate] || {}); persistCurrentUser(); renderAll();
   });
   document.getElementById("btn-clear-slot7").addEventListener("click", () => {
     document.getElementById("slot7-input").value = "";
-    updateSlot7ForSelectedDate("");
+    delete currentUser.slot7Map[selectedCalDate]; if (currentUser.dailyTicks[selectedCalDate]) delete currentUser.dailyTicks[selectedCalDate][8];
+    const { units } = getMergedDaySlots(selectedCalDate); recomputeDayBadge(selectedCalDate, units, currentUser.dailyTicks[selectedCalDate] || {}); persistCurrentUser(); renderAll();
   });
 
   document.getElementById("btn-tt-even").addEventListener("click", () => switchTtTab("Even"));
   document.getElementById("btn-tt-odd").addEventListener("click", () => switchTtTab("Odd"));
   document.getElementById("btn-tt-img").addEventListener("click", () => switchTtTab("Img"));
-
   document.getElementById("btn-mode-cards").addEventListener("click", () => switchTtMode("cards"));
   document.getElementById("btn-mode-grid").addEventListener("click", () => switchTtMode("grid"));
-
   document.querySelectorAll(".day-pill").forEach(btn => {
-    btn.addEventListener("click", () => {
-      ttSelectedDay = btn.dataset.day;
-      updateTimetableTabButtons();
-      renderAll();
-    });
+    btn.addEventListener("click", () => { ttSelectedDay = btn.dataset.day; updateTimetableTabButtons(); renderAll(); });
   });
 
   document.getElementById("tt-file-input").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      localStorage.setItem("att_saved_tt_img", ev.target.result);
-      loadSavedTimetableImage();
-    };
-    reader.readAsDataURL(file);
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader(); reader.onload = (ev) => { localStorage.setItem("att_saved_tt_img", ev.target.result); loadSavedTimetableImage(); }; reader.readAsDataURL(file);
   });
-
   document.getElementById("paste-zone").addEventListener("paste", (e) => {
-    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-    let found = false;
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items; let found = false;
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.indexOf("image") === 0) {
-        found = true;
-        const blob = items[i].getAsFile();
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          localStorage.setItem("att_saved_tt_img", ev.target.result);
-          document.getElementById("paste-status").textContent = "Image pasted and saved!";
-          loadSavedTimetableImage();
-        };
-        reader.readAsDataURL(blob);
-        break;
+        found = true; const blob = items[i].getAsFile(); const reader = new FileReader();
+        reader.onload = (ev) => { localStorage.setItem("att_saved_tt_img", ev.target.result); document.getElementById("paste-status").textContent = "Image pasted and saved!"; loadSavedTimetableImage(); };
+        reader.readAsDataURL(blob); break;
       }
     }
-    if (!found) {
-      document.getElementById("paste-status").textContent = "Clipboard does not contain an image!";
-    }
+    if (!found) document.getElementById("paste-status").textContent = "Clipboard does not contain an image!";
   });
-
-  document.getElementById("btn-remove-img").addEventListener("click", () => {
-    localStorage.removeItem("att_saved_tt_img");
-    loadSavedTimetableImage();
-  });
-
+  document.getElementById("btn-remove-img").addEventListener("click", () => { localStorage.removeItem("att_saved_tt_img"); loadSavedTimetableImage(); });
   switchTtMode(ttViewMode);
-}
-
-function populateUniversalPanel() {
-  const sel = document.getElementById("global-course-select");
-  if (!sel) return;
-  sel.innerHTML = "";
-  SEMESTER_DATA[currentSem].forEach(c => {
-    const opt = document.createElement("option");
-    opt.value = c.code;
-    opt.textContent = `${c.short} - ${c.name} (${c.code})`;
-    sel.appendChild(opt);
-  });
-  renderGlobalCustomHolidaysBadges();
-}
-
-function switchTtTab(tab) {
-  ttWeekTab = tab;
-  updateTimetableTabButtons();
-
-  if (tab === "Img") {
-    document.getElementById("tt-schedule-container").classList.add("hidden");
-    document.getElementById("tt-image-container").classList.remove("hidden");
-  } else {
-    document.getElementById("tt-schedule-container").classList.remove("hidden");
-    document.getElementById("tt-image-container").classList.add("hidden");
-    renderAll();
-  }
-}
-
-function switchTtMode(mode) {
-  ttViewMode = mode;
-  document.getElementById("btn-mode-cards").className = mode === "cards" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-sky-600 text-white" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
-  document.getElementById("btn-mode-grid").className = mode === "grid" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-sky-600 text-white" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
-
-  if (mode === "cards") {
-    document.getElementById("tt-day-pills").classList.remove("hidden");
-    document.getElementById("tt-cards-output").classList.remove("hidden");
-    document.getElementById("tt-grid-output").classList.add("hidden");
-  } else {
-    document.getElementById("tt-day-pills").classList.add("hidden");
-    document.getElementById("tt-cards-output").classList.add("hidden");
-    document.getElementById("tt-grid-output").classList.remove("hidden");
-  }
-}
-
-function loadSavedTimetableImage() {
-  const dataUrl = localStorage.getItem("att_saved_tt_img");
-  const imgEl = document.getElementById("tt-saved-preview");
-  const rmBtn = document.getElementById("btn-remove-img");
-  if (dataUrl) {
-    imgEl.src = dataUrl;
-    imgEl.classList.remove("hidden");
-    rmBtn.classList.remove("hidden");
-  } else {
-    imgEl.src = "";
-    imgEl.classList.add("hidden");
-    rmBtn.classList.add("hidden");
-  }
 }
 </script>
 </body>
