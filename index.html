@@ -187,6 +187,17 @@
         <div class="flex flex-wrap items-center gap-2">
           <!-- Universal Power Button Slot -->
           <span id="global-btn-mount"></span>
+          
+          <select id="dash-branch" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white max-w-[140px] sm:max-w-none truncate">
+            <option value="Computer Engineering - Div I">CE Div I</option>
+            <option value="Computer Engineering - Div II">CE Div II</option>
+            <option value="Computer Engineering - Div III">CE Div III (Comps C)</option>
+            <option value="Mechanical Engineering">Mech</option>
+            <option value="Information Technology">IT</option>
+            <option value="Electronics and Telecommunication">EXTC</option>
+            <option value="Basic Sciences and Humanities">FE Basics</option>
+          </select>
+          
           <select id="dash-semester" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white"></select>
           <select id="dash-batch" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white">
             <option value="Batch A">Batch A</option>
@@ -423,7 +434,7 @@ function escapeHTML(str) {
   }[ch]));
 }
 
-// 2. EXAM PERIODS & SLOTS
+// 2. EXAM PERIODS
 const SEM1_START_DATE = "2026-09-07";
 const SEM1_LAST_INSTRUCTION_DATE = "2026-12-04";
 const SEM1_END_DATE = "2026-12-23";
@@ -435,6 +446,7 @@ const EXAM_PERIODS = [
 ];
 
 const AUTH_PEPPER = "ATT_V9_PEPPER_2026";
+const STRICT_ADMIN_PW_HASH = "a2eb4d78636647b59f87c3e45b18a431a6c27ff8df435364a85261e6401564a1";
 
 const TIME_SLOTS = [
   "1 (9:00 - 10:00)", "2 (10:00 - 11:00)", "Short Break (11:00 - 11:15)",
@@ -442,7 +454,7 @@ const TIME_SLOTS = [
   "5 (14:00 - 15:00)", "6 (15:00 - 16:00)", "7 (16:00 - 17:00)"
 ];
 
-// DYNAMIC TIMETABLES
+// DYNAMIC TIMETABLE ARCHITECTURE FOR DIFFERENT BRANCHES AND DIVISIONS
 const DEFAULT_EVEN = {
   MON: ["AP", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Remedial Lecture"],
   TUE: ["EC", "EG", "SHORT BREAK", "BE&DE", "FEM-I", "LUNCH BREAK", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "UHV", "FE Mentoring Slot"],
@@ -499,6 +511,7 @@ const IT_EVEN = {
   FRI: ["BE&DE", "EG", "SHORT BREAK", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "BE&DE", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Extra Lecture Slot 3"]
 };
 
+// COMMANDO FIX: PERFECT MAPPING SO IT/MECH DO NOT RETURN UNDEFINED
 const TIMETABLES_DB = {
   "Computer Engineering - Div I": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
   "Computer Engineering - Div II": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
@@ -580,7 +593,6 @@ async function saltedHash(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-// Global functions to declare/remove holiday universally
 window.universalDeclareHoliday = async function(isoDate, customReason) {
   if (!isoDate) return;
   const reason = escapeHTML((customReason || "Declared Holiday").trim());
@@ -590,20 +602,15 @@ window.universalDeclareHoliday = async function(isoDate, customReason) {
   delete removed[isoDate];
   saveGlobalCustomHolidays(custom);
   saveRemovedBaseHolidays(removed);
-
   purgeNonInstructionalDates(currentUser);
   persistCurrentUser();
-
+  
   try {
     await fetch(`${_getCloudEndpoint()}/global_holidays.json`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: custom, removed })
-    });
+      method: "PUT", headers: { "Content-Type": "application/json" }, 
+      body: JSON.stringify({ authToken: STRICT_ADMIN_PW_HASH, data: custom, removed })
+    }).catch(() => null);
   } catch (e) {}
-
-  const statusEl = document.getElementById("global-holiday-status");
-  if (statusEl) statusEl.textContent = `Declared ${isoDate} (${reason}) as a holiday for all students!`;
   renderAll();
 };
 
@@ -612,30 +619,21 @@ window.universalRemoveHoliday = async function(isoDate) {
   const custom = getGlobalCustomHolidays();
   const removed = getRemovedBaseHolidays();
   delete custom[isoDate];
-  if (BASE_HOLIDAYS[isoDate]) {
-    removed[isoDate] = true;
-  }
+  if (BASE_HOLIDAYS[isoDate]) removed[isoDate] = true;
   saveGlobalCustomHolidays(custom);
   saveRemovedBaseHolidays(removed);
-
+  
   try {
     await fetch(`${_getCloudEndpoint()}/global_holidays.json`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: custom, removed })
-    });
+      method: "PUT", headers: { "Content-Type": "application/json" }, 
+      body: JSON.stringify({ authToken: STRICT_ADMIN_PW_HASH, data: custom, removed })
+    }).catch(() => null);
   } catch (e) {}
-
-  const statusEl = document.getElementById("global-holiday-status");
-  if (statusEl) statusEl.textContent = `Removed holiday status for ${isoDate} (now a normal working day).`;
   renderAll();
 };
 
 function mountUniversalVault() {
-  if (universalVaultMounted) {
-    populateUniversalPanel();
-    return;
-  }
+  if (universalVaultMounted) { populateUniversalPanel(); return; }
   document.getElementById("global-btn-mount").innerHTML = `
     <button id="btn-toggle-power-panel" type="button" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black px-3.5 py-2 rounded-xl shadow-lg border border-amber-300 transition active:scale-95">
       &#9889; Global Tools
@@ -691,30 +689,25 @@ function mountUniversalVault() {
     panel.classList.toggle("hidden");
     if (!panel.classList.contains("hidden")) panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
-
   document.getElementById("btn-global-add-holiday").addEventListener("click", () => {
     window.universalDeclareHoliday(document.getElementById("global-holiday-date").value, document.getElementById("global-holiday-name").value);
   });
-
   document.getElementById("btn-global-remove-holiday").addEventListener("click", () => {
     window.universalRemoveHoliday(document.getElementById("global-holiday-date").value);
   });
-
   document.getElementById("btn-broadcast-extra").addEventListener("click", async () => {
     const code = document.getElementById("global-course-select").value;
     const count = Math.max(0, parseInt(document.getElementById("global-extra-count").value) || 0);
     const extras = getGlobalExtras();
     extras[code] = count;
     saveGlobalExtras(extras);
-
     try {
       await fetch(`${_getCloudEndpoint()}/global_extras.json`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: extras })
-      });
+        method: "PUT", headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify({ authToken: STRICT_ADMIN_PW_HASH, data: extras })
+      }).catch(() => null);
     } catch (e) {}
-    document.getElementById("global-broadcast-status").textContent = `Broadcasted ${count} extra lecture(s) for ${code} to all other students!`;
+    document.getElementById("global-broadcast-status").textContent = `Broadcasted ${count} extra lecture(s) for ${code} to all other students via Firebase!`;
     renderAll();
   });
 }
@@ -725,10 +718,7 @@ async function getCloudUserNodeHash(email, passwordHash) {
 
 async function deriveAESKey(email, passwordHash) {
   const enc = new TextEncoder();
-  const baseKey = await crypto.subtle.importKey(
-    "raw", enc.encode(`${email.toLowerCase()}::${passwordHash}`),
-    { name: "PBKDF2" }, false, ["deriveKey"]
-  );
+  const baseKey = await crypto.subtle.importKey("raw", enc.encode(`${email.toLowerCase()}::${passwordHash}`), { name: "PBKDF2" }, false, ["deriveKey"]);
   return crypto.subtle.deriveKey(
     { name: "PBKDF2", salt: enc.encode("DBIT_ATT_E2EE_SALT_2026"), iterations: 100000, hash: "SHA-256" },
     baseKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
@@ -740,11 +730,7 @@ async function encryptProfileData(profileObj, email, passwordHash) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const encoded = new TextEncoder().encode(JSON.stringify(profileObj));
   const cipherBuf = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
-  return {
-    iv: btoa(String.fromCharCode(...iv)),
-    ct: btoa(String.fromCharCode(...new Uint8Array(cipherBuf))),
-    updatedAt: profileObj.updatedAt || Date.now()
-  };
+  return { iv: btoa(String.fromCharCode(...iv)), ct: btoa(String.fromCharCode(...new Uint8Array(cipherBuf))), updatedAt: profileObj.updatedAt || Date.now() };
 }
 
 async function decryptProfileData(encRecord, email, passwordHash) {
@@ -776,15 +762,9 @@ async function pushToFirebaseSilent() {
     lastSyncedTimestamp = currentUser.updatedAt;
     const nodeHash = await getCloudUserNodeHash(currentUser.email, currentUser.passwordHash);
     const encryptedPayload = await encryptProfileData(currentUser, currentUser.email, currentUser.passwordHash);
-    
-    // Fallback try/catch wrapper around fetch to prevent silent UI freezing
     const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      cache: "no-store",
-      body: JSON.stringify(encryptedPayload)
+      method: "PUT", headers: { "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify(encryptedPayload)
     }).catch(() => null);
-
     if (res && res.ok) {
       setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
       return true;
@@ -812,15 +792,12 @@ async function pullFromFirebaseSilent(email, passwordHash) {
     const decrypted = await decryptProfileData(raw, email, passwordHash);
     setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
     return decrypted;
-  } catch (e) {
-    return null;
-  }
+  } catch (e) { return null; }
 }
 
 function startRealtimeCloudListener() {
   if (livePollTimer) { clearInterval(livePollTimer); livePollTimer = null; }
   if (!currentUser || !currentUser.email || !currentUser.passwordHash) return;
-
   livePollTimer = setInterval(async () => {
     if (document.visibilityState !== "visible" || !currentUser || !currentUser.passwordHash) return;
     try {
@@ -829,7 +806,6 @@ function startRealtimeCloudListener() {
       if (!res || !res.ok) return;
       const raw = await res.json();
       if (!raw || !raw.ct) return;
-
       const remoteTime = raw.updatedAt || 0;
       const localTime = currentUser.updatedAt || 0;
       if (remoteTime > localTime && remoteTime > lastSyncedTimestamp) {
@@ -852,10 +828,7 @@ function startRealtimeCloudListener() {
   }, 4000);
 }
 
-window.addEventListener("online", () => {
-  if (currentUser) pushToFirebaseSilent();
-});
-
+window.addEventListener("online", () => { if (currentUser) pushToFirebaseSilent(); });
 document.addEventListener("visibilitychange", async () => {
   if (document.visibilityState === "visible" && currentUser && currentUser.passwordHash) {
     fetchGlobalConfigFromFirebase();
@@ -890,13 +863,9 @@ async function fetchGlobalConfigFromFirebase() {
       }
     }
   } catch (e) {
-    console.error("Global config fetch failed:", e);
+    console.warn("Global config sync skipped:", e);
   } finally {
-    // ALWAYS render UI even if Firebase hangs
-    if (currentUser) {
-      purgeNonInstructionalDates(currentUser);
-      renderAll();
-    }
+    if (currentUser) { purgeNonInstructionalDates(currentUser); renderAll(); }
   }
 }
 
@@ -911,11 +880,9 @@ function getExamPeriodInfo(isoDate) {
 }
 function isNonInstructionalDay(isoDate) {
   return (
-    isBeforeTermStart(isoDate) ||
-    isAfterTermEnd(isoDate) ||
+    isBeforeTermStart(isoDate) || isAfterTermEnd(isoDate) ||
     (currentSem === "Semester I" && isoDate > SEM1_LAST_INSTRUCTION_DATE) ||
-    Boolean(getHolidayName(isoDate)) ||
-    Boolean(getExamPeriodInfo(isoDate))
+    Boolean(getHolidayName(isoDate)) || Boolean(getExamPeriodInfo(isoDate))
   );
 }
 
@@ -923,15 +890,14 @@ function computeSem1WorkingDaysSummary() {
   const start = new Date(SEM1_START_DATE + "T00:00:00");
   const end = new Date(SEM1_LAST_INSTRUCTION_DATE + "T00:00:00");
   const todayIso = new Date().toISOString().slice(0, 10);
-
   let totalWorkingDays = 0; let completedWorkingDays = 0; let remainingWorkingDays = 0;
+
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, "0"); const day = String(d.getDate()).padStart(2, "0");
     const iso = `${y}-${m}-${day}`; const dow = (d.getDay() + 6) % 7;
     if (dow < 5 && !getHolidayName(iso) && !getExamPeriodInfo(iso)) {
       totalWorkingDays++;
-      if (iso <= todayIso) completedWorkingDays++;
-      else remainingWorkingDays++;
+      if (iso <= todayIso) completedWorkingDays++; else remainingWorkingDays++;
     }
   }
   return { totalWorkingDays, completedWorkingDays, remainingWorkingDays };
@@ -956,13 +922,8 @@ function purgeNonInstructionalDates(user) {
 function computeCalendarTotalsForSem(sem) {
   const calMissedByShort = {}; const calExtraAttendedByShort = {}; const calExtraMissedByShort = {};
   const courses = SEMESTER_DATA[sem] || [];
-  courses.forEach(c => {
-    calMissedByShort[c.short] = 0; calExtraAttendedByShort[c.short] = 0; calExtraMissedByShort[c.short] = 0;
-  });
-
-  if (sem !== "Semester I" || !currentUser) {
-    return { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort };
-  }
+  courses.forEach(c => { calMissedByShort[c.short] = 0; calExtraAttendedByShort[c.short] = 0; calExtraMissedByShort[c.short] = 0; });
+  if (sem !== "Semester I" || !currentUser) return { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort };
 
   const allDates = new Set([...Object.keys(currentUser.dailyTicks || {}), ...Object.keys(currentUser.slot7Map || {})]);
   allDates.forEach(isoDate => {
@@ -970,7 +931,6 @@ function computeCalendarTotalsForSem(sem) {
     const { isOff, units } = getMergedDaySlots(isoDate, sem);
     if (isOff) return;
     const dayTicks = (currentUser.dailyTicks && currentUser.dailyTicks[isoDate]) || {};
-
     units.forEach(u => {
       if (!u.short) return;
       const isTickedMissed = u.indices.some(i => Boolean(dayTicks[i]));
@@ -982,7 +942,6 @@ function computeCalendarTotalsForSem(sem) {
       }
     });
   });
-
   return { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort };
 }
 
@@ -997,9 +956,11 @@ function getWeekType(isoDate) {
   for (const [s, e] of EVEN_RANGES) { if (isoDate >= s && isoDate <= e) return "Even Week"; }
   for (const [s, e] of ODD_RANGES) { if (isoDate >= s && isoDate <= e) return "Odd Week"; }
   const d = new Date(isoDate + "T00:00:00");
-  const dayNum = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7) % 2 === 0 ? "Even Week" : "Odd Week";
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return weekNo % 2 === 0 ? "Even Week" : "Odd Week";
 }
 
 function getSessionKind(entryText) {
@@ -1059,7 +1020,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   Object.keys(SEMESTER_DATA).forEach(s => {
     const opt = document.createElement("option"); opt.value = s; opt.textContent = s; semSel.appendChild(opt);
   });
-
   const todayIso = new Date().toISOString().slice(0, 10);
   selectedCalDate = (todayIso >= SEM1_START_DATE && todayIso <= "2026-12-31") ? todayIso : SEM1_START_DATE;
   const ym = selectedCalDate.slice(0, 7);
@@ -1072,6 +1032,11 @@ window.addEventListener("DOMContentLoaded", async () => {
     currentUser = db[rememberedEmail];
     purgeNonInstructionalDates(currentUser);
     enterDashboard();
+    
+    // Always render UI first immediately to prevent blank white screens
+    renderAll();
+    
+    // Then attempt background sync
     await fetchGlobalConfigFromFirebase();
     const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
     if (remote && remote.semData) {
@@ -1082,13 +1047,12 @@ window.addEventListener("DOMContentLoaded", async () => {
         db[currentUser.email] = currentUser;
         saveAllUsersDB(db);
         renderAll();
-      } else { await pushToFirebaseSilent(); }
-    } else { await pushToFirebaseSilent(); }
+      } else await pushToFirebaseSilent();
+    } else await pushToFirebaseSilent();
     startRealtimeCloudListener();
   } else {
     document.getElementById("login-view").classList.remove("hidden");
   }
-
   setupEventListeners();
 });
 
@@ -1099,7 +1063,6 @@ function ensureUserSemData(user) {
   if (!user.slot7Map) user.slot7Map = {};
   if (!user.targetPct) user.targetPct = 75;
   purgeNonInstructionalDates(user);
-
   const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem("Semester I");
 
   Object.keys(SEMESTER_DATA).forEach(sem => {
@@ -1165,15 +1128,10 @@ function getComputedStats() {
     const displayUnattended = calMissed + manualMissed;
     const displayExtra = manualExtra;
 
-    const item = {
-      ...c, imp: rec.imp || c.imp, dynamicTotal, unattended, calMissed, manualMissed, calExtraAttended, calExtraMissed,
-      manualExtra, personalExtra: manualExtra, displayUnattended, displayExtra, adminExtra, totalExtra: totalExtraAttended,
-      effAttended, pct, reqTarget, needed, safeBunks, isSafe: pct >= targetPct
-    };
+    const item = { ...c, imp: rec.imp || c.imp, dynamicTotal, unattended, calMissed, manualMissed, calExtraAttended, calExtraMissed, manualExtra, personalExtra: manualExtra, displayUnattended, displayExtra, adminExtra, totalExtra: totalExtraAttended, effAttended, pct, reqTarget, needed, safeBunks, isSafe: pct >= targetPct };
     statsMap[c.short] = item;
     return item;
   });
-
   return { list, statsMap, targetPct };
 }
 
@@ -1182,11 +1140,11 @@ function enterDashboard() {
   syncCalendarToTableTotals();
   document.getElementById("login-view").classList.add("hidden");
   document.getElementById("app-view").classList.remove("hidden");
-
   const hr = new Date().getHours();
   const greet = hr < 12 ? "Good Morning" : hr < 17 ? "Good Afternoon" : "Good Evening";
   document.getElementById("greeting-title").textContent = `${greet}, ${currentUser.name}`;
   document.getElementById("student-meta").innerHTML = `<b>Branch:</b> ${escapeHTML(currentUser.branch)} &nbsp;|&nbsp; <b>Batch:</b> ${escapeHTML(currentUser.batch)} &nbsp;|&nbsp; <b>Account:</b> ${escapeHTML(currentUser.email)}`;
+  document.getElementById("dash-branch").value = currentUser.branch || "Computer Engineering - Div I";
   document.getElementById("dash-batch").value = currentUser.batch;
   document.getElementById("custom-target-input").value = currentUser.targetPct || 75;
 
@@ -1198,7 +1156,6 @@ function enterDashboard() {
 
 function renderAll() {
   const { list, statsMap, targetPct } = getComputedStats();
-
   const wdBar = document.getElementById("term-working-days-bar");
   if (currentSem === "Semester I") {
     const { totalWorkingDays, completedWorkingDays, remainingWorkingDays } = computeSem1WorkingDaysSummary();
@@ -1209,9 +1166,7 @@ function renderAll() {
       <span class="font-bold text-amber-300">Remaining Lecture Days: <b>${remainingWorkingDays}</b> (Min ${minDaysForTarget} days for ${targetPct}%)</span>
     `;
     wdBar.classList.remove("hidden");
-  } else {
-    wdBar.classList.add("hidden");
-  }
+  } else wdBar.classList.add("hidden");
 
   document.querySelectorAll(".target-pill").forEach(btn => {
     const val = parseInt(btn.dataset.target);
@@ -1251,6 +1206,39 @@ function renderAll() {
   renderDailyInspector(statsMap, targetPct);
   renderTimetableSection(statsMap, targetPct);
 }
+
+// BUG FIX: Wrapped Step Functions in strict integers to prevent negative NaN issues
+window.stepSubject = function(code, field, delta) {
+  const rec = currentUser.semData[currentSem][code];
+  const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
+  const { calMissedByShort } = computeCalendarTotalsForSem(currentSem);
+  const calMissed = parseInt(calMissedByShort[course.short]) || 0;
+  
+  if (field === "unattended") {
+    const displayUnattended = calMissed + (parseInt(rec.manualUnattended) || 0);
+    rec.manualUnattended = Math.max(0, (displayUnattended + parseInt(delta)) - calMissed);
+  } else {
+    rec.manualExtra = (parseInt(rec.manualExtra) || 0) + parseInt(delta);
+  }
+  persistCurrentUser();
+  renderAll();
+};
+
+window.setSubjectVal = function(code, field, val) {
+  const rec = currentUser.semData[currentSem][code];
+  const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
+  const { calMissedByShort } = computeCalendarTotalsForSem(currentSem);
+  const calMissed = parseInt(calMissedByShort[course.short]) || 0;
+  const num = parseInt(val) || 0;
+
+  if (field === "unattended") {
+    rec.manualUnattended = Math.max(0, num - calMissed);
+  } else {
+    rec.manualExtra = num;
+  }
+  persistCurrentUser();
+  renderAll();
+};
 
 function renderSubjectsUI(list, targetPct) {
   document.getElementById("th-req-target").textContent = `Req (${targetPct}%)`;
@@ -1341,38 +1329,6 @@ function renderSubjectsUI(list, targetPct) {
   }).join("");
 }
 
-window.stepSubject = function(code, field, delta) {
-  const rec = currentUser.semData[currentSem][code];
-  const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
-  const { calMissedByShort } = computeCalendarTotalsForSem(currentSem);
-  const calMissed = calMissedByShort[course.short] || 0;
-  
-  if (field === "unattended") {
-    const displayUnattended = calMissed + (rec.manualUnattended || 0);
-    rec.manualUnattended = Math.max(0, (displayUnattended + delta) - calMissed);
-  } else {
-    rec.manualExtra = (parseInt(rec.manualExtra) || 0) + delta;
-  }
-  persistCurrentUser();
-  renderAll();
-};
-
-window.setSubjectVal = function(code, field, val) {
-  const rec = currentUser.semData[currentSem][code];
-  const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
-  const { calMissedByShort } = computeCalendarTotalsForSem(currentSem);
-  const calMissed = calMissedByShort[course.short] || 0;
-  const num = parseInt(val) || 0;
-
-  if (field === "unattended") {
-    rec.manualUnattended = Math.max(0, num - calMissed);
-  } else {
-    rec.manualExtra = num;
-  }
-  persistCurrentUser();
-  renderAll();
-};
-
 function renderCalendarGrid() {
   const ym = document.getElementById("cal-month-select").value;
   const [year, month] = ym.split("-").map(Number);
@@ -1380,12 +1336,9 @@ function renderCalendarGrid() {
   const startOffset = (firstDay.getDay() + 6) % 7;
   const daysInMonth = new Date(year, month, 0).getDate();
   const todayIso = new Date().toISOString().slice(0, 10);
-
   const gridEl = document.getElementById("calendar-grid");
   let html = "";
-  for (let i = 0; i < startOffset; i++) {
-    html += `<div class="min-h-[54px] bg-slate-950/40 border border-slate-800/70 rounded-xl"></div>`;
-  }
+  for (let i = 0; i < startOffset; i++) html += `<div class="min-h-[54px] bg-slate-950/40 border border-slate-800/70 rounded-xl"></div>`;
 
   for (let d = 1; d <= daysInMonth; d++) {
     const iso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -1413,12 +1366,7 @@ function renderCalendarGrid() {
     else if (extraSlot7) { sub = `+${escapeHTML(extraSlot7)}`; }
 
     const ring = isSelected ? "ring-2 ring-white scale-[1.04] z-10 shadow-lg" : "opacity-95 hover:opacity-100";
-    html += `
-      <button onclick="selectDate('${iso}')" class="min-h-[54px] p-1 rounded-xl border ${bg} ${ring} flex flex-col items-center justify-center transition active:scale-95">
-        <span class="text-xs sm:text-sm font-black leading-none">${d}</span>
-        <span class="text-[9px] font-black mt-1 leading-tight truncate max-w-full px-0.5">${sub}</span>
-      </button>
-    `;
+    html += `<button onclick="selectDate('${iso}')" class="min-h-[54px] p-1 rounded-xl border ${bg} ${ring} flex flex-col items-center justify-center transition active:scale-95"><span class="text-xs sm:text-sm font-black leading-none">${d}</span><span class="text-[9px] font-black mt-1 leading-tight truncate max-w-full px-0.5">${sub}</span></button>`;
   }
   gridEl.innerHTML = html;
 }
@@ -1426,8 +1374,7 @@ function renderCalendarGrid() {
 window.selectDate = function(iso) {
   selectedCalDate = iso;
   const ym = iso.slice(0, 7);
-  const selEl = document.getElementById("cal-month-select");
-  if (MONTHS_LIST.includes(ym) && selEl.value !== ym) selEl.value = ym;
+  if (MONTHS_LIST.includes(ym)) document.getElementById("cal-month-select").value = ym;
   if (universalVaultMounted) {
     const holInput = document.getElementById("global-holiday-date");
     if (holInput) holInput.value = iso;
@@ -1447,8 +1394,11 @@ function getMergedDaySlots(isoDate, semOverride = null) {
   const wkType = getWeekType(isoDate);
   const branchKey = currentUser?.branch || "Computer Engineering - Div I";
   const branchGrids = TIMETABLES_DB[branchKey] || TIMETABLES_DB["Computer Engineering - Div I"];
-  const grid = wkType === "Even Week" ? branchGrids.EVEN : branchGrids.ODD;
+  
+  // COMMANDO FIX: Fallback to empty array if branchGrids misses a key
+  const grid = wkType === "Even Week" ? (branchGrids.EVEN || []) : (branchGrids.ODD || []);
   const rawSlots = grid[dayKey] || [];
+  
   const batchLetter = (currentUser?.batch || "Batch A").slice(-1).toUpperCase();
   const courses = SEMESTER_DATA[activeSem];
   const savedSlot7 = (currentUser?.slot7Map && currentUser.slot7Map[isoDate]) || "";
@@ -1456,9 +1406,7 @@ function getMergedDaySlots(isoDate, semOverride = null) {
   const extracted = rawSlots.map((raw, idx) => {
     if (idx === 8 && savedSlot7) return { idx, slotLabel: TIME_SLOTS[idx], text: `Extra Lecture: ${savedSlot7} (4–5 PM)`, short: savedSlot7, isLab: false, kind: "extra", isCustomExtra: true };
     const { text, isLab } = extractBatchEntry(raw, batchLetter);
-    const short = matchSubjectShort(text, courses);
-    const kind = getSessionKind(text);
-    return { idx, slotLabel: TIME_SLOTS[idx], text, short, isLab, kind, isCustomExtra: false };
+    return { idx, slotLabel: TIME_SLOTS[idx], text, short: matchSubjectShort(text, courses), isLab, kind: getSessionKind(text), isCustomExtra: false };
   });
 
   const units = [];
@@ -1490,25 +1438,6 @@ function renderDailyInspector(statsMap, targetPct) {
   document.getElementById("inspected-date-title").textContent = dObj.toDateString();
   document.getElementById("inspected-date-meta").textContent = `Schedule Status: ${holidayLabel ? holidayLabel : (examInfo ? `${examInfo.label}` : wkType)} | Your Batch: ${currentUser.batch}`;
 
-  const universalHolMount = document.getElementById("inspector-universal-holiday-mount");
-  if (universalHolMount) {
-    if (holidayLabel) {
-      universalHolMount.innerHTML = `
-        <div class="bg-amber-950/50 border border-amber-500/60 rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs">
-          <span class="font-bold text-amber-300">&#9889; Global: ${selectedCalDate} is a Holiday (${escapeHTML(holidayLabel)})</span>
-          <button type="button" onclick="window.universalRemoveHoliday('${selectedCalDate}')" class="bg-slate-800 hover:bg-slate-700 border border-amber-400 text-amber-300 font-black px-3 py-1.5 rounded-lg shrink-0 transition">Remove Holiday</button>
-        </div>
-      `;
-    } else {
-      universalHolMount.innerHTML = `
-        <div class="bg-red-950/50 border border-red-500/60 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <span class="font-bold text-red-200">&#9889; Universal Quick Action for ${selectedCalDate}:</span>
-          <button type="button" onclick="window.universalDeclareHoliday('${selectedCalDate}', prompt('Holiday Name / Reason:', 'Declared Holiday') || 'Declared Holiday')" class="bg-red-600 hover:bg-red-500 text-white font-black px-3 py-1.5 rounded-lg shadow shrink-0 transition">Declare ${selectedCalDate} as Holiday</button>
-        </div>
-      `;
-    }
-  }
-
   const container = document.getElementById("daily-slots-container");
   const slot7Box = document.getElementById("slot7-editor-box");
   const quickBtns = document.getElementById("day-quick-bunk-btns");
@@ -1522,7 +1451,7 @@ function renderDailyInspector(statsMap, targetPct) {
     slot7Box.classList.add("hidden"); quickBtns.classList.add("hidden"); return;
   }
   if (examInfo) {
-    container.innerHTML = `<div class="bg-purple-950/80 border border-purple-400 text-purple-100 p-4 rounded-xl text-xs font-bold leading-relaxed"><b>${examInfo.label}:</b> Regular timetable lectures are paused during official college examinations, so this date does not inflate or alter your lecture attendance calculations.</div>`;
+    container.innerHTML = `<div class="bg-purple-950/80 border border-purple-400 text-purple-100 p-4 rounded-xl text-xs font-bold leading-relaxed"><b>${examInfo.label}:</b> Regular timetable lectures are paused during official college examinations.</div>`;
     slot7Box.classList.add("hidden"); quickBtns.classList.add("hidden"); return;
   }
   if (isAfterTermEnd(selectedCalDate)) {
@@ -1546,17 +1475,10 @@ function renderDailyInspector(statsMap, targetPct) {
     let statusHtml = `<span class="text-slate-400">Non-Credit / Free Slot (Editable in 4–5 PM box below)</span>`;
     if (u.text.includes("BREAK")) statusHtml = `<span class="text-slate-400">Official Break</span>`;
     else if (st) {
-      if (u.isCustomExtra) {
-        statusHtml = isTicked
-          ? `<span class="text-amber-300 font-bold">+1 Missed to ${u.short} (Missed: ${st.unattended}/${st.dynamicTotal} | ${st.pct}%)</span>`
-          : `<span class="text-emerald-400 font-bold">+1 Attended to ${u.short} (Extra: ${st.personalExtra} | ${st.pct}%)</span>`;
-      } else if (st.needed > 0) {
-        statusHtml = `<span class="text-amber-300 font-bold">Missed: ${st.unattended}/${st.dynamicTotal} | Need ${st.needed} for ${targetPct}% (${st.pct}%)</span>`;
-      } else {
-        statusHtml = `<span class="text-emerald-400 font-bold">Missed: ${st.unattended}/${st.dynamicTotal} | Safe: Bunk ${st.safeBunks} (${st.pct}%)</span>`;
-      }
+      if (u.isCustomExtra) statusHtml = isTicked ? `<span class="text-amber-300 font-bold">+1 Missed to ${u.short} (Missed: ${st.unattended}/${st.dynamicTotal} | ${st.pct}%)</span>` : `<span class="text-emerald-400 font-bold">+1 Attended to ${u.short} (Extra: ${st.personalExtra} | ${st.pct}%)</span>`;
+      else if (st.needed > 0) statusHtml = `<span class="text-amber-300 font-bold">Missed: ${st.unattended}/${st.dynamicTotal} | Need ${st.needed} for ${targetPct}% (${st.pct}%)</span>`;
+      else statusHtml = `<span class="text-emerald-400 font-bold">Missed: ${st.unattended}/${st.dynamicTotal} | Safe: Bunk ${st.safeBunks} (${st.pct}%)</span>`;
     }
-
     const labBadge = u.isLab ? `<span class="batch-badge ml-1">YOUR ${escapeHTML(currentUser.batch.toUpperCase())} LAB</span>` : "";
     const canTick = Boolean(u.short);
 
@@ -1593,7 +1515,6 @@ function applyPresetBunkMode(mode) {
   if (isOff) return;
   if (!currentUser.dailyTicks[selectedCalDate]) currentUser.dailyTicks[selectedCalDate] = {};
   const dayTicks = currentUser.dailyTicks[selectedCalDate];
-
   units.forEach(u => {
     if (u.short) {
       let shouldTick = false;
@@ -1604,36 +1525,25 @@ function applyPresetBunkMode(mode) {
       u.indices.forEach(i => { dayTicks[i] = shouldTick; });
     }
   });
-
-  if (mode === "CLEAR") {
-    delete currentUser.dailyTicks[selectedCalDate];
-    delete currentUser.dailyLogs[selectedCalDate];
-  } else {
-    recomputeDayBadge(selectedCalDate, units, dayTicks);
-  }
+  if (mode === "CLEAR") { delete currentUser.dailyTicks[selectedCalDate]; delete currentUser.dailyLogs[selectedCalDate]; }
+  else recomputeDayBadge(selectedCalDate, units, dayTicks);
   persistCurrentUser();
   renderAll();
 }
 
 function recomputeDayBadge(isoDate, units, dayTicks) {
-  if (isNonInstructionalDay(isoDate)) {
-    delete currentUser.dailyLogs[isoDate];
-    return;
-  }
+  if (isNonInstructionalDay(isoDate)) { delete currentUser.dailyLogs[isoDate]; return; }
   const creditUnits = units.filter(u => Boolean(u.short));
   const missedShorts = []; let tickedCount = 0;
   creditUnits.forEach(u => {
-    if (u.indices.some(i => Boolean(dayTicks[i]))) {
-      tickedCount++;
-      if (!missedShorts.includes(u.short)) missedShorts.push(u.short);
-    }
+    if (u.indices.some(i => Boolean(dayTicks[i]))) { tickedCount++; if (!missedShorts.includes(u.short)) missedShorts.push(u.short); }
   });
-
   if (tickedCount === 0) delete currentUser.dailyLogs[isoDate];
   else if (creditUnits.length > 0 && tickedCount >= creditUnits.length) currentUser.dailyLogs[isoDate] = "F";
   else currentUser.dailyLogs[isoDate] = missedShorts.join(", ");
 }
 
+// COMMANDO FIX: Try/Catch wrap + null-checks to prevent grid rendering crashes
 function renderTimetableSection(statsMap, targetPct) {
   try {
     const branchKey = currentUser?.branch || "Computer Engineering - Div I";
@@ -1779,7 +1689,12 @@ function setupEventListeners() {
     if (cloudProfile && cloudProfile.semData) {
       candidateUser = cloudProfile;
       candidateUser.passwordHash = pwDigest;
+      
+      // COMMANDO FIX: Force profile overwrite with latest UI selections
+      candidateUser.branch = branch;
+      candidateUser.batch = batch;
       if (name) candidateUser.name = name;
+      
     } else if (db[email]) {
       if (db[email].passwordHash && db[email].passwordHash !== pwDigest) {
         submitBtn.textContent = "Login / Register & Enter Dashboard";
@@ -1787,6 +1702,8 @@ function setupEventListeners() {
       }
       candidateUser = db[email];
       candidateUser.passwordHash = pwDigest;
+      candidateUser.branch = branch;
+      candidateUser.batch = batch;
       if (name) candidateUser.name = name;
     } else {
       if (!name) {
@@ -1826,6 +1743,12 @@ function setupEventListeners() {
   document.getElementById("btn-day-pm-bunk")?.addEventListener("click", () => applyPresetBunkMode("PM"));
   document.getElementById("btn-day-clear-bunk")?.addEventListener("click", () => applyPresetBunkMode("CLEAR"));
 
+  document.getElementById("dash-branch")?.addEventListener("change", (e) => { 
+    currentUser.branch = e.target.value; 
+    document.getElementById("student-meta").innerHTML = `<b>Branch:</b> ${escapeHTML(currentUser.branch)} &nbsp;|&nbsp; <b>Batch:</b> ${escapeHTML(currentUser.batch)} &nbsp;|&nbsp; <b>Account:</b> ${escapeHTML(currentUser.email)}`; 
+    persistCurrentUser(); 
+    renderAll(); 
+  });
   document.getElementById("dash-semester")?.addEventListener("change", (e) => { currentSem = e.target.value; if (universalVaultMounted) populateUniversalPanel(); renderAll(); });
   document.getElementById("dash-batch")?.addEventListener("change", (e) => { currentUser.batch = e.target.value; document.getElementById("student-meta").innerHTML = `<b>Branch:</b> ${escapeHTML(currentUser.branch)} &nbsp;|&nbsp; <b>Batch:</b> ${escapeHTML(currentUser.batch)} &nbsp;|&nbsp; <b>Account:</b> ${escapeHTML(currentUser.email)}`; persistCurrentUser(); renderAll(); });
 
@@ -1840,7 +1763,7 @@ function setupEventListeners() {
     currentUser = null;
     universalVaultMounted = false; 
     
-    // Safely unmount UI components
+    // COMMANDO FIX: Safely unmount UI components without crashing
     const gbm = document.getElementById("global-btn-mount"); if(gbm) gbm.innerHTML = ""; 
     const gvm = document.getElementById("global-vault-mount"); if(gvm) gvm.innerHTML = ""; 
     const ihm = document.getElementById("inspector-universal-holiday-mount"); if(ihm) ihm.innerHTML = "";
