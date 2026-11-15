@@ -255,7 +255,8 @@
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
       <div class="missed-banner text-sm sm:text-xl">ENTER HOW MANY LECTURES YOU HAVE MISSED</div>
       <div class="bg-sky-950/60 border border-sky-500/40 text-sky-200 text-xs sm:text-sm font-bold px-4 py-3 rounded-xl text-center">
-        Note: These calculations assume you will attend your remaining classes. Extra Lectures dynamically expand your personal semester total!
+        Note: Extra Lectures dynamically expand your personal Total Lectures for the semester. 
+        <br>Press <b class="text-white">+</b> if you Attended the extra lecture. Press <b class="text-white">-</b> if you Missed the extra lecture!
       </div>
 
       <!-- Mobile Touch Cards -->
@@ -270,7 +271,7 @@
               <th class="py-3.5 px-3">Course Name</th>
               <th class="py-3.5 px-3 text-center">Credits</th>
               <th class="py-3.5 px-3 text-center">Unattended (Missed)</th>
-              <th class="py-3.5 px-3 text-center">Extra Attended</th>
+              <th class="py-3.5 px-3 text-center">Extra (+ Att / - Miss)</th>
               <th class="py-3.5 px-3 text-center">Attended / Total</th>
               <th class="py-3.5 px-3 text-center">Attendance %</th>
               <th id="th-req-target" class="py-3.5 px-3 text-center">Req (75%)</th>
@@ -348,7 +349,7 @@
           <div id="slot7-editor-box" class="pt-4 border-t border-slate-800">
             <label class="block text-xs font-black text-sky-400 mb-1">Set / Edit 4:00 PM – 5:00 PM Extra Lecture for This Date Only:</label>
             <p class="text-[11px] text-slate-400 mb-2">
-              Type any subject short-form (e.g. <b>eg</b>, <b>ap</b>, <b>cp</b>, <b>fem-i</b>). If ticked, it adds <b>+1 Unattended</b>. If left unticked, it adds <b>+1 Extra Attended</b> and dynamically expands your total lectures for the semester!
+              Type any subject short-form (e.g. <b>eg</b>, <b>ap</b>, <b>cp</b>, <b>fem-i</b>). If ticked, it counts as a missed extra. If unticked, it counts as an attended extra. Both expand your total lectures!
             </p>
             <div class="flex gap-2">
               <input id="slot7-input" type="text" maxlength="15" placeholder="e.g. eg, ap, cp, fem-i, uhv, ec..."
@@ -495,13 +496,29 @@ const COMP3_EVEN = {
   FRI: ["FEM-I", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "UHV", "EC", "LUNCH BREAK", "CP", "CP", "Extra Lecture Slot 3"]
 };
 
+const IT_ODD = {
+  MON: ["CP", "CP", "SHORT BREAK", "FEM-I", "FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "LUNCH BREAK", "AP", "EG", "Remedial Lecture"],
+  TUE: ["EC", "FEM-I", "SHORT BREAK", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "LUNCH BREAK", "BE&DE", "UHV", "FE Mentoring Slot"],
+  WED: ["FEM-I", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "SHORT BREAK", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "LUNCH BREAK", "EC", "AP", "UHV"],
+  THR: ["EG", "BE&DE", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "FEM-I", "EC", "Extra Lecture Slot 1"],
+  FRI: ["BE&DE", "AP", "SHORT BREAK", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "BE&DE", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Extra Lecture Slot 2"]
+};
+
+const IT_EVEN = {
+  MON: ["CP", "CP", "SHORT BREAK", "FEM-I", "FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "LUNCH BREAK", "AP", "EG", "Remedial Lecture"],
+  TUE: ["EC", "FEM-I", "SHORT BREAK", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "LUNCH BREAK", "BE&DE", "UHV", "FE Mentoring Slot"],
+  WED: ["FEM-I", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "SHORT BREAK", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "LUNCH BREAK", "AP", "UHV", "Extra Lecture Slot 1"],
+  THR: ["EG", "BE&DE", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "FEM-I", "EC", "Extra Lecture Slot 2"],
+  FRI: ["BE&DE", "EG", "SHORT BREAK", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "LUNCH BREAK", "BE&DE", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Extra Lecture Slot 3"]
+};
+
 const TIMETABLES_DB = {
   "Computer Engineering - Div I": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
   "Computer Engineering - Div II": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
   "Computer Engineering - Div III": { EVEN: COMP3_EVEN, ODD: COMP3_EVEN }, // Using EVEN layout for ODD fallback currently
   "Mechanical Engineering": { EVEN: MECH_EVEN, ODD: MECH_ODD },
+  "Information Technology": { EVEN: IT_EVEN, ODD: IT_ODD },
   "Electronics and Telecommunication": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
-  "Information Technology": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
   "Basic Sciences and Humanities": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD }
 };
 
@@ -1066,14 +1083,16 @@ function purgeNonInstructionalDates(user) {
 function computeCalendarTotalsForSem(sem) {
   const calMissedByShort = {};
   const calExtraAttendedByShort = {};
+  const calExtraMissedByShort = {};
   const courses = SEMESTER_DATA[sem] || [];
   courses.forEach(c => {
     calMissedByShort[c.short] = 0;
     calExtraAttendedByShort[c.short] = 0;
+    calExtraMissedByShort[c.short] = 0;
   });
 
   if (sem !== "Semester I" || !currentUser) {
-    return { calMissedByShort, calExtraAttendedByShort };
+    return { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort };
   }
 
   const allDates = new Set([
@@ -1092,7 +1111,7 @@ function computeCalendarTotalsForSem(sem) {
       const isTickedMissed = u.indices.some(i => Boolean(dayTicks[i]));
       if (u.isCustomExtra) {
         if (isTickedMissed) {
-          calMissedByShort[u.short] = (calMissedByShort[u.short] || 0) + 1;
+          calExtraMissedByShort[u.short] = (calExtraMissedByShort[u.short] || 0) + 1;
         } else {
           calExtraAttendedByShort[u.short] = (calExtraAttendedByShort[u.short] || 0) + 1;
         }
@@ -1104,25 +1123,12 @@ function computeCalendarTotalsForSem(sem) {
     });
   });
 
-  return { calMissedByShort, calExtraAttendedByShort };
+  return { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort };
 }
 
 function syncCalendarToTableTotals() {
   if (!currentUser || currentSem !== "Semester I") return;
   ensureUserSemData(currentUser);
-  const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem("Semester I");
-  const courses = SEMESTER_DATA["Semester I"];
-
-  courses.forEach(c => {
-    const rec = currentUser.semData["Semester I"][c.code];
-    const manualMissed = Math.max(0, parseInt(rec.manualUnattended || 0));
-    const manualExtra = Math.max(0, parseInt(rec.manualExtra || 0));
-    const calMissed = calMissedByShort[c.short] || 0;
-    const calExtra = calExtraAttendedByShort[c.short] || 0;
-
-    rec.unattended = Math.min(c.total, manualMissed + calMissed);
-    rec.extra = manualExtra + calExtra;
-  });
 }
 
 function getWeekType(isoDate) {
@@ -1274,6 +1280,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     startRealtimeCloudListener();
   } else {
+    localStorage.removeItem("att_remembered_user_v9");
     document.getElementById("login-view").classList.remove("hidden");
   }
 
@@ -1309,7 +1316,7 @@ function ensureUserSemData(user) {
         }
         if (rec.manualExtra === undefined) {
           const calE = sem === "Semester I" ? (calExtraAttendedByShort[c.short] || 0) : 0;
-          rec.manualExtra = Math.max(0, (parseInt(rec.extra) || 0) - calE);
+          rec.manualExtra = (parseInt(rec.extra) || 0) - calE;
         }
       }
     });
@@ -1335,27 +1342,43 @@ function getComputedStats() {
   const globalExtras = getGlobalExtras();
   const targetPct = Math.max(75, Math.min(100, parseInt(currentUser.targetPct || 75)));
   const tRatio = targetPct / 100.0;
-  const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem(currentSem);
+  const { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort } = computeCalendarTotalsForSem(currentSem);
 
   const statsMap = {};
   const list = courses.map(c => {
     const rec = userSem[c.code] || { unattended: 0, extra: 0, manualUnattended: 0, manualExtra: 0, imp: c.imp };
+    
+    // Calendar Base
     const calMissed = calMissedByShort[c.short] || 0;
-    const calExtra = calExtraAttendedByShort[c.short] || 0;
+    const calExtraAttended = calExtraAttendedByShort[c.short] || 0;
+    const calExtraMissed = calExtraMissedByShort[c.short] || 0;
+    
+    // Manual Base
     const manualMissed = Math.max(0, parseInt(rec.manualUnattended || 0));
-    const manualExtra = Math.max(0, parseInt(rec.manualExtra || 0));
+    const manualExtra = parseInt(rec.manualExtra || 0);
 
-    const personalExtra = calExtra + manualExtra;
+    const manualExtraAttended = Math.max(0, manualExtra);
+    const manualExtraMissed = Math.abs(Math.min(0, manualExtra));
+
     const adminExtra = Math.max(0, parseInt(globalExtras[c.code] || 0));
-    const totalExtra = personalExtra + adminExtra;
-    const dynamicTotal = c.total + totalExtra;
-    const unattended = Math.min(dynamicTotal, calMissed + manualMissed);
+
+    // Dynamic Expansion Logic
+    const totalExtraAttended = calExtraAttended + manualExtraAttended + adminExtra;
+    const totalExtraMissed = calExtraMissed + manualExtraMissed;
+
+    const dynamicTotal = c.total + totalExtraAttended + totalExtraMissed;
+    const unattended = calMissed + manualMissed + totalExtraMissed;
+    
     const effAttended = Math.max(0, dynamicTotal - unattended);
     const pct = Number(((effAttended / dynamicTotal) * 100).toFixed(2));
     const reqTarget = Math.ceil(tRatio * dynamicTotal);
     const needed = Math.max(0, reqTarget - effAttended);
     const maxBunks = Math.max(0, dynamicTotal - reqTarget);
     const safeBunks = Math.max(0, maxBunks - unattended);
+
+    // Display bindings
+    const displayUnattended = calMissed + manualMissed;
+    const displayExtra = manualExtra;
 
     const item = {
       ...c,
@@ -1364,11 +1387,14 @@ function getComputedStats() {
       unattended,
       calMissed,
       manualMissed,
-      personalExtra,
-      calExtra,
+      calExtraAttended,
+      calExtraMissed,
       manualExtra,
+      personalExtra: manualExtra,
+      displayUnattended,
+      displayExtra,
       adminExtra,
-      totalExtra,
+      totalExtra: totalExtraAttended,
       effAttended,
       pct,
       reqTarget,
@@ -1501,7 +1527,7 @@ function renderSubjectsUI(list, targetPct) {
             </div>
             <div class="flex items-center justify-between">
               <button onclick="stepSubject('${item.code}', 'unattended', -1)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-base transition">-</button>
-              <input type="number" min="0" max="${item.dynamicTotal}" value="${item.unattended}"
+              <input type="number" min="0" max="${item.dynamicTotal}" value="${item.displayUnattended}"
                 onchange="setSubjectVal('${item.code}', 'unattended', this.value)"
                 class="w-12 bg-transparent text-center font-black text-sm text-amber-300 focus:outline-none" />
               <button onclick="stepSubject('${item.code}', 'unattended', 1)" class="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-base transition">+</button>
@@ -1510,12 +1536,12 @@ function renderSubjectsUI(list, targetPct) {
 
           <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-2.5">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] font-black text-slate-400 uppercase">Extra Attended</span>
-              <span class="text-[9px] font-bold text-emerald-400/90">Cal: ${item.calExtra} | Man: ${item.manualExtra}</span>
+              <span class="text-[10px] font-black text-slate-400 uppercase">Extra (+ Att / - Miss)</span>
+              <span class="text-[9px] font-bold text-emerald-400/90">Cal: ${item.calExtraAttended} | Man: ${item.manualExtra}</span>
             </div>
             <div class="flex items-center justify-between">
               <button onclick="stepSubject('${item.code}', 'extra', -1)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-base transition">-</button>
-              <input type="number" min="0" value="${item.personalExtra}"
+              <input type="number" value="${item.displayExtra}"
                 onchange="setSubjectVal('${item.code}', 'extra', this.value)"
                 class="w-12 bg-transparent text-center font-black text-sm text-emerald-300 focus:outline-none" />
               <button onclick="stepSubject('${item.code}', 'extra', 1)" class="w-8 h-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-base transition">+</button>
@@ -1543,7 +1569,7 @@ function renderSubjectsUI(list, targetPct) {
         <td class="py-3 px-3 text-center">
           <div class="inline-flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-2 py-1">
             <button onclick="stepSubject('${item.code}', 'unattended', -1)" class="px-2 py-0.5 text-slate-300 hover:text-white font-black">-</button>
-            <input type="number" min="0" max="${item.dynamicTotal}" value="${item.unattended}"
+            <input type="number" min="0" max="${item.dynamicTotal}" value="${item.displayUnattended}"
               onchange="setSubjectVal('${item.code}', 'unattended', this.value)"
               class="w-12 bg-transparent text-center font-black text-amber-300 focus:outline-none" />
             <button onclick="stepSubject('${item.code}', 'unattended', 1)" class="px-2 py-0.5 text-sky-400 hover:text-sky-300 font-black">+</button>
@@ -1553,12 +1579,12 @@ function renderSubjectsUI(list, targetPct) {
         <td class="py-3 px-3 text-center">
           <div class="inline-flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-2 py-1">
             <button onclick="stepSubject('${item.code}', 'extra', -1)" class="px-2 py-0.5 text-slate-300 hover:text-white font-black">-</button>
-            <input type="number" min="0" value="${item.personalExtra}"
+            <input type="number" value="${item.displayExtra}"
               onchange="setSubjectVal('${item.code}', 'extra', this.value)"
               class="w-12 bg-transparent text-center font-black text-emerald-300 focus:outline-none" />
             <button onclick="stepSubject('${item.code}', 'extra', 1)" class="px-2 py-0.5 text-emerald-400 hover:text-emerald-300 font-black">+</button>
           </div>
-          <div class="text-[10px] text-emerald-300/80 font-bold mt-0.5">Cal: ${item.calExtra} | Man: ${item.manualExtra}</div>
+          <div class="text-[10px] text-emerald-300/80 font-bold mt-0.5">Cal: ${item.calExtraAttended} | Man: ${item.manualExtra}</div>
         </td>
         <td class="py-3 px-3 text-center font-black">${item.effAttended} / ${item.dynamicTotal}</td>
         <td class="py-3 px-3 text-center font-black">${item.pct}%</td>
@@ -1576,14 +1602,12 @@ window.stepSubject = function(code, field, delta) {
   const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
   const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem(currentSem);
   const calMissed = calMissedByShort[course.short] || 0;
-  const calExtra = calExtraAttendedByShort[course.short] || 0;
-
+  
   if (field === "unattended") {
-    const currTotal = calMissed + (rec.manualUnattended || 0);
-    rec.manualUnattended = Math.max(0, Math.min(course.total + calExtra + (rec.manualExtra || 0), Math.max(calMissed, currTotal + delta)) - calMissed);
+    const displayUnattended = calMissed + (rec.manualUnattended || 0);
+    rec.manualUnattended = Math.max(0, (displayUnattended + delta) - calMissed);
   } else {
-    const currTotal = calExtra + (rec.manualExtra || 0);
-    rec.manualExtra = Math.max(0, Math.max(calExtra, currTotal + delta) - calExtra);
+    rec.manualExtra = (parseInt(rec.manualExtra) || 0) + delta;
   }
   persistCurrentUser();
   renderAll();
@@ -1594,13 +1618,12 @@ window.setSubjectVal = function(code, field, val) {
   const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
   const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem(currentSem);
   const calMissed = calMissedByShort[course.short] || 0;
-  const calExtra = calExtraAttendedByShort[course.short] || 0;
   const num = parseInt(val) || 0;
 
   if (field === "unattended") {
-    rec.manualUnattended = Math.max(0, Math.min(course.total + calExtra + (rec.manualExtra || 0), Math.max(calMissed, num)) - calMissed);
+    rec.manualUnattended = Math.max(0, num - calMissed);
   } else {
-    rec.manualExtra = Math.max(0, Math.max(calExtra, num) - calExtra);
+    rec.manualExtra = num;
   }
   persistCurrentUser();
   renderAll();
@@ -1866,8 +1889,8 @@ function renderDailyInspector(statsMap, targetPct) {
     } else if (st) {
       if (u.isCustomExtra) {
         statusHtml = isTicked
-          ? `<span class="text-amber-300 font-bold">+1 Added to ${u.short} Unattended (Missed: ${st.unattended}/${st.dynamicTotal} | ${st.pct}%)</span>`
-          : `<span class="text-emerald-400 font-bold">+1 Added to ${u.short} Extra Attended (Extra: ${st.personalExtra} | ${st.pct}%)</span>`;
+          ? `<span class="text-amber-300 font-bold">+1 Missed to ${u.short} (Missed: ${st.unattended}/${st.dynamicTotal} | ${st.pct}%)</span>`
+          : `<span class="text-emerald-400 font-bold">+1 Attended to ${u.short} (Extra: ${st.personalExtra} | ${st.pct}%)</span>`;
       } else if (st.needed > 0) {
         statusHtml = `<span class="text-amber-300 font-bold">Missed: ${st.unattended}/${st.dynamicTotal} | Need ${st.needed} for ${targetPct}% (${st.pct}%)</span>`;
       } else {
