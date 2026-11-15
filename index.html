@@ -185,8 +185,11 @@
           <p id="student-meta" class="text-xs sm:text-sm text-slate-400 mt-1 font-medium"></p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <!-- Universal Power Button Slot -->
-          <span id="global-btn-mount"></span>
+          
+          <button id="btn-toggle-power-panel" type="button"
+            class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black px-3.5 py-2 rounded-xl shadow-lg border border-amber-300 transition active:scale-95">
+            &#9889; Personal Tools
+          </button>
           
           <select id="dash-branch" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white max-w-[140px] sm:max-w-none truncate">
             <option value="Computer Engineering - Div I">CE Div I</option>
@@ -230,11 +233,68 @@
       </div>
 
       <div id="term-working-days-bar" class="mt-4 bg-slate-950/90 border border-slate-800 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs"></div>
-      <div id="global-broadcast-banner" class="hidden mt-4 bg-sky-950/80 border border-sky-500/60 text-sky-200 text-xs font-bold px-4 py-3 rounded-xl"></div>
+      <div id="personal-extra-banner" class="hidden mt-4 bg-sky-950/80 border border-sky-500/60 text-sky-200 text-xs font-bold px-4 py-3 rounded-xl"></div>
     </div>
 
-    <!-- DYNAMIC GLOBAL VAULT MOUNT -->
-    <div id="global-vault-mount"></div>
+    <!-- PERSONAL TOOLS PANEL -->
+    <div id="power-panel" class="hidden bg-slate-900 border-2 border-amber-500/80 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h2 class="text-base sm:text-lg font-black text-amber-400">&#9889; Personal Tools Panel (Local to your account)</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Declare holidays or bulk-add extra lectures strictly for your own calendar.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
+          <div class="text-xs font-black uppercase tracking-wider text-red-400">1. Personal Holiday Override</div>
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            Pick any date (or click a date on the calendar below) to declare it as a holiday or restore it to a working day for your account:
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <input id="personal-holiday-date" type="date" value="2026-11-11" min="2026-09-07" max="2026-12-23"
+              class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-bold" />
+            <input id="personal-holiday-name" type="text" maxlength="50" placeholder="Reason (e.g. Personal Leave)"
+              value="Personal Leave"
+              class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-bold" />
+          </div>
+          <div class="flex gap-2">
+            <button id="btn-personal-add-holiday" type="button"
+              class="flex-1 bg-red-600 hover:bg-red-500 text-white font-black text-xs py-2.5 px-3 rounded-xl shadow transition">
+              Declare Holiday
+            </button>
+            <button id="btn-personal-remove-holiday" type="button"
+              class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs py-2.5 px-3 rounded-xl transition">
+              Remove Holiday
+            </button>
+          </div>
+          <div id="personal-holiday-status" class="text-xs text-emerald-400 font-extrabold"></div>
+          <div class="pt-2 border-t border-slate-800/80">
+            <div class="text-[11px] font-bold text-slate-400 mb-1.5">Your Custom Holidays:</div>
+            <div id="personal-custom-holidays-list" class="flex flex-wrap gap-1.5 text-[11px]"></div>
+          </div>
+        </div>
+
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
+          <div class="text-xs font-black uppercase tracking-wider text-amber-400">2. Add Missing Lectures to Total</div>
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            Add bulk extra lectures for a subject to dynamically expand your semester total:
+          </p>
+          <div class="space-y-2.5">
+            <select id="personal-course-select" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white font-bold"></select>
+            <div class="flex gap-2">
+              <input id="personal-extra-count" type="number" min="0" value="0" placeholder="Count"
+                class="w-28 bg-slate-800 border border-slate-600 rounded-xl px-3.5 py-2.5 text-sm text-white font-black text-center" />
+              <button id="btn-personal-extra" type="button"
+                class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs sm:text-sm transition">
+                Add to Subject Total
+              </button>
+            </div>
+          </div>
+          <div id="personal-extra-status" class="text-xs text-emerald-400 font-extrabold"></div>
+        </div>
+      </div>
+    </div>
 
     <!-- SUMMARY METRICS -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -336,7 +396,7 @@
             </div>
           </div>
 
-          <div id="inspector-universal-holiday-mount"></div>
+          <div id="inspector-personal-holiday-mount"></div>
 
           <p class="text-xs text-slate-300 leading-relaxed font-medium">
             Continuous identical sessions merge into <b>1 Bulk Unit</b>. Tick the checkbox beside any class (including 4–5 PM extra lectures) you missed on this date—it automatically updates the main table above!
@@ -446,7 +506,6 @@ const EXAM_PERIODS = [
 ];
 
 const AUTH_PEPPER = "ATT_V9_PEPPER_2026";
-const STRICT_ADMIN_PW_HASH = "a2eb4d78636647b59f87c3e45b18a431a6c27ff8df435364a85261e6401564a1";
 
 const TIME_SLOTS = [
   "1 (9:00 - 10:00)", "2 (10:00 - 11:00)", "Short Break (11:00 - 11:15)",
@@ -511,7 +570,6 @@ const IT_EVEN = {
   FRI: ["BE&DE", "EG", "SHORT BREAK", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "BE&DE", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Extra Lecture Slot 3"]
 };
 
-// COMMANDO FIX: PERFECT MAPPING SO IT/MECH DO NOT RETURN UNDEFINED
 const TIMETABLES_DB = {
   "Computer Engineering - Div I": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
   "Computer Engineering - Div II": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
@@ -530,26 +588,6 @@ const BASE_HOLIDAYS = {
   "2026-11-09": "Diwali Break", "2026-11-10": "Diwali Break", "2026-11-11": "Declared Holiday (Diwali Break Extension)",
   "2026-11-24": "Guru Nanak Jayanti"
 };
-
-function getGlobalCustomHolidays() {
-  try { return JSON.parse(localStorage.getItem("att_global_custom_holidays") || "{}"); } catch { return {}; }
-}
-function saveGlobalCustomHolidays(obj) {
-  localStorage.setItem("att_global_custom_holidays", JSON.stringify(obj));
-}
-function getRemovedBaseHolidays() {
-  try { return JSON.parse(localStorage.getItem("att_global_removed_holidays") || "{}"); } catch { return {}; }
-}
-function saveRemovedBaseHolidays(obj) {
-  localStorage.setItem("att_global_removed_holidays", JSON.stringify(obj));
-}
-
-function getHolidayName(isoDate) {
-  const removed = getRemovedBaseHolidays();
-  if (removed[isoDate]) return null;
-  const custom = getGlobalCustomHolidays();
-  return custom[isoDate] || BASE_HOLIDAYS[isoDate] || null;
-}
 
 const EVEN_RANGES = [
   ["2026-09-21", "2026-09-25"], ["2026-10-05", "2026-10-09"],
@@ -578,7 +616,6 @@ const SEMESTER_DATA = {
 };
 
 let currentUser = null;
-let universalVaultMounted = false;
 let currentSem = "Semester I";
 let selectedCalDate = "2026-11-11";
 let ttWeekTab = "Even";
@@ -593,123 +630,67 @@ async function saltedHash(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-window.universalDeclareHoliday = async function(isoDate, customReason) {
-  if (!isoDate) return;
-  const reason = escapeHTML((customReason || "Declared Holiday").trim());
-  const custom = getGlobalCustomHolidays();
-  const removed = getRemovedBaseHolidays();
-  custom[isoDate] = reason;
-  delete removed[isoDate];
-  saveGlobalCustomHolidays(custom);
-  saveRemovedBaseHolidays(removed);
+// LOCAL HOLIDAY OVERRIDES
+window.universalDeclareHoliday = function(isoDate, customReason) {
+  if (!isoDate || !currentUser) return;
+  const reason = escapeHTML((customReason || "Personal Holiday").trim());
+  currentUser.customHolidays[isoDate] = reason;
+  delete currentUser.removedHolidays[isoDate];
   purgeNonInstructionalDates(currentUser);
   persistCurrentUser();
-  
-  try {
-    await fetch(`${_getCloudEndpoint()}/global_holidays.json`, {
-      method: "PUT", headers: { "Content-Type": "application/json" }, 
-      body: JSON.stringify({ authToken: STRICT_ADMIN_PW_HASH, data: custom, removed })
-    }).catch(() => null);
-  } catch (e) {}
+  const statusEl = document.getElementById("personal-holiday-status");
+  if (statusEl) statusEl.textContent = `Declared ${isoDate} (${reason}) as a holiday for your account!`;
   renderAll();
 };
 
-window.universalRemoveHoliday = async function(isoDate) {
-  if (!isoDate) return;
-  const custom = getGlobalCustomHolidays();
-  const removed = getRemovedBaseHolidays();
-  delete custom[isoDate];
-  if (BASE_HOLIDAYS[isoDate]) removed[isoDate] = true;
-  saveGlobalCustomHolidays(custom);
-  saveRemovedBaseHolidays(removed);
-  
-  try {
-    await fetch(`${_getCloudEndpoint()}/global_holidays.json`, {
-      method: "PUT", headers: { "Content-Type": "application/json" }, 
-      body: JSON.stringify({ authToken: STRICT_ADMIN_PW_HASH, data: custom, removed })
-    }).catch(() => null);
-  } catch (e) {}
+window.universalRemoveHoliday = function(isoDate) {
+  if (!isoDate || !currentUser) return;
+  delete currentUser.customHolidays[isoDate];
+  if (BASE_HOLIDAYS[isoDate]) {
+    currentUser.removedHolidays[isoDate] = true;
+  }
+  purgeNonInstructionalDates(currentUser);
+  persistCurrentUser();
+  const statusEl = document.getElementById("personal-holiday-status");
+  if (statusEl) statusEl.textContent = `Removed holiday status for ${isoDate} (now a working day).`;
   renderAll();
 };
 
-function mountUniversalVault() {
-  if (universalVaultMounted) { populateUniversalPanel(); return; }
-  document.getElementById("global-btn-mount").innerHTML = `
-    <button id="btn-toggle-power-panel" type="button" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black px-3.5 py-2 rounded-xl shadow-lg border border-amber-300 transition active:scale-95">
-      &#9889; Global Tools
-    </button>
-  `;
-  document.getElementById("global-vault-mount").innerHTML = `
-    <div id="power-panel" class="hidden bg-slate-900 border-2 border-amber-500/80 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <div>
-          <h2 class="text-base sm:text-lg font-black text-amber-400">&#9889; Universal Tools Panel (Global Access)</h2>
-          <p class="text-xs text-slate-400 mt-0.5">Declare holidays or broadcast extra lectures globally to all students.</p>
-        </div>
-      </div>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
-          <div class="text-xs font-black uppercase tracking-wider text-red-400">1. Declare / Remove College Holiday On Will</div>
-          <p class="text-[11px] text-slate-300 leading-relaxed">Pick any date (or click a date on the calendar below) to declare it as a holiday or restore it to a working day for all students:</p>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <input id="global-holiday-date" type="date" value="${selectedCalDate}" min="2026-09-07" max="2026-12-23" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-bold" />
-            <input id="global-holiday-name" type="text" maxlength="50" placeholder="Reason (e.g. Declared Holiday)" value="Declared Holiday" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-bold" />
-          </div>
-          <div class="flex gap-2">
-            <button id="btn-global-add-holiday" type="button" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-black text-xs py-2.5 px-3 rounded-xl shadow transition">Declare Holiday</button>
-            <button id="btn-global-remove-holiday" type="button" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs py-2.5 px-3 rounded-xl transition">Remove Holiday</button>
-          </div>
-          <div id="global-holiday-status" class="text-xs text-emerald-400 font-extrabold"></div>
-          <div class="pt-2 border-t border-slate-800/80">
-            <div class="text-[11px] font-bold text-slate-400 mb-1.5">Active Custom Declared Holidays:</div>
-            <div id="global-custom-holidays-list" class="flex flex-wrap gap-1.5 text-[11px]"></div>
-          </div>
-        </div>
-        <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
-          <div class="text-xs font-black uppercase tracking-wider text-amber-400">2. Broadcast Extra Lectures to All Students</div>
-          <p class="text-[11px] text-slate-300 leading-relaxed">Add college-wide extra lectures for any subject so all students automatically receive the attendance boost:</p>
-          <div class="space-y-2.5">
-            <select id="global-course-select" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white font-bold"></select>
-            <div class="flex gap-2">
-              <input id="global-extra-count" type="number" min="0" value="0" placeholder="Extra Lectures Count" class="w-28 bg-slate-800 border border-slate-600 rounded-xl px-3.5 py-2.5 text-sm text-white font-black text-center" />
-              <button id="btn-broadcast-extra" type="button" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs sm:text-sm transition">Broadcast Extra Lectures</button>
-            </div>
-          </div>
-          <div id="global-broadcast-status" class="text-xs text-emerald-400 font-extrabold"></div>
-        </div>
-      </div>
-    </div>
-  `;
-  universalVaultMounted = true;
-  populateUniversalPanel();
+function populatePersonalPanel() {
+  const sel = document.getElementById("personal-course-select");
+  if (!sel) return;
+  sel.innerHTML = "";
+  SEMESTER_DATA[currentSem].forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.code;
+    opt.textContent = `${c.short} - ${c.name} (${c.code})`;
+    sel.appendChild(opt);
+  });
+  renderPersonalCustomHolidaysBadges();
+}
 
-  document.getElementById("btn-toggle-power-panel").addEventListener("click", () => {
-    const panel = document.getElementById("power-panel");
-    if (!panel) return;
-    panel.classList.toggle("hidden");
-    if (!panel.classList.contains("hidden")) panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  });
-  document.getElementById("btn-global-add-holiday").addEventListener("click", () => {
-    window.universalDeclareHoliday(document.getElementById("global-holiday-date").value, document.getElementById("global-holiday-name").value);
-  });
-  document.getElementById("btn-global-remove-holiday").addEventListener("click", () => {
-    window.universalRemoveHoliday(document.getElementById("global-holiday-date").value);
-  });
-  document.getElementById("btn-broadcast-extra").addEventListener("click", async () => {
-    const code = document.getElementById("global-course-select").value;
-    const count = Math.max(0, parseInt(document.getElementById("global-extra-count").value) || 0);
-    const extras = getGlobalExtras();
-    extras[code] = count;
-    saveGlobalExtras(extras);
-    try {
-      await fetch(`${_getCloudEndpoint()}/global_extras.json`, {
-        method: "PUT", headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify({ authToken: STRICT_ADMIN_PW_HASH, data: extras })
-      }).catch(() => null);
-    } catch (e) {}
-    document.getElementById("global-broadcast-status").textContent = `Broadcasted ${count} extra lecture(s) for ${code} to all other students via Firebase!`;
-    renderAll();
-  });
+function renderPersonalCustomHolidaysBadges() {
+  const el = document.getElementById("personal-custom-holidays-list");
+  if (!el) return;
+  const custom = currentUser?.customHolidays || {};
+  const entries = Object.entries(custom).sort(([a], [b]) => a.localeCompare(b));
+  if (!entries.length) {
+    el.innerHTML = `<span class="text-slate-500">11 Nov 2026 is built-in. Click any date on the calendar below or pick a date above to add more!</span>`;
+    return;
+  }
+  el.innerHTML = entries.map(([iso, reason]) => `
+    <span class="inline-flex items-center gap-1.5 bg-red-950/80 border border-red-500/50 text-red-200 px-2.5 py-1 rounded-lg font-bold">
+      ${escapeHTML(iso)}: ${escapeHTML(reason)}
+      <button type="button" onclick="window.universalRemoveHoliday('${escapeHTML(iso)}')" class="text-red-400 hover:text-white ml-1 font-black">&times;</button>
+    </span>
+  `).join("");
+}
+
+function getHolidayName(isoDate) {
+  if (!currentUser) return BASE_HOLIDAYS[isoDate] || null;
+  if (currentUser.removedHolidays && currentUser.removedHolidays[isoDate]) return null;
+  if (currentUser.customHolidays && currentUser.customHolidays[isoDate]) return currentUser.customHolidays[isoDate];
+  return BASE_HOLIDAYS[isoDate] || null;
 }
 
 async function getCloudUserNodeHash(email, passwordHash) {
@@ -831,7 +812,6 @@ function startRealtimeCloudListener() {
 window.addEventListener("online", () => { if (currentUser) pushToFirebaseSilent(); });
 document.addEventListener("visibilitychange", async () => {
   if (document.visibilityState === "visible" && currentUser && currentUser.passwordHash) {
-    fetchGlobalConfigFromFirebase();
     const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
     if (remote && (remote.updatedAt || 0) > (currentUser.updatedAt || 0)) {
       currentUser = remote;
@@ -844,30 +824,6 @@ document.addEventListener("visibilitychange", async () => {
     }
   }
 });
-
-async function fetchGlobalConfigFromFirebase() {
-  try {
-    const [exRes, holRes] = await Promise.all([
-      fetch(`${_getCloudEndpoint()}/global_extras.json?t=${Date.now()}`, { cache: "no-store" }).catch(() => null),
-      fetch(`${_getCloudEndpoint()}/global_holidays.json?t=${Date.now()}`, { cache: "no-store" }).catch(() => null)
-    ]);
-    if (exRes && exRes.ok) {
-      const exPayload = await exRes.json().catch(() => null);
-      if (exPayload && exPayload.data) saveGlobalExtras(exPayload.data);
-    }
-    if (holRes && holRes.ok) {
-      const holPayload = await holRes.json().catch(() => null);
-      if (holPayload) {
-        if (holPayload.data) saveGlobalCustomHolidays(holPayload.data);
-        if (holPayload.removed) saveRemovedBaseHolidays(holPayload.removed);
-      }
-    }
-  } catch (e) {
-    console.warn("Global config sync skipped:", e);
-  } finally {
-    if (currentUser) { purgeNonInstructionalDates(currentUser); renderAll(); }
-  }
-}
 
 function isBeforeTermStart(isoDate) { return currentSem === "Semester I" && isoDate < SEM1_START_DATE; }
 function isAfterTermEnd(isoDate) { return currentSem === "Semester I" && isoDate > SEM1_END_DATE; }
@@ -905,8 +861,6 @@ function computeSem1WorkingDaysSummary() {
 
 function getAllUsersDB() { try { return JSON.parse(localStorage.getItem("att_users_db_v9") || "{}"); } catch { return {}; } }
 function saveAllUsersDB(db) { localStorage.setItem("att_users_db_v9", JSON.stringify(db)); }
-function getGlobalExtras() { try { return JSON.parse(localStorage.getItem("att_global_extras") || "{}"); } catch { return {}; } }
-function saveGlobalExtras(obj) { localStorage.setItem("att_global_extras", JSON.stringify(obj)); }
 
 function purgeNonInstructionalDates(user) {
   if (!user) return;
@@ -959,8 +913,7 @@ function getWeekType(isoDate) {
   const dayNum = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-  return weekNo % 2 === 0 ? "Even Week" : "Odd Week";
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7) % 2 === 0 ? "Even Week" : "Odd Week";
 }
 
 function getSessionKind(entryText) {
@@ -970,7 +923,6 @@ function getSessionKind(entryText) {
   return "theory";
 }
 
-// BUG FIX: Graceful fail if `raw` slot string is undefined or empty
 function extractBatchEntry(raw, batchLetter) {
   if (!raw) return { text: "Free Slot", isLab: false };
   if (raw.includes("/") && (raw.includes("(A)") || raw.includes("(B)") || raw.includes("(C)"))) {
@@ -1037,7 +989,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     renderAll();
     
     // Then attempt background sync
-    await fetchGlobalConfigFromFirebase();
     const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
     if (remote && remote.semData) {
       if ((remote.updatedAt || 0) >= (currentUser.updatedAt || 0)) {
@@ -1061,8 +1012,12 @@ function ensureUserSemData(user) {
   if (!user.dailyLogs) user.dailyLogs = {};
   if (!user.dailyTicks) user.dailyTicks = {};
   if (!user.slot7Map) user.slot7Map = {};
+  if (!user.customHolidays) user.customHolidays = {};
+  if (!user.removedHolidays) user.removedHolidays = {};
+  if (!user.globalExtras) user.globalExtras = {};
   if (!user.targetPct) user.targetPct = 75;
   purgeNonInstructionalDates(user);
+  
   const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem("Semester I");
 
   Object.keys(SEMESTER_DATA).forEach(sem => {
@@ -1094,26 +1049,28 @@ function getComputedStats() {
   ensureUserSemData(currentUser);
   const courses = SEMESTER_DATA[currentSem];
   const userSem = currentUser.semData[currentSem];
-  const globalExtras = getGlobalExtras();
+  const globalExtras = currentUser.globalExtras || {};
   const targetPct = Math.max(75, Math.min(100, parseInt(currentUser.targetPct || 75)));
   const tRatio = targetPct / 100.0;
+  
+  // WAIT for branch DB to fully initialize before computing array!
   const { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort } = computeCalendarTotalsForSem(currentSem);
 
   const statsMap = {};
   const list = courses.map(c => {
     const rec = userSem[c.code] || { unattended: 0, extra: 0, manualUnattended: 0, manualExtra: 0, imp: c.imp };
     
-    const calMissed = calMissedByShort[c.short] || 0;
-    const calExtraAttended = calExtraAttendedByShort[c.short] || 0;
-    const calExtraMissed = calExtraMissedByShort[c.short] || 0;
-    const manualMissed = Math.max(0, parseInt(rec.manualUnattended || 0));
-    const manualExtra = parseInt(rec.manualExtra || 0);
+    const calMissed = parseInt(calMissedByShort[c.short]) || 0;
+    const calExtraAttended = parseInt(calExtraAttendedByShort[c.short]) || 0;
+    const calExtraMissed = parseInt(calExtraMissedByShort[c.short]) || 0;
+    const manualMissed = Math.max(0, parseInt(rec.manualUnattended) || 0);
+    const manualExtra = parseInt(rec.manualExtra) || 0;
 
     const manualExtraAttended = Math.max(0, manualExtra);
     const manualExtraMissed = Math.abs(Math.min(0, manualExtra));
-    const adminExtra = Math.max(0, parseInt(globalExtras[c.code] || 0));
+    const addedExtra = Math.max(0, parseInt(globalExtras[c.code]) || 0);
 
-    const totalExtraAttended = calExtraAttended + manualExtraAttended + adminExtra;
+    const totalExtraAttended = calExtraAttended + manualExtraAttended + addedExtra;
     const totalExtraMissed = calExtraMissed + manualExtraMissed;
     const dynamicTotal = c.total + totalExtraAttended + totalExtraMissed;
     const unattended = calMissed + manualMissed + totalExtraMissed;
@@ -1128,7 +1085,7 @@ function getComputedStats() {
     const displayUnattended = calMissed + manualMissed;
     const displayExtra = manualExtra;
 
-    const item = { ...c, imp: rec.imp || c.imp, dynamicTotal, unattended, calMissed, manualMissed, calExtraAttended, calExtraMissed, manualExtra, personalExtra: manualExtra, displayUnattended, displayExtra, adminExtra, totalExtra: totalExtraAttended, effAttended, pct, reqTarget, needed, safeBunks, isSafe: pct >= targetPct };
+    const item = { ...c, imp: rec.imp || c.imp, dynamicTotal, unattended, calMissed, manualMissed, calExtraAttended, calExtraMissed, manualExtra, personalExtra: manualExtra, displayUnattended, displayExtra, adminExtra: addedExtra, totalExtra: totalExtraAttended, effAttended, pct, reqTarget, needed, safeBunks, isSafe: pct >= targetPct };
     statsMap[c.short] = item;
     return item;
   });
@@ -1148,7 +1105,7 @@ function enterDashboard() {
   document.getElementById("dash-batch").value = currentUser.batch;
   document.getElementById("custom-target-input").value = currentUser.targetPct || 75;
 
-  mountUniversalVault();
+  populatePersonalPanel();
   syncTimetableToDate(selectedCalDate);
   loadSavedTimetableImage();
   renderAll();
@@ -1194,194 +1151,18 @@ function renderAll() {
   document.getElementById("metric-needed-label").textContent = `Classes Needed (${targetPct}%)`;
   document.getElementById("metric-needed").textContent = `${totNeeded} classes`;
 
-  const bannerEl = document.getElementById("global-broadcast-banner");
+  const bannerEl = document.getElementById("personal-extra-banner");
   if (totAdminEx > 0) {
-    bannerEl.textContent = `Global Broadcast Active: ${totAdminEx} extra college-wide lecture(s) automatically added to your personal semester total!`;
+    bannerEl.textContent = `Personal Extra Lectures Active: ${totAdminEx} extra lecture(s) added to your semester total!`;
     bannerEl.classList.remove("hidden");
-  } else bannerEl.classList.add("hidden");
+  } else if (bannerEl) bannerEl.classList.add("hidden");
 
-  if (universalVaultMounted) renderGlobalCustomHolidaysBadges();
+  renderPersonalCustomHolidaysBadges();
   renderSubjectsUI(list, targetPct);
   renderCalendarGrid();
   renderDailyInspector(statsMap, targetPct);
   renderTimetableSection(statsMap, targetPct);
 }
-
-// BUG FIX: Wrapped Step Functions in strict integers to prevent negative NaN issues
-window.stepSubject = function(code, field, delta) {
-  const rec = currentUser.semData[currentSem][code];
-  const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
-  const { calMissedByShort } = computeCalendarTotalsForSem(currentSem);
-  const calMissed = parseInt(calMissedByShort[course.short]) || 0;
-  
-  if (field === "unattended") {
-    const displayUnattended = calMissed + (parseInt(rec.manualUnattended) || 0);
-    rec.manualUnattended = Math.max(0, (displayUnattended + parseInt(delta)) - calMissed);
-  } else {
-    rec.manualExtra = (parseInt(rec.manualExtra) || 0) + parseInt(delta);
-  }
-  persistCurrentUser();
-  renderAll();
-};
-
-window.setSubjectVal = function(code, field, val) {
-  const rec = currentUser.semData[currentSem][code];
-  const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
-  const { calMissedByShort } = computeCalendarTotalsForSem(currentSem);
-  const calMissed = parseInt(calMissedByShort[course.short]) || 0;
-  const num = parseInt(val) || 0;
-
-  if (field === "unattended") {
-    rec.manualUnattended = Math.max(0, num - calMissed);
-  } else {
-    rec.manualExtra = num;
-  }
-  persistCurrentUser();
-  renderAll();
-};
-
-function renderSubjectsUI(list, targetPct) {
-  document.getElementById("th-req-target").textContent = `Req (${targetPct}%)`;
-  document.getElementById("th-need-target").textContent = `Need (${targetPct}%)`;
-
-  const mobContainer = document.getElementById("mobile-subject-cards");
-  mobContainer.innerHTML = list.map(item => {
-    const borderCol = item.isSafe ? "border-emerald-500/50 bg-emerald-950/20" : "border-amber-500/60 bg-amber-950/25";
-    const pctCol = item.isSafe ? "text-emerald-400" : "text-amber-300";
-    return `
-      <div class="border ${borderCol} rounded-2xl p-4 space-y-3 shadow-md">
-        <div class="flex items-start justify-between gap-2">
-          <div>
-            <span class="text-xs font-black px-2.5 py-0.5 rounded-lg bg-slate-800 text-sky-300 border border-slate-700">${item.short}</span>
-            <h3 class="text-sm font-black text-white mt-1.5">${item.name}</h3>
-            <p class="text-[11px] text-slate-400 font-medium">Code: ${item.code} | Credits: ${item.credits}</p>
-          </div>
-          <div class="text-right shrink-0">
-            <div class="text-lg font-black ${pctCol}">${item.pct}%</div>
-            <div class="text-[10px] font-extrabold uppercase tracking-wider ${pctCol}">${item.isSafe ? `Safe (Bunk ${item.safeBunks})` : `Need ${item.needed} more`}</div>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3 pt-1">
-          <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-2.5">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] font-black text-slate-400 uppercase">Unattended (Missed)</span>
-              <span class="text-[9px] font-bold text-amber-400/90">Cal: ${item.calMissed} | Man: ${item.manualMissed}</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <button onclick="stepSubject('${item.code}', 'unattended', -1)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-base transition">-</button>
-              <input type="number" min="0" max="${item.dynamicTotal}" value="${item.displayUnattended}" onchange="setSubjectVal('${item.code}', 'unattended', this.value)" class="w-12 bg-transparent text-center font-black text-sm text-amber-300 focus:outline-none" />
-              <button onclick="stepSubject('${item.code}', 'unattended', 1)" class="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-base transition">+</button>
-            </div>
-          </div>
-          <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-2.5">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] font-black text-slate-400 uppercase">Extra (+ Att / - Miss)</span>
-              <span class="text-[9px] font-bold text-emerald-400/90">Cal: ${item.calExtraAttended} | Man: ${item.manualExtra}</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <button onclick="stepSubject('${item.code}', 'extra', -1)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-base transition">-</button>
-              <input type="number" value="${item.displayExtra}" onchange="setSubjectVal('${item.code}', 'extra', this.value)" class="w-12 bg-transparent text-center font-black text-sm text-emerald-300 focus:outline-none" />
-              <button onclick="stepSubject('${item.code}', 'extra', 1)" class="w-8 h-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-base transition">+</button>
-            </div>
-          </div>
-        </div>
-        <div class="flex justify-between text-xs text-slate-300 pt-2 border-t border-slate-800/80 font-semibold">
-          <span>Attended: <b>${item.effAttended}/${item.dynamicTotal}</b></span>
-          <span>Req (${targetPct}%): <b>${item.reqTarget}</b></span>
-          <span>Safe Bunks: <b>${item.safeBunks}</b></span>
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  const tbody = document.getElementById("desktop-subject-tbody");
-  tbody.innerHTML = list.map(item => {
-    const rowBg = item.isSafe ? "bg-emerald-950/20 text-emerald-200" : "bg-amber-950/25 text-amber-200";
-    return `
-      <tr class="${rowBg} hover:bg-slate-800/60 transition">
-        <td class="py-3 px-3 font-black text-sky-300">${item.short}</td>
-        <td class="py-3 px-3 font-bold text-white">${item.name}</td>
-        <td class="py-3 px-3 text-center font-semibold">${item.credits}</td>
-        <td class="py-3 px-3 text-center">
-          <div class="inline-flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-2 py-1">
-            <button onclick="stepSubject('${item.code}', 'unattended', -1)" class="px-2 py-0.5 text-slate-300 hover:text-white font-black">-</button>
-            <input type="number" min="0" max="${item.dynamicTotal}" value="${item.displayUnattended}" onchange="setSubjectVal('${item.code}', 'unattended', this.value)" class="w-12 bg-transparent text-center font-black text-amber-300 focus:outline-none" />
-            <button onclick="stepSubject('${item.code}', 'unattended', 1)" class="px-2 py-0.5 text-sky-400 hover:text-sky-300 font-black">+</button>
-          </div>
-          <div class="text-[10px] text-amber-300/80 font-bold mt-0.5">Cal: ${item.calMissed} | Man: ${item.manualMissed}</div>
-        </td>
-        <td class="py-3 px-3 text-center">
-          <div class="inline-flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-2 py-1">
-            <button onclick="stepSubject('${item.code}', 'extra', -1)" class="px-2 py-0.5 text-slate-300 hover:text-white font-black">-</button>
-            <input type="number" value="${item.displayExtra}" onchange="setSubjectVal('${item.code}', 'extra', this.value)" class="w-12 bg-transparent text-center font-black text-emerald-300 focus:outline-none" />
-            <button onclick="stepSubject('${item.code}', 'extra', 1)" class="px-2 py-0.5 text-emerald-400 hover:text-emerald-300 font-black">+</button>
-          </div>
-          <div class="text-[10px] text-emerald-300/80 font-bold mt-0.5">Cal: ${item.calExtraAttended} | Man: ${item.manualExtra}</div>
-        </td>
-        <td class="py-3 px-3 text-center font-black">${item.effAttended} / ${item.dynamicTotal}</td>
-        <td class="py-3 px-3 text-center font-black">${item.pct}%</td>
-        <td class="py-3 px-3 text-center font-bold">${item.reqTarget}</td>
-        <td class="py-3 px-3 text-center font-black">${item.needed}</td>
-        <td class="py-3 px-3 text-center font-black">${item.safeBunks}</td>
-        <td class="py-3 px-3 text-center font-black text-xs">${item.isSafe ? `Safe (>=${targetPct}%)` : `Shortage (<${targetPct}%)`}</td>
-      </tr>
-    `;
-  }).join("");
-}
-
-function renderCalendarGrid() {
-  const ym = document.getElementById("cal-month-select").value;
-  const [year, month] = ym.split("-").map(Number);
-  const firstDay = new Date(year, month - 1, 1);
-  const startOffset = (firstDay.getDay() + 6) % 7;
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const todayIso = new Date().toISOString().slice(0, 10);
-  const gridEl = document.getElementById("calendar-grid");
-  let html = "";
-  for (let i = 0; i < startOffset; i++) html += `<div class="min-h-[54px] bg-slate-950/40 border border-slate-800/70 rounded-xl"></div>`;
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const iso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    const dow = (startOffset + d - 1) % 7;
-    const isSunday = dow === 6;
-    const isWeekend = dow >= 5;
-    const isHoliday = Boolean(getHolidayName(iso));
-    const isPreTerm = isBeforeTermStart(iso);
-    const isPostTerm = isAfterTermEnd(iso);
-    const examInfo = getExamPeriodInfo(iso);
-    const bunkVal = (isPreTerm || isPostTerm || isHoliday || examInfo) ? "" : (currentUser.dailyLogs[iso] || "");
-    const extraSlot7 = (isPreTerm || isPostTerm || isHoliday || examInfo) ? "" : (currentUser.slot7Map[iso] || "");
-    const isSelected = iso === selectedCalDate;
-
-    let bg = "bg-blue-600 text-white border-blue-400";
-    let sub = getWeekType(iso).split(" ")[0].toUpperCase();
-
-    if (isHoliday || isPreTerm) { bg = "bg-red-600 text-white border-red-400"; sub = "HOL"; }
-    else if (isSunday) { bg = "bg-red-600/90 text-white border-red-400"; sub = "WKND"; }
-    else if (examInfo) { bg = "bg-purple-600 text-white border-purple-400"; sub = examInfo.code; }
-    else if (isWeekend) { bg = "bg-red-600/90 text-white border-red-400"; sub = "WKND"; }
-    else if (isPostTerm) { bg = "bg-red-600/80 text-white border-red-400"; sub = "END"; }
-    else if (bunkVal) { bg = "bg-amber-400 text-slate-950 border-amber-200"; sub = escapeHTML(bunkVal); }
-    else if (iso <= todayIso) { bg = "bg-emerald-600 text-white border-emerald-400"; sub = extraSlot7 ? `+${escapeHTML(extraSlot7)}` : "ATT"; }
-    else if (extraSlot7) { sub = `+${escapeHTML(extraSlot7)}`; }
-
-    const ring = isSelected ? "ring-2 ring-white scale-[1.04] z-10 shadow-lg" : "opacity-95 hover:opacity-100";
-    html += `<button onclick="selectDate('${iso}')" class="min-h-[54px] p-1 rounded-xl border ${bg} ${ring} flex flex-col items-center justify-center transition active:scale-95"><span class="text-xs sm:text-sm font-black leading-none">${d}</span><span class="text-[9px] font-black mt-1 leading-tight truncate max-w-full px-0.5">${sub}</span></button>`;
-  }
-  gridEl.innerHTML = html;
-}
-
-window.selectDate = function(iso) {
-  selectedCalDate = iso;
-  const ym = iso.slice(0, 7);
-  if (MONTHS_LIST.includes(ym)) document.getElementById("cal-month-select").value = ym;
-  if (universalVaultMounted) {
-    const holInput = document.getElementById("global-holiday-date");
-    if (holInput) holInput.value = iso;
-  }
-  syncTimetableToDate(iso);
-  renderAll();
-};
 
 function getMergedDaySlots(isoDate, semOverride = null) {
   const activeSem = semOverride || currentSem;
@@ -1395,12 +1176,12 @@ function getMergedDaySlots(isoDate, semOverride = null) {
   const branchKey = currentUser?.branch || "Computer Engineering - Div I";
   const branchGrids = TIMETABLES_DB[branchKey] || TIMETABLES_DB["Computer Engineering - Div I"];
   
-  // COMMANDO FIX: Fallback to empty array if branchGrids misses a key
+  // COMMANDO FIX: Strict Default Empty Array
   const grid = wkType === "Even Week" ? (branchGrids.EVEN || []) : (branchGrids.ODD || []);
   const rawSlots = grid[dayKey] || [];
   
   const batchLetter = (currentUser?.batch || "Batch A").slice(-1).toUpperCase();
-  const courses = SEMESTER_DATA[activeSem];
+  const courses = SEMESTER_DATA[activeSem] || [];
   const savedSlot7 = (currentUser?.slot7Map && currentUser.slot7Map[isoDate]) || "";
 
   const extracted = rawSlots.map((raw, idx) => {
@@ -1438,6 +1219,25 @@ function renderDailyInspector(statsMap, targetPct) {
   document.getElementById("inspected-date-title").textContent = dObj.toDateString();
   document.getElementById("inspected-date-meta").textContent = `Schedule Status: ${holidayLabel ? holidayLabel : (examInfo ? `${examInfo.label}` : wkType)} | Your Batch: ${currentUser.batch}`;
 
+  const personalHolMount = document.getElementById("inspector-personal-holiday-mount");
+  if (personalHolMount) {
+    if (holidayLabel) {
+      personalHolMount.innerHTML = `
+        <div class="bg-amber-950/50 border border-amber-500/60 rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs">
+          <span class="font-bold text-amber-300">&#9889; Personal: ${selectedCalDate} is a Holiday (${escapeHTML(holidayLabel)})</span>
+          <button type="button" onclick="window.universalRemoveHoliday('${selectedCalDate}')" class="bg-slate-800 hover:bg-slate-700 border border-amber-400 text-amber-300 font-black px-3 py-1.5 rounded-lg shrink-0 transition">Remove Holiday</button>
+        </div>
+      `;
+    } else {
+      personalHolMount.innerHTML = `
+        <div class="bg-red-950/50 border border-red-500/60 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span class="font-bold text-red-200">&#9889; Personal Quick Action for ${selectedCalDate}:</span>
+          <button type="button" onclick="window.universalDeclareHoliday('${selectedCalDate}', prompt('Holiday Name / Reason:', 'Personal Holiday') || 'Personal Holiday')" class="bg-red-600 hover:bg-red-500 text-white font-black px-3 py-1.5 rounded-lg shadow shrink-0 transition">Declare ${selectedCalDate} as Holiday</button>
+        </div>
+      `;
+    }
+  }
+
   const container = document.getElementById("daily-slots-container");
   const slot7Box = document.getElementById("slot7-editor-box");
   const quickBtns = document.getElementById("day-quick-bunk-btns");
@@ -1447,7 +1247,7 @@ function renderDailyInspector(statsMap, targetPct) {
     slot7Box.classList.add("hidden"); quickBtns.classList.add("hidden"); return;
   }
   if (holidayLabel) {
-    container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">Official Holiday: ${escapeHTML(holidayLabel)} (No Regular Lectures)</div>`;
+    container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">Holiday: ${escapeHTML(holidayLabel)} (No Regular Lectures)</div>`;
     slot7Box.classList.add("hidden"); quickBtns.classList.add("hidden"); return;
   }
   if (examInfo) {
@@ -1479,7 +1279,7 @@ function renderDailyInspector(statsMap, targetPct) {
       else if (st.needed > 0) statusHtml = `<span class="text-amber-300 font-bold">Missed: ${st.unattended}/${st.dynamicTotal} | Need ${st.needed} for ${targetPct}% (${st.pct}%)</span>`;
       else statusHtml = `<span class="text-emerald-400 font-bold">Missed: ${st.unattended}/${st.dynamicTotal} | Safe: Bunk ${st.safeBunks} (${st.pct}%)</span>`;
     }
-    const labBadge = u.isLab ? `<span class="batch-badge ml-1">YOUR ${escapeHTML(currentUser.batch.toUpperCase())} LAB</span>` : "";
+    const labBadge = u.isLab ? `<span class="batch-badge ml-1">YOUR ${escapeHTML((currentUser?.batch || "Batch A").toUpperCase())} LAB</span>` : "";
     const canTick = Boolean(u.short);
 
     return `
@@ -1543,118 +1343,6 @@ function recomputeDayBadge(isoDate, units, dayTicks) {
   else currentUser.dailyLogs[isoDate] = missedShorts.join(", ");
 }
 
-// COMMANDO FIX: Try/Catch wrap + null-checks to prevent grid rendering crashes
-function renderTimetableSection(statsMap, targetPct) {
-  try {
-    const branchKey = currentUser?.branch || "Computer Engineering - Div I";
-    const branchGrids = TIMETABLES_DB[branchKey] || TIMETABLES_DB["Computer Engineering - Div I"];
-    const grid = ttWeekTab === "Odd" ? (branchGrids.ODD || branchGrids.EVEN) : (branchGrids.EVEN || branchGrids.ODD);
-    const batchLetter = (currentUser?.batch || "Batch A").slice(-1).toUpperCase();
-    const courses = SEMESTER_DATA[currentSem] || [];
-
-    const daySlots = grid[ttSelectedDay] || [];
-    let cardsHtml = ""; let i = 0;
-    while (i < TIME_SLOTS.length) {
-      const raw = daySlots[i] || "";
-      const { text, isLab } = extractBatchEntry(raw, batchLetter);
-      const short = matchSubjectShort(text, courses);
-      const kind = getSessionKind(text);
-      let span = 1;
-      
-      if (short && i < 8) {
-        while (i + span < 8) {
-          const nextRaw = daySlots[i + span] || "";
-          if (matchSubjectShort(extractBatchEntry(nextRaw, batchLetter).text, courses) === short && getSessionKind(extractBatchEntry(nextRaw, batchLetter).text) === kind) {
-            span++;
-          } else break;
-        }
-      }
-
-      const st = short ? statsMap[short] : null;
-      let cardClass = "cell-blue"; let meta = "Non-Credit / Extra Slot";
-      if (raw.includes("BREAK")) { cardClass = "cell-red"; meta = "Official Break"; }
-      else if (st) {
-        cardClass = st.pct >= targetPct ? "cell-green" : "cell-yellow";
-        meta = `Attendance: <b>${st.pct}%</b> | Missed: <b>${st.unattended}/${st.dynamicTotal}</b> | Extra: <b>${st.personalExtra}</b> | ${st.needed > 0 ? `Need ${st.needed} for ${targetPct}%` : `Safe (Bunk ${st.safeBunks})`}`;
-      }
-
-      const slotText = span > 1 ? `Slots ${i + 1}–${i + span} [1 Combined Bulk Unit]` : TIME_SLOTS[i];
-      const labBadge = isLab ? `<span class="batch-badge ml-1.5">YOUR ${escapeHTML((currentUser?.batch || "Batch A").toUpperCase())} LAB</span>` : "";
-
-      cardsHtml += `
-        <div class="${cardClass} rounded-2xl p-4 border border-slate-700 flex items-center justify-between gap-3 shadow-md">
-          <div>
-            <div class="text-[11px] font-black uppercase tracking-wider text-sky-300">${slotText}</div>
-            <div class="text-sm sm:text-base font-black mt-1">${escapeHTML(text)} ${labBadge}</div>
-            <div class="text-xs mt-1.5 opacity-90 font-medium">${meta}</div>
-          </div>
-        </div>
-      `;
-      i += span;
-    }
-    document.getElementById("tt-cards-output").innerHTML = cardsHtml;
-
-    const days = ["MON", "TUE", "WED", "THR", "FRI"];
-    const skip = { MON: {}, TUE: {}, WED: {}, THR: {}, FRI: {} };
-    const spanMap = { MON: {}, TUE: {}, WED: {}, THR: {}, FRI: {} };
-
-    days.forEach(d => {
-      let s = 0;
-      const dSlots = grid[d] || [];
-      while (s < TIME_SLOTS.length) {
-        const dRaw = dSlots[s] || "";
-        const { text } = extractBatchEntry(dRaw, batchLetter);
-        const sf = matchSubjectShort(text, courses);
-        const kind = getSessionKind(text);
-        if (sf && s < 8) {
-          let sp = 1;
-          while (s + sp < 8) {
-             const nextRaw = dSlots[s + sp] || "";
-             if (matchSubjectShort(extractBatchEntry(nextRaw, batchLetter).text, courses) === sf && getSessionKind(extractBatchEntry(nextRaw, batchLetter).text) === kind) {
-                skip[d][s + sp] = true; sp++;
-             } else break;
-          }
-          spanMap[d][s] = sp; s += sp;
-        } else {
-          spanMap[d][s] = 1; s++;
-        }
-      }
-    });
-
-    let tableHtml = `<div class="tt-scroll"><table class="tt-table"><thead><tr><th class="tt-sticky-col">TIME SLOT</th>`;
-    days.forEach(d => { tableHtml += `<th>${d}</th>`; });
-    tableHtml += `</tr></thead><tbody>`;
-
-    TIME_SLOTS.forEach((slotName, sIdx) => {
-      tableHtml += `<tr><td class="tt-sticky-col">${slotName}</td>`;
-      days.forEach(d => {
-        if (skip[d][sIdx]) return;
-        const raw = (grid[d] || [])[sIdx] || "";
-        const { text, isLab } = extractBatchEntry(raw, batchLetter);
-        const sf = matchSubjectShort(text, courses);
-        const rSpan = spanMap[d][sIdx] || 1;
-        const st = sf ? statsMap[sf] : null;
-
-        let cls = "cell-blue"; let sub = "";
-        if (raw.includes("BREAK")) { cls = "cell-red"; }
-        else if (st) {
-          cls = st.pct >= targetPct ? "cell-green" : "cell-yellow";
-          sub = `<div class="text-[11px] mt-1.5 opacity-95 font-medium">Att: ${st.pct}% | Missed: ${st.unattended}/${st.dynamicTotal}</div>`;
-        }
-
-        const bulkTag = rSpan > 1 ? `<div class="text-[10px] text-sky-300 font-black">[1 Combined Bulk Unit (${rSpan} Hrs)]</div>` : "";
-        const labTag = isLab ? `<div class="mt-1.5"><span class="batch-badge">YOUR ${escapeHTML((currentUser?.batch || "Batch A").toUpperCase())} LAB</span></div>` : "";
-        tableHtml += `<td class="${cls}" ${rSpan > 1 ? `rowspan="${rSpan}"` : ""}><div>${escapeHTML(text)}</div>${bulkTag}${labTag}${sub}</td>`;
-      });
-      tableHtml += `</tr>`;
-    });
-    tableHtml += `</tbody></table></div>`;
-    document.getElementById("tt-grid-output").innerHTML = tableHtml;
-  } catch(e) {
-    console.error("Timetable rendering prevented a crash: ", e);
-  }
-}
-
 function setupEventListeners() {
   document.getElementById("btn-toggle-login-pw")?.addEventListener("click", () => {
     const inp = document.getElementById("login-password");
@@ -1680,7 +1368,6 @@ function setupEventListeners() {
     }
 
     const pwDigest = await saltedHash(pw);
-    
     submitBtn.textContent = "Decrypting & Syncing Cloud Profile...";
     const db = getAllUsersDB();
     let candidateUser = null;
@@ -1690,7 +1377,7 @@ function setupEventListeners() {
       candidateUser = cloudProfile;
       candidateUser.passwordHash = pwDigest;
       
-      // COMMANDO FIX: Force profile overwrite with latest UI selections
+      // Force profile overwrite with latest UI selections on login
       candidateUser.branch = branch;
       candidateUser.batch = batch;
       if (name) candidateUser.name = name;
@@ -1719,7 +1406,6 @@ function setupEventListeners() {
     currentUser.lastLogin = new Date().toLocaleString("en-IN");
     persistCurrentUser();
     startRealtimeCloudListener();
-    fetchGlobalConfigFromFirebase();
 
     if (remember) localStorage.setItem("att_remembered_user_v9", email);
     else localStorage.removeItem("att_remembered_user_v9");
@@ -1749,7 +1435,7 @@ function setupEventListeners() {
     persistCurrentUser(); 
     renderAll(); 
   });
-  document.getElementById("dash-semester")?.addEventListener("change", (e) => { currentSem = e.target.value; if (universalVaultMounted) populateUniversalPanel(); renderAll(); });
+  document.getElementById("dash-semester")?.addEventListener("change", (e) => { currentSem = e.target.value; populatePersonalPanel(); renderAll(); });
   document.getElementById("dash-batch")?.addEventListener("change", (e) => { currentUser.batch = e.target.value; document.getElementById("student-meta").innerHTML = `<b>Branch:</b> ${escapeHTML(currentUser.branch)} &nbsp;|&nbsp; <b>Batch:</b> ${escapeHTML(currentUser.batch)} &nbsp;|&nbsp; <b>Account:</b> ${escapeHTML(currentUser.email)}`; persistCurrentUser(); renderAll(); });
 
   document.getElementById("btn-reset-sem")?.addEventListener("click", () => {
@@ -1761,12 +1447,11 @@ function setupEventListeners() {
     if (livePollTimer) { clearInterval(livePollTimer); livePollTimer = null; }
     localStorage.removeItem("att_remembered_user_v9"); 
     currentUser = null;
-    universalVaultMounted = false; 
     
-    // COMMANDO FIX: Safely unmount UI components without crashing
-    const gbm = document.getElementById("global-btn-mount"); if(gbm) gbm.innerHTML = ""; 
-    const gvm = document.getElementById("global-vault-mount"); if(gvm) gvm.innerHTML = ""; 
-    const ihm = document.getElementById("inspector-universal-holiday-mount"); if(ihm) ihm.innerHTML = "";
+    const pp = document.getElementById("power-panel");
+    if(pp) pp.classList.add("hidden");
+    const ihm = document.getElementById("inspector-personal-holiday-mount"); 
+    if(ihm) ihm.innerHTML = "";
     
     setSyncPill("Connecting to Cloud...", true); 
     document.getElementById("app-view")?.classList.add("hidden"); 
@@ -1779,6 +1464,31 @@ function setupEventListeners() {
 
   document.getElementById("custom-target-input")?.addEventListener("change", (e) => {
     const val = Math.max(75, Math.min(100, parseInt(e.target.value) || 75)); e.target.value = val; currentUser.targetPct = val; persistCurrentUser(); renderAll();
+  });
+
+  document.getElementById("btn-toggle-power-panel")?.addEventListener("click", () => {
+    const panel = document.getElementById("power-panel");
+    if (!panel) return;
+    panel.classList.toggle("hidden");
+    if (!panel.classList.contains("hidden")) panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+
+  document.getElementById("btn-personal-add-holiday")?.addEventListener("click", () => {
+    window.universalDeclareHoliday(document.getElementById("personal-holiday-date").value, document.getElementById("personal-holiday-name").value);
+  });
+  
+  document.getElementById("btn-personal-remove-holiday")?.addEventListener("click", () => {
+    window.universalRemoveHoliday(document.getElementById("personal-holiday-date").value);
+  });
+  
+  document.getElementById("btn-personal-extra")?.addEventListener("click", () => {
+    if (!currentUser) return;
+    const code = document.getElementById("personal-course-select").value;
+    const count = Math.max(0, parseInt(document.getElementById("personal-extra-count").value) || 0);
+    currentUser.globalExtras[code] = count;
+    persistCurrentUser();
+    document.getElementById("personal-extra-status").textContent = `Added ${count} extra lecture(s) for ${code} to your personal total!`;
+    renderAll();
   });
 
   document.getElementById("btn-save-slot7")?.addEventListener("click", () => {
