@@ -100,7 +100,7 @@
         <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight">Student Login</h1>
         <span class="text-[11px] font-extrabold bg-emerald-600/20 text-emerald-400 border border-emerald-500/40 px-2.5 py-1 rounded-lg">E2E Encrypted Sync</span>
       </div>
-      <p class="text-xs text-slate-400 mb-5 leading-relaxed">Automatic real-time sync. Your data is AES-256 encrypted.</p>
+      <p class="text-xs text-slate-400 mb-5 leading-relaxed">Automatic real-time PC &amp; Android sync. Your data is AES-256 encrypted before leaving your device.</p>
 
       <div id="login-error" class="hidden bg-red-950/80 border border-red-500 text-red-200 text-xs font-semibold p-3 rounded-xl mb-4"></div>
 
@@ -157,7 +157,7 @@
 
         <label class="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer pt-1">
           <input id="login-remember" type="checkbox" checked class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-sky-500" />
-          <span class="font-semibold">Stay logged in &amp; auto-sync</span>
+          <span class="font-semibold">Stay logged in &amp; auto-sync on this device</span>
         </label>
 
         <button type="submit" id="btn-login-submit"
@@ -185,32 +185,31 @@
           <p id="student-meta" class="text-xs sm:text-sm text-slate-400 mt-1 font-medium"></p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          
           <button id="btn-toggle-power-panel" type="button"
             class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black px-3.5 py-2 rounded-xl shadow-lg border border-amber-300 transition active:scale-95">
             &#9889; Personal Tools
           </button>
-          
-          <select id="dash-branch" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white max-w-[140px] sm:max-w-none truncate">
-            <option value="Computer Engineering - Div I">CE Div I</option>
-            <option value="Computer Engineering - Div II">CE Div II</option>
-            <option value="Computer Engineering - Div III">CE Div III (Comps C)</option>
-            <option value="Mechanical Engineering">Mech</option>
+
+          <select id="dash-branch" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white">
+            <option value="Computer Engineering - Div I">Comps Div I (A)</option>
+            <option value="Computer Engineering - Div II">Comps Div II (B)</option>
+            <option value="Computer Engineering - Div III">Comps Div III (C)</option>
+            <option value="Mechanical Engineering">Mechanical</option>
             <option value="Information Technology">IT</option>
             <option value="Electronics and Telecommunication">EXTC</option>
             <option value="Basic Sciences and Humanities">FE Basics</option>
           </select>
-          
+
           <select id="dash-semester" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white"></select>
           <select id="dash-batch" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white">
             <option value="Batch A">Batch A</option>
             <option value="Batch B">Batch B</option>
             <option value="Batch C">Batch C</option>
           </select>
-          <button id="btn-reset-sem" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl transition">
+          <button id="btn-reset-sem" type="button" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl transition">
             Reset Missed to 0
           </button>
-          <button id="btn-logout" class="bg-red-950 hover:bg-red-900 border border-red-500/60 text-red-100 text-xs font-bold px-3 py-2 rounded-xl transition">
+          <button id="btn-logout" type="button" onclick="window.forceLogout()" class="bg-red-950 hover:bg-red-900 border border-red-500/60 text-red-100 text-xs font-bold px-3 py-2 rounded-xl transition">
             Logout
           </button>
         </div>
@@ -220,10 +219,10 @@
       <div class="mt-5 pt-4 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-xs font-black uppercase tracking-wider text-sky-400 mr-1">Target Attendance % (Min 75%):</span>
-          <button data-target="75" class="target-pill px-3.5 py-2 rounded-xl text-xs font-black border">75% Min</button>
-          <button data-target="80" class="target-pill px-3.5 py-2 rounded-xl text-xs font-black border">80%</button>
-          <button data-target="85" class="target-pill px-3.5 py-2 rounded-xl text-xs font-black border">85%</button>
-          <button data-target="90" class="target-pill px-3.5 py-2 rounded-xl text-xs font-black border">90%</button>
+          <button type="button" data-target="75" class="target-pill px-3.5 py-2 rounded-xl text-xs font-black border">75% Min</button>
+          <button type="button" data-target="80" class="target-pill px-3.5 py-2 rounded-xl text-xs font-black border">80%</button>
+          <button type="button" data-target="85" class="target-pill px-3.5 py-2 rounded-xl text-xs font-black border">85%</button>
+          <button type="button" data-target="90" class="target-pill px-3.5 py-2 rounded-xl text-xs font-black border">90%</button>
         </div>
         <div class="flex items-center gap-2.5">
           <label class="text-xs font-bold text-slate-300">Custom %:</label>
@@ -240,22 +239,22 @@
     <div id="power-panel" class="hidden bg-slate-900 border-2 border-amber-500/80 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div>
-          <h2 class="text-base sm:text-lg font-black text-amber-400">&#9889; Personal Tools Panel (Local to your account)</h2>
-          <p class="text-xs text-slate-400 mt-0.5">Declare holidays or bulk-add extra lectures strictly for your own calendar.</p>
+          <h2 class="text-base sm:text-lg font-black text-amber-400">&#9889; Personal Tools Panel (Private to Your Account)</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Declare holidays or adjust extra lecture totals strictly for your own profile.</p>
         </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
-          <div class="text-xs font-black uppercase tracking-wider text-red-400">1. Personal Holiday Override</div>
+          <div class="text-xs font-black uppercase tracking-wider text-red-400">1. Declare / Remove Personal Holiday</div>
           <p class="text-[11px] text-slate-300 leading-relaxed">
-            Pick any date (or click a date on the calendar below) to declare it as a holiday or restore it to a working day for your account:
+            Pick any date (or click a date on the calendar below) to declare it as a holiday or restore it to a working day on your screen:
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <input id="personal-holiday-date" type="date" value="2026-11-11" min="2026-09-07" max="2026-12-23"
               class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-bold" />
-            <input id="personal-holiday-name" type="text" maxlength="50" placeholder="Reason (e.g. Personal Leave)"
-              value="Personal Leave"
+            <input id="personal-holiday-name" type="text" maxlength="50" placeholder="Reason (e.g. Declared Holiday)"
+              value="Declared Holiday"
               class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-bold" />
           </div>
           <div class="flex gap-2">
@@ -270,15 +269,15 @@
           </div>
           <div id="personal-holiday-status" class="text-xs text-emerald-400 font-extrabold"></div>
           <div class="pt-2 border-t border-slate-800/80">
-            <div class="text-[11px] font-bold text-slate-400 mb-1.5">Your Custom Holidays:</div>
+            <div class="text-[11px] font-bold text-slate-400 mb-1.5">Your Custom Declared Holidays:</div>
             <div id="personal-custom-holidays-list" class="flex flex-wrap gap-1.5 text-[11px]"></div>
           </div>
         </div>
 
         <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
-          <div class="text-xs font-black uppercase tracking-wider text-amber-400">2. Add Missing Lectures to Total</div>
+          <div class="text-xs font-black uppercase tracking-wider text-amber-400">2. Bulk Add Extra Lectures to Subject Total</div>
           <p class="text-[11px] text-slate-300 leading-relaxed">
-            Add bulk extra lectures for a subject to dynamically expand your semester total:
+            Add extra lectures for any subject to dynamically increase your personal semester total:
           </p>
           <div class="space-y-2.5">
             <select id="personal-course-select" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white font-bold"></select>
@@ -287,7 +286,7 @@
                 class="w-28 bg-slate-800 border border-slate-600 rounded-xl px-3.5 py-2.5 text-sm text-white font-black text-center" />
               <button id="btn-personal-extra" type="button"
                 class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs sm:text-sm transition">
-                Add to Subject Total
+                Save Extra Lectures
               </button>
             </div>
           </div>
@@ -324,7 +323,7 @@
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
       <div class="missed-banner text-sm sm:text-xl">ENTER HOW MANY LECTURES YOU HAVE MISSED</div>
       <div class="bg-sky-950/60 border border-sky-500/40 text-sky-200 text-xs sm:text-sm font-bold px-4 py-3 rounded-xl text-center">
-        Note: Extra Lectures dynamically expand your personal Total Lectures for the semester. 
+        Note: Extra Lectures dynamically expand your personal Total Lectures for the semester.
         <br>Press <b class="text-white">+</b> if you Attended the extra lecture. Press <b class="text-white">-</b> if you Missed the extra lecture!
       </div>
 
@@ -389,10 +388,10 @@
               <p id="inspected-date-meta" class="text-xs text-sky-400 font-extrabold mt-0.5"></p>
             </div>
             <div id="day-quick-bunk-btns" class="grid grid-cols-2 sm:flex gap-1.5">
-              <button id="btn-day-full-bunk" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] px-2.5 py-1.5 rounded-lg transition">Full Bunk ('F')</button>
-              <button id="btn-day-am-bunk" class="bg-amber-600/80 hover:bg-amber-500 text-white font-black text-[11px] px-2.5 py-1.5 rounded-lg transition">Half Bunk (AM)</button>
-              <button id="btn-day-pm-bunk" class="bg-amber-600/80 hover:bg-amber-500 text-white font-black text-[11px] px-2.5 py-1.5 rounded-lg transition">Half Bunk (PM)</button>
-              <button id="btn-day-clear-bunk" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] px-2.5 py-1.5 rounded-lg transition">Attended All</button>
+              <button id="btn-day-full-bunk" type="button" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] px-2.5 py-1.5 rounded-lg transition">Full Bunk ('F')</button>
+              <button id="btn-day-am-bunk" type="button" class="bg-amber-600/80 hover:bg-amber-500 text-white font-black text-[11px] px-2.5 py-1.5 rounded-lg transition">Half Bunk (AM)</button>
+              <button id="btn-day-pm-bunk" type="button" class="bg-amber-600/80 hover:bg-amber-500 text-white font-black text-[11px] px-2.5 py-1.5 rounded-lg transition">Half Bunk (PM)</button>
+              <button id="btn-day-clear-bunk" type="button" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] px-2.5 py-1.5 rounded-lg transition">Attended All</button>
             </div>
           </div>
 
@@ -412,8 +411,8 @@
             <div class="flex gap-2">
               <input id="slot7-input" type="text" maxlength="15" placeholder="e.g. eg, ap, cp, fem-i, uhv, ec..."
                 class="min-w-0 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white flex-grow focus:outline-none focus:border-sky-400" />
-              <button id="btn-save-slot7" class="bg-blue-600 hover:bg-blue-500 text-white font-black text-xs px-4 py-2.5 rounded-xl shrink-0 transition">Save 4–5 PM</button>
-              <button id="btn-clear-slot7" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-bold text-xs px-3 py-2.5 rounded-xl shrink-0 transition">Clear</button>
+              <button id="btn-save-slot7" type="button" class="bg-blue-600 hover:bg-blue-500 text-white font-black text-xs px-4 py-2.5 rounded-xl shrink-0 transition">Save 4–5 PM</button>
+              <button id="btn-clear-slot7" type="button" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-bold text-xs px-3 py-2.5 rounded-xl shrink-0 transition">Clear</button>
             </div>
           </div>
         </div>
@@ -433,24 +432,24 @@
           <p class="text-xs text-slate-400 font-medium mt-0.5">Dynamically switches to match your currently selected branch and week type.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <button id="btn-tt-even" class="px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300">Even Week</button>
-          <button id="btn-tt-odd" class="px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white">Odd Week</button>
-          <button id="btn-tt-img" class="px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300">Timetable Image</button>
+          <button id="btn-tt-even" type="button" class="px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300">Even Week</button>
+          <button id="btn-tt-odd" type="button" class="px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white">Odd Week</button>
+          <button id="btn-tt-img" type="button" class="px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300">Timetable Image</button>
         </div>
       </div>
 
       <div id="tt-schedule-container" class="space-y-3.5">
         <div class="flex flex-wrap items-center justify-between gap-2.5 bg-slate-950/80 p-3 rounded-2xl border border-slate-800">
           <div class="flex gap-2">
-            <button id="btn-mode-cards" class="px-3.5 py-2 rounded-xl text-xs font-black bg-sky-600 text-white">Mobile Day Cards</button>
-            <button id="btn-mode-grid" class="px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300">Full 5-Day Grid</button>
+            <button id="btn-mode-cards" type="button" class="px-3.5 py-2 rounded-xl text-xs font-black bg-sky-600 text-white">Mobile Day Cards</button>
+            <button id="btn-mode-grid" type="button" class="px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300">Full 5-Day Grid</button>
           </div>
           <div id="tt-day-pills" class="flex gap-1">
-            <button data-day="MON" class="day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-blue-600 text-white">MON</button>
-            <button data-day="TUE" class="day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300">TUE</button>
-            <button data-day="WED" class="day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300">WED</button>
-            <button data-day="THR" class="day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300">THR</button>
-            <button data-day="FRI" class="day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300">FRI</button>
+            <button type="button" data-day="MON" class="day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-blue-600 text-white">MON</button>
+            <button type="button" data-day="TUE" class="day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300">TUE</button>
+            <button type="button" data-day="WED" class="day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300">WED</button>
+            <button type="button" data-day="THR" class="day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300">THR</button>
+            <button type="button" data-day="FRI" class="day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300">FRI</button>
           </div>
         </div>
 
@@ -461,7 +460,7 @@
       <div id="tt-image-container" class="hidden space-y-4 pt-2">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <span class="text-xs text-slate-300 font-bold">Upload an image file or press <b>Ctrl + V</b> anywhere below to paste a copied image:</span>
-          <button id="btn-remove-img" class="hidden bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3.5 py-2 rounded-xl transition">Remove Timetable Image</button>
+          <button id="btn-remove-img" type="button" class="hidden bg-red-600 hover:bg-red-500 text-white text-xs font-black px-3.5 py-2 rounded-xl transition">Remove Timetable Image</button>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <label class="border-2 border-dashed border-slate-600 hover:border-sky-400 rounded-2xl p-5 text-center cursor-pointer bg-slate-950/50 transition">
@@ -483,18 +482,14 @@
   </footer>
 
 <script>
-// 1. ZERO PLAINTEXT URLS
 function _getCloudEndpoint() {
   return atob("aHR0cHM6Ly9hdHRlbmRhbmNldHJhY2tlci04ZTMxMS1kZWZhdWx0LXJ0ZGIuYXNpYS1zb3V0aGVhc3QxLmZpcmViYXNlZGF0YWJhc2UuYXBw");
 }
 
 function escapeHTML(str) {
-  return String(str || "").replace(/[&<>"']/g, (ch) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-  }[ch]));
+  return String(str || "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
 }
 
-// 2. EXAM PERIODS
 const SEM1_START_DATE = "2026-09-07";
 const SEM1_LAST_INSTRUCTION_DATE = "2026-12-04";
 const SEM1_END_DATE = "2026-12-23";
@@ -513,7 +508,6 @@ const TIME_SLOTS = [
   "5 (14:00 - 15:00)", "6 (15:00 - 16:00)", "7 (16:00 - 17:00)"
 ];
 
-// DYNAMIC TIMETABLE ARCHITECTURE FOR DIFFERENT BRANCHES AND DIVISIONS
 const DEFAULT_EVEN = {
   MON: ["AP", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Remedial Lecture"],
   TUE: ["EC", "EG", "SHORT BREAK", "BE&DE", "FEM-I", "LUNCH BREAK", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "UHV", "FE Mentoring Slot"],
@@ -571,16 +565,21 @@ const IT_EVEN = {
 };
 
 const TIMETABLES_DB = {
+  "Computer Engineering": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
   "Computer Engineering - Div I": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
   "Computer Engineering - Div II": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
-  "Computer Engineering - Div III": { EVEN: COMP3_EVEN, ODD: COMP3_EVEN }, 
+  "Computer Engineering - Div III": { EVEN: COMP3_EVEN, ODD: COMP3_EVEN },
   "Mechanical Engineering": { EVEN: MECH_EVEN, ODD: MECH_ODD },
   "Information Technology": { EVEN: IT_EVEN, ODD: IT_ODD },
   "Electronics and Telecommunication": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
   "Basic Sciences and Humanities": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD }
 };
 
-// Base Official Holidays
+function normalizeBranchName(b) {
+  if (!b || b === "Computer Engineering") return "Computer Engineering - Div I";
+  return TIMETABLES_DB[b] ? b : "Computer Engineering - Div I";
+}
+
 const BASE_HOLIDAYS = {
   "2026-09-14": "Ganeshotsav Break", "2026-09-15": "Ganeshotsav Break", "2026-09-16": "Ganeshotsav Break",
   "2026-09-17": "Ganeshotsav Break", "2026-09-18": "Ganeshotsav Break", "2026-10-02": "Gandhi Jayanti",
@@ -630,21 +629,37 @@ async function saltedHash(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-// LOCAL HOLIDAY OVERRIDES
+window.forceLogout = function() {
+  if (livePollTimer) { clearInterval(livePollTimer); livePollTimer = null; }
+  localStorage.removeItem("att_remembered_user_v9");
+  currentUser = null;
+  const pp = document.getElementById("power-panel");
+  if (pp) pp.classList.add("hidden");
+  const ihm = document.getElementById("inspector-personal-holiday-mount");
+  if (ihm) ihm.innerHTML = "";
+  setSyncPill("Connecting to Cloud...", true);
+  document.getElementById("app-view").classList.add("hidden");
+  document.getElementById("login-view").classList.remove("hidden");
+};
+
 window.universalDeclareHoliday = function(isoDate, customReason) {
   if (!isoDate || !currentUser) return;
-  const reason = escapeHTML((customReason || "Personal Holiday").trim());
+  const reason = escapeHTML((customReason || "Declared Holiday").trim());
+  if (!currentUser.customHolidays) currentUser.customHolidays = {};
+  if (!currentUser.removedHolidays) currentUser.removedHolidays = {};
   currentUser.customHolidays[isoDate] = reason;
   delete currentUser.removedHolidays[isoDate];
   purgeNonInstructionalDates(currentUser);
   persistCurrentUser();
   const statusEl = document.getElementById("personal-holiday-status");
-  if (statusEl) statusEl.textContent = `Declared ${isoDate} (${reason}) as a holiday for your account!`;
+  if (statusEl) statusEl.textContent = `Declared ${isoDate} (${reason}) as a holiday on your calendar!`;
   renderAll();
 };
 
 window.universalRemoveHoliday = function(isoDate) {
   if (!isoDate || !currentUser) return;
+  if (!currentUser.customHolidays) currentUser.customHolidays = {};
+  if (!currentUser.removedHolidays) currentUser.removedHolidays = {};
   delete currentUser.customHolidays[isoDate];
   if (BASE_HOLIDAYS[isoDate]) {
     currentUser.removedHolidays[isoDate] = true;
@@ -652,7 +667,7 @@ window.universalRemoveHoliday = function(isoDate) {
   purgeNonInstructionalDates(currentUser);
   persistCurrentUser();
   const statusEl = document.getElementById("personal-holiday-status");
-  if (statusEl) statusEl.textContent = `Removed holiday status for ${isoDate} (now a working day).`;
+  if (statusEl) statusEl.textContent = `Removed holiday status for ${isoDate} (now a normal working day).`;
   renderAll();
 };
 
@@ -687,9 +702,10 @@ function renderPersonalCustomHolidaysBadges() {
 }
 
 function getHolidayName(isoDate) {
-  if (!currentUser) return BASE_HOLIDAYS[isoDate] || null;
-  if (currentUser.removedHolidays && currentUser.removedHolidays[isoDate]) return null;
-  if (currentUser.customHolidays && currentUser.customHolidays[isoDate]) return currentUser.customHolidays[isoDate];
+  if (currentUser) {
+    if (currentUser.removedHolidays && currentUser.removedHolidays[isoDate]) return null;
+    if (currentUser.customHolidays && currentUser.customHolidays[isoDate]) return currentUser.customHolidays[isoDate];
+  }
   return BASE_HOLIDAYS[isoDate] || null;
 }
 
@@ -733,11 +749,7 @@ function setSyncPill(text, isOnline = true) {
 }
 
 async function pushToFirebaseSilent() {
-  if (!currentUser || !currentUser.email) return false;
-  if (!currentUser.passwordHash) {
-    setSyncPill("Tap Logout & Log In Once to Activate Sync", false);
-    return false;
-  }
+  if (!currentUser || !currentUser.email || !currentUser.passwordHash) return false;
   try {
     currentUser.updatedAt = Date.now();
     lastSyncedTimestamp = currentUser.updatedAt;
@@ -750,11 +762,11 @@ async function pushToFirebaseSilent() {
       setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
       return true;
     } else {
-      setSyncPill(`Firebase Rules Locked / Disconnected`, false);
+      setSyncPill("Local Saved (Cloud Offline)", false);
       return false;
     }
   } catch (e) {
-    setSyncPill("Offline / Shields Blocked", false);
+    setSyncPill("Local Saved (Cloud Offline)", false);
     return false;
   }
 }
@@ -764,10 +776,7 @@ async function pullFromFirebaseSilent(email, passwordHash) {
   try {
     const nodeHash = await getCloudUserNodeHash(email, passwordHash);
     const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json?t=${Date.now()}`, { cache: "no-store" }).catch(() => null);
-    if (!res || !res.ok) {
-      setSyncPill(`Disconnected / Blocked`, false);
-      return null;
-    }
+    if (!res || !res.ok) return null;
     const raw = await res.json();
     if (!raw || !raw.ct) return null;
     const decrypted = await decryptProfileData(raw, email, passwordHash);
@@ -794,36 +803,20 @@ function startRealtimeCloudListener() {
         if (decrypted && decrypted.semData) {
           lastSyncedTimestamp = remoteTime;
           currentUser = decrypted;
+          currentUser.branch = normalizeBranchName(currentUser.branch);
           purgeNonInstructionalDates(currentUser);
-          syncCalendarToTableTotals();
           const db = getAllUsersDB();
           db[currentUser.email] = currentUser;
           saveAllUsersDB(db);
           renderAll();
           setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
         }
-      } else {
-        setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
       }
     } catch (e) {}
   }, 4000);
 }
 
 window.addEventListener("online", () => { if (currentUser) pushToFirebaseSilent(); });
-document.addEventListener("visibilitychange", async () => {
-  if (document.visibilityState === "visible" && currentUser && currentUser.passwordHash) {
-    const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
-    if (remote && (remote.updatedAt || 0) > (currentUser.updatedAt || 0)) {
-      currentUser = remote;
-      purgeNonInstructionalDates(currentUser);
-      syncCalendarToTableTotals();
-      const db = getAllUsersDB();
-      db[currentUser.email] = currentUser;
-      saveAllUsersDB(db);
-      renderAll();
-    }
-  }
-});
 
 function isBeforeTermStart(isoDate) { return currentSem === "Semester I" && isoDate < SEM1_START_DATE; }
 function isAfterTermEnd(isoDate) { return currentSem === "Semester I" && isoDate > SEM1_END_DATE; }
@@ -899,11 +892,6 @@ function computeCalendarTotalsForSem(sem) {
   return { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort };
 }
 
-function syncCalendarToTableTotals() {
-  if (!currentUser || currentSem !== "Semester I") return;
-  ensureUserSemData(currentUser);
-}
-
 function getWeekType(isoDate) {
   const examInfo = getExamPeriodInfo(isoDate);
   if (examInfo) return examInfo.code;
@@ -967,46 +955,6 @@ function updateTimetableTabButtons() {
   });
 }
 
-window.addEventListener("DOMContentLoaded", async () => {
-  const semSel = document.getElementById("dash-semester");
-  Object.keys(SEMESTER_DATA).forEach(s => {
-    const opt = document.createElement("option"); opt.value = s; opt.textContent = s; semSel.appendChild(opt);
-  });
-  const todayIso = new Date().toISOString().slice(0, 10);
-  selectedCalDate = (todayIso >= SEM1_START_DATE && todayIso <= "2026-12-31") ? todayIso : SEM1_START_DATE;
-  const ym = selectedCalDate.slice(0, 7);
-  if (MONTHS_LIST.includes(ym)) document.getElementById("cal-month-select").value = ym;
-  syncTimetableToDate(selectedCalDate);
-
-  const rememberedEmail = localStorage.getItem("att_remembered_user_v9");
-  const db = getAllUsersDB();
-  if (rememberedEmail && db[rememberedEmail] && db[rememberedEmail].passwordHash) {
-    currentUser = db[rememberedEmail];
-    purgeNonInstructionalDates(currentUser);
-    enterDashboard();
-    
-    // Always render UI first immediately to prevent blank white screens
-    renderAll();
-    
-    // Then attempt background sync
-    const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
-    if (remote && remote.semData) {
-      if ((remote.updatedAt || 0) >= (currentUser.updatedAt || 0)) {
-        currentUser = remote;
-        purgeNonInstructionalDates(currentUser);
-        syncCalendarToTableTotals();
-        db[currentUser.email] = currentUser;
-        saveAllUsersDB(db);
-        renderAll();
-      } else await pushToFirebaseSilent();
-    } else await pushToFirebaseSilent();
-    startRealtimeCloudListener();
-  } else {
-    document.getElementById("login-view").classList.remove("hidden");
-  }
-  setupEventListeners();
-});
-
 function ensureUserSemData(user) {
   if (!user.semData) user.semData = {};
   if (!user.dailyLogs) user.dailyLogs = {};
@@ -1016,8 +964,9 @@ function ensureUserSemData(user) {
   if (!user.removedHolidays) user.removedHolidays = {};
   if (!user.globalExtras) user.globalExtras = {};
   if (!user.targetPct) user.targetPct = 75;
+  user.branch = normalizeBranchName(user.branch);
   purgeNonInstructionalDates(user);
-  
+
   const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem("Semester I");
 
   Object.keys(SEMESTER_DATA).forEach(sem => {
@@ -1037,7 +986,6 @@ function ensureUserSemData(user) {
 function persistCurrentUser() {
   if (!currentUser) return;
   purgeNonInstructionalDates(currentUser);
-  syncCalendarToTableTotals();
   currentUser.updatedAt = Date.now();
   const db = getAllUsersDB();
   db[currentUser.email] = currentUser;
@@ -1052,14 +1000,11 @@ function getComputedStats() {
   const globalExtras = currentUser.globalExtras || {};
   const targetPct = Math.max(75, Math.min(100, parseInt(currentUser.targetPct || 75)));
   const tRatio = targetPct / 100.0;
-  
-  // WAIT for branch DB to fully initialize before computing array!
   const { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort } = computeCalendarTotalsForSem(currentSem);
 
   const statsMap = {};
   const list = courses.map(c => {
     const rec = userSem[c.code] || { unattended: 0, extra: 0, manualUnattended: 0, manualExtra: 0, imp: c.imp };
-    
     const calMissed = parseInt(calMissedByShort[c.short]) || 0;
     const calExtraAttended = parseInt(calExtraAttendedByShort[c.short]) || 0;
     const calExtraMissed = parseInt(calExtraMissedByShort[c.short]) || 0;
@@ -1074,7 +1019,7 @@ function getComputedStats() {
     const totalExtraMissed = calExtraMissed + manualExtraMissed;
     const dynamicTotal = c.total + totalExtraAttended + totalExtraMissed;
     const unattended = calMissed + manualMissed + totalExtraMissed;
-    
+
     const effAttended = Math.max(0, dynamicTotal - unattended);
     const pct = Number(((effAttended / dynamicTotal) * 100).toFixed(2));
     const reqTarget = Math.ceil(tRatio * dynamicTotal);
@@ -1092,19 +1037,23 @@ function getComputedStats() {
   return { list, statsMap, targetPct };
 }
 
-function enterDashboard() {
-  ensureUserSemData(currentUser);
-  syncCalendarToTableTotals();
-  document.getElementById("login-view").classList.add("hidden");
-  document.getElementById("app-view").classList.remove("hidden");
+function updateHeaderMeta() {
+  if (!currentUser) return;
+  currentUser.branch = normalizeBranchName(currentUser.branch);
   const hr = new Date().getHours();
   const greet = hr < 12 ? "Good Morning" : hr < 17 ? "Good Afternoon" : "Good Evening";
   document.getElementById("greeting-title").textContent = `${greet}, ${currentUser.name}`;
   document.getElementById("student-meta").innerHTML = `<b>Branch:</b> ${escapeHTML(currentUser.branch)} &nbsp;|&nbsp; <b>Batch:</b> ${escapeHTML(currentUser.batch)} &nbsp;|&nbsp; <b>Account:</b> ${escapeHTML(currentUser.email)}`;
-  document.getElementById("dash-branch").value = currentUser.branch || "Computer Engineering - Div I";
+  document.getElementById("dash-branch").value = currentUser.branch;
   document.getElementById("dash-batch").value = currentUser.batch;
   document.getElementById("custom-target-input").value = currentUser.targetPct || 75;
+}
 
+function enterDashboard() {
+  ensureUserSemData(currentUser);
+  document.getElementById("login-view").classList.add("hidden");
+  document.getElementById("app-view").classList.remove("hidden");
+  updateHeaderMeta();
   populatePersonalPanel();
   syncTimetableToDate(selectedCalDate);
   loadSavedTimetableImage();
@@ -1112,6 +1061,8 @@ function enterDashboard() {
 }
 
 function renderAll() {
+  if (!currentUser) return;
+  updateHeaderMeta();
   const { list, statsMap, targetPct } = getComputedStats();
   const wdBar = document.getElementById("term-working-days-bar");
   if (currentSem === "Semester I") {
@@ -1164,6 +1115,179 @@ function renderAll() {
   renderTimetableSection(statsMap, targetPct);
 }
 
+window.stepSubject = function(code, field, delta) {
+  const rec = currentUser.semData[currentSem][code];
+  const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
+  const { calMissedByShort } = computeCalendarTotalsForSem(currentSem);
+  const calMissed = parseInt(calMissedByShort[course.short]) || 0;
+
+  if (field === "unattended") {
+    const displayUnattended = calMissed + (parseInt(rec.manualUnattended) || 0);
+    rec.manualUnattended = Math.max(0, (displayUnattended + parseInt(delta)) - calMissed);
+  } else {
+    rec.manualExtra = (parseInt(rec.manualExtra) || 0) + parseInt(delta);
+  }
+  persistCurrentUser();
+  renderAll();
+};
+
+window.setSubjectVal = function(code, field, val) {
+  const rec = currentUser.semData[currentSem][code];
+  const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
+  const { calMissedByShort } = computeCalendarTotalsForSem(currentSem);
+  const calMissed = parseInt(calMissedByShort[course.short]) || 0;
+  const num = parseInt(val) || 0;
+
+  if (field === "unattended") {
+    rec.manualUnattended = Math.max(0, num - calMissed);
+  } else {
+    rec.manualExtra = num;
+  }
+  persistCurrentUser();
+  renderAll();
+};
+
+function renderSubjectsUI(list, targetPct) {
+  document.getElementById("th-req-target").textContent = `Req (${targetPct}%)`;
+  document.getElementById("th-need-target").textContent = `Need (${targetPct}%)`;
+
+  const mobContainer = document.getElementById("mobile-subject-cards");
+  mobContainer.innerHTML = list.map(item => {
+    const borderCol = item.isSafe ? "border-emerald-500/50 bg-emerald-950/20" : "border-amber-500/60 bg-amber-950/25";
+    const pctCol = item.isSafe ? "text-emerald-400" : "text-amber-300";
+    return `
+      <div class="border ${borderCol} rounded-2xl p-4 space-y-3 shadow-md">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <span class="text-xs font-black px-2.5 py-0.5 rounded-lg bg-slate-800 text-sky-300 border border-slate-700">${item.short}</span>
+            <h3 class="text-sm font-black text-white mt-1.5">${item.name}</h3>
+            <p class="text-[11px] text-slate-400 font-medium">Code: ${item.code} | Credits: ${item.credits}</p>
+          </div>
+          <div class="text-right shrink-0">
+            <div class="text-lg font-black ${pctCol}">${item.pct}%</div>
+            <div class="text-[10px] font-extrabold uppercase tracking-wider ${pctCol}">${item.isSafe ? `Safe (Bunk ${item.safeBunks})` : `Need ${item.needed} more`}</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 pt-1">
+          <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-2.5">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-black text-slate-400 uppercase">Unattended (Missed)</span>
+              <span class="text-[9px] font-bold text-amber-400/90">Cal: ${item.calMissed} | Man: ${item.manualMissed}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <button type="button" onclick="stepSubject('${item.code}', 'unattended', -1)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-base transition">-</button>
+              <input type="number" min="0" max="${item.dynamicTotal}" value="${item.displayUnattended}" onchange="setSubjectVal('${item.code}', 'unattended', this.value)" class="w-12 bg-transparent text-center font-black text-sm text-amber-300 focus:outline-none" />
+              <button type="button" onclick="stepSubject('${item.code}', 'unattended', 1)" class="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-base transition">+</button>
+            </div>
+          </div>
+          <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-2.5">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-black text-slate-400 uppercase">Extra (+ Att / - Miss)</span>
+              <span class="text-[9px] font-bold text-emerald-400/90">Cal: ${item.calExtraAttended} | Man: ${item.manualExtra}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <button type="button" onclick="stepSubject('${item.code}', 'extra', -1)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-base transition">-</button>
+              <input type="number" value="${item.displayExtra}" onchange="setSubjectVal('${item.code}', 'extra', this.value)" class="w-12 bg-transparent text-center font-black text-sm text-emerald-300 focus:outline-none" />
+              <button type="button" onclick="stepSubject('${item.code}', 'extra', 1)" class="w-8 h-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-base transition">+</button>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-between text-xs text-slate-300 pt-2 border-t border-slate-800/80 font-semibold">
+          <span>Attended: <b>${item.effAttended}/${item.dynamicTotal}</b></span>
+          <span>Req (${targetPct}%): <b>${item.reqTarget}</b></span>
+          <span>Safe Bunks: <b>${item.safeBunks}</b></span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  const tbody = document.getElementById("desktop-subject-tbody");
+  tbody.innerHTML = list.map(item => {
+    const rowBg = item.isSafe ? "bg-emerald-950/20 text-emerald-200" : "bg-amber-950/25 text-amber-200";
+    return `
+      <tr class="${rowBg} hover:bg-slate-800/60 transition">
+        <td class="py-3 px-3 font-black text-sky-300">${item.short}</td>
+        <td class="py-3 px-3 font-bold text-white">${item.name}</td>
+        <td class="py-3 px-3 text-center font-semibold">${item.credits}</td>
+        <td class="py-3 px-3 text-center">
+          <div class="inline-flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-2 py-1">
+            <button type="button" onclick="stepSubject('${item.code}', 'unattended', -1)" class="px-2 py-0.5 text-slate-300 hover:text-white font-black">-</button>
+            <input type="number" min="0" max="${item.dynamicTotal}" value="${item.displayUnattended}" onchange="setSubjectVal('${item.code}', 'unattended', this.value)" class="w-12 bg-transparent text-center font-black text-amber-300 focus:outline-none" />
+            <button type="button" onclick="stepSubject('${item.code}', 'unattended', 1)" class="px-2 py-0.5 text-sky-400 hover:text-sky-300 font-black">+</button>
+          </div>
+          <div class="text-[10px] text-amber-300/80 font-bold mt-0.5">Cal: ${item.calMissed} | Man: ${item.manualMissed}</div>
+        </td>
+        <td class="py-3 px-3 text-center">
+          <div class="inline-flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-2 py-1">
+            <button type="button" onclick="stepSubject('${item.code}', 'extra', -1)" class="px-2 py-0.5 text-slate-300 hover:text-white font-black">-</button>
+            <input type="number" value="${item.displayExtra}" onchange="setSubjectVal('${item.code}', 'extra', this.value)" class="w-12 bg-transparent text-center font-black text-emerald-300 focus:outline-none" />
+            <button type="button" onclick="stepSubject('${item.code}', 'extra', 1)" class="px-2 py-0.5 text-emerald-400 hover:text-emerald-300 font-black">+</button>
+          </div>
+          <div class="text-[10px] text-emerald-300/80 font-bold mt-0.5">Cal: ${item.calExtraAttended} | Man: ${item.manualExtra}</div>
+        </td>
+        <td class="py-3 px-3 text-center font-black">${item.effAttended} / ${item.dynamicTotal}</td>
+        <td class="py-3 px-3 text-center font-black">${item.pct}%</td>
+        <td class="py-3 px-3 text-center font-bold">${item.reqTarget}</td>
+        <td class="py-3 px-3 text-center font-black">${item.needed}</td>
+        <td class="py-3 px-3 text-center font-black">${item.safeBunks}</td>
+        <td class="py-3 px-3 text-center font-black text-xs">${item.isSafe ? `Safe (>=${targetPct}%)` : `Shortage (<${targetPct}%)`}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderCalendarGrid() {
+  const ym = document.getElementById("cal-month-select").value;
+  const [year, month] = ym.split("-").map(Number);
+  const firstDay = new Date(year, month - 1, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const gridEl = document.getElementById("calendar-grid");
+  let html = "";
+  for (let i = 0; i < startOffset; i++) html += `<div class="min-h-[54px] bg-slate-950/40 border border-slate-800/70 rounded-xl"></div>`;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const dow = (startOffset + d - 1) % 7;
+    const isSunday = dow === 6;
+    const isWeekend = dow >= 5;
+    const isHoliday = Boolean(getHolidayName(iso));
+    const isPreTerm = isBeforeTermStart(iso);
+    const isPostTerm = isAfterTermEnd(iso);
+    const examInfo = getExamPeriodInfo(iso);
+    const bunkVal = (isPreTerm || isPostTerm || isHoliday || examInfo) ? "" : (currentUser.dailyLogs[iso] || "");
+    const extraSlot7 = (isPreTerm || isPostTerm || isHoliday || examInfo) ? "" : (currentUser.slot7Map[iso] || "");
+    const isSelected = iso === selectedCalDate;
+
+    let bg = "bg-blue-600 text-white border-blue-400";
+    let sub = getWeekType(iso).split(" ")[0].toUpperCase();
+
+    if (isHoliday || isPreTerm) { bg = "bg-red-600 text-white border-red-400"; sub = "HOL"; }
+    else if (isSunday) { bg = "bg-red-600/90 text-white border-red-400"; sub = "WKND"; }
+    else if (examInfo) { bg = "bg-purple-600 text-white border-purple-400"; sub = examInfo.code; }
+    else if (isWeekend) { bg = "bg-red-600/90 text-white border-red-400"; sub = "WKND"; }
+    else if (isPostTerm) { bg = "bg-red-600/80 text-white border-red-400"; sub = "END"; }
+    else if (bunkVal) { bg = "bg-amber-400 text-slate-950 border-amber-200"; sub = escapeHTML(bunkVal); }
+    else if (iso <= todayIso) { bg = "bg-emerald-600 text-white border-emerald-400"; sub = extraSlot7 ? `+${escapeHTML(extraSlot7)}` : "ATT"; }
+    else if (extraSlot7) { sub = `+${escapeHTML(extraSlot7)}`; }
+
+    const ring = isSelected ? "ring-2 ring-white scale-[1.04] z-10 shadow-lg" : "opacity-95 hover:opacity-100";
+    html += `<button type="button" onclick="selectDate('${iso}')" class="min-h-[54px] p-1 rounded-xl border ${bg} ${ring} flex flex-col items-center justify-center transition active:scale-95"><span class="text-xs sm:text-sm font-black leading-none">${d}</span><span class="text-[9px] font-black mt-1 leading-tight truncate max-w-full px-0.5">${sub}</span></button>`;
+  }
+  gridEl.innerHTML = html;
+}
+
+window.selectDate = function(iso) {
+  selectedCalDate = iso;
+  const ym = iso.slice(0, 7);
+  if (MONTHS_LIST.includes(ym)) document.getElementById("cal-month-select").value = ym;
+  const holInput = document.getElementById("personal-holiday-date");
+  if (holInput) holInput.value = iso;
+  syncTimetableToDate(iso);
+  renderAll();
+};
+
 function getMergedDaySlots(isoDate, semOverride = null) {
   const activeSem = semOverride || currentSem;
   if (activeSem === "Semester I" && isNonInstructionalDay(isoDate)) return { dow: 0, isOff: true, units: [] };
@@ -1173,13 +1297,12 @@ function getMergedDaySlots(isoDate, semOverride = null) {
 
   const dayKey = ["MON", "TUE", "WED", "THR", "FRI"][dow];
   const wkType = getWeekType(isoDate);
-  const branchKey = currentUser?.branch || "Computer Engineering - Div I";
+  const branchKey = normalizeBranchName(currentUser?.branch);
   const branchGrids = TIMETABLES_DB[branchKey] || TIMETABLES_DB["Computer Engineering - Div I"];
-  
-  // COMMANDO FIX: Strict Default Empty Array
-  const grid = wkType === "Even Week" ? (branchGrids.EVEN || []) : (branchGrids.ODD || []);
+
+  const grid = wkType === "Even Week" ? (branchGrids.EVEN || {}) : (branchGrids.ODD || {});
   const rawSlots = grid[dayKey] || [];
-  
+
   const batchLetter = (currentUser?.batch || "Batch A").slice(-1).toUpperCase();
   const courses = SEMESTER_DATA[activeSem] || [];
   const savedSlot7 = (currentUser?.slot7Map && currentUser.slot7Map[isoDate]) || "";
@@ -1224,15 +1347,15 @@ function renderDailyInspector(statsMap, targetPct) {
     if (holidayLabel) {
       personalHolMount.innerHTML = `
         <div class="bg-amber-950/50 border border-amber-500/60 rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs">
-          <span class="font-bold text-amber-300">&#9889; Personal: ${selectedCalDate} is a Holiday (${escapeHTML(holidayLabel)})</span>
+          <span class="font-bold text-amber-300">&#9889; Holiday Active: ${selectedCalDate} (${escapeHTML(holidayLabel)})</span>
           <button type="button" onclick="window.universalRemoveHoliday('${selectedCalDate}')" class="bg-slate-800 hover:bg-slate-700 border border-amber-400 text-amber-300 font-black px-3 py-1.5 rounded-lg shrink-0 transition">Remove Holiday</button>
         </div>
       `;
     } else {
       personalHolMount.innerHTML = `
         <div class="bg-red-950/50 border border-red-500/60 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <span class="font-bold text-red-200">&#9889; Personal Quick Action for ${selectedCalDate}:</span>
-          <button type="button" onclick="window.universalDeclareHoliday('${selectedCalDate}', prompt('Holiday Name / Reason:', 'Personal Holiday') || 'Personal Holiday')" class="bg-red-600 hover:bg-red-500 text-white font-black px-3 py-1.5 rounded-lg shadow shrink-0 transition">Declare ${selectedCalDate} as Holiday</button>
+          <span class="font-bold text-red-200">&#9889; Quick Holiday Action for ${selectedCalDate}:</span>
+          <button type="button" onclick="window.universalDeclareHoliday('${selectedCalDate}', prompt('Holiday Name / Reason:', 'Declared Holiday') || 'Declared Holiday')" class="bg-red-600 hover:bg-red-500 text-white font-black px-3 py-1.5 rounded-lg shadow shrink-0 transition">Declare ${selectedCalDate} as Holiday</button>
         </div>
       `;
     }
@@ -1343,6 +1466,199 @@ function recomputeDayBadge(isoDate, units, dayTicks) {
   else currentUser.dailyLogs[isoDate] = missedShorts.join(", ");
 }
 
+function renderTimetableSection(statsMap, targetPct) {
+  const branchKey = normalizeBranchName(currentUser?.branch);
+  const branchGrids = TIMETABLES_DB[branchKey] || TIMETABLES_DB["Computer Engineering - Div I"];
+  const grid = ttWeekTab === "Odd" ? (branchGrids.ODD || branchGrids.EVEN) : (branchGrids.EVEN || branchGrids.ODD);
+  const batchLetter = (currentUser?.batch || "Batch A").slice(-1).toUpperCase();
+  const courses = SEMESTER_DATA[currentSem] || [];
+
+  const daySlots = grid[ttSelectedDay] || [];
+  let cardsHtml = ""; let i = 0;
+  while (i < TIME_SLOTS.length) {
+    const raw = daySlots[i] || "";
+    const { text, isLab } = extractBatchEntry(raw, batchLetter);
+    const short = matchSubjectShort(text, courses);
+    const kind = getSessionKind(text);
+    let span = 1;
+
+    if (short && i < 8) {
+      while (i + span < 8) {
+        const nextRaw = daySlots[i + span] || "";
+        if (matchSubjectShort(extractBatchEntry(nextRaw, batchLetter).text, courses) === short && getSessionKind(extractBatchEntry(nextRaw, batchLetter).text) === kind) {
+          span++;
+        } else break;
+      }
+    }
+
+    const st = short ? statsMap[short] : null;
+    let cardClass = "cell-blue"; let meta = "Non-Credit / Extra Slot";
+    if (raw.includes("BREAK")) { cardClass = "cell-red"; meta = "Official Break"; }
+    else if (st) {
+      cardClass = st.pct >= targetPct ? "cell-green" : "cell-yellow";
+      meta = `Attendance: <b>${st.pct}%</b> | Missed: <b>${st.unattended}/${st.dynamicTotal}</b> | Extra: <b>${st.personalExtra}</b> | ${st.needed > 0 ? `Need ${st.needed} for ${targetPct}%` : `Safe (Bunk ${st.safeBunks})`}`;
+    }
+
+    const slotText = span > 1 ? `Slots ${i + 1}–${i + span} [1 Combined Bulk Unit]` : TIME_SLOTS[i];
+    const labBadge = isLab ? `<span class="batch-badge ml-1.5">YOUR ${escapeHTML((currentUser?.batch || "Batch A").toUpperCase())} LAB</span>` : "";
+
+    cardsHtml += `
+      <div class="${cardClass} rounded-2xl p-4 border border-slate-700 flex items-center justify-between gap-3 shadow-md">
+        <div>
+          <div class="text-[11px] font-black uppercase tracking-wider text-sky-300">${slotText}</div>
+          <div class="text-sm sm:text-base font-black mt-1">${escapeHTML(text)} ${labBadge}</div>
+          <div class="text-xs mt-1.5 opacity-90 font-medium">${meta}</div>
+        </div>
+      </div>
+    `;
+    i += span;
+  }
+  document.getElementById("tt-cards-output").innerHTML = cardsHtml;
+
+  const days = ["MON", "TUE", "WED", "THR", "FRI"];
+  const skip = { MON: {}, TUE: {}, WED: {}, THR: {}, FRI: {} };
+  const spanMap = { MON: {}, TUE: {}, WED: {}, THR: {}, FRI: {} };
+
+  days.forEach(d => {
+    let s = 0;
+    const dSlots = grid[d] || [];
+    while (s < TIME_SLOTS.length) {
+      const dRaw = dSlots[s] || "";
+      const { text } = extractBatchEntry(dRaw, batchLetter);
+      const sf = matchSubjectShort(text, courses);
+      const kind = getSessionKind(text);
+      if (sf && s < 8) {
+        let sp = 1;
+        while (s + sp < 8) {
+          const nextRaw = dSlots[s + sp] || "";
+          if (matchSubjectShort(extractBatchEntry(nextRaw, batchLetter).text, courses) === sf && getSessionKind(extractBatchEntry(nextRaw, batchLetter).text) === kind) {
+            skip[d][s + sp] = true; sp++;
+          } else break;
+        }
+        spanMap[d][s] = sp; s += sp;
+      } else {
+        spanMap[d][s] = 1; s++;
+      }
+    }
+  });
+
+  let tableHtml = `<div class="tt-scroll"><table class="tt-table"><thead><tr><th class="tt-sticky-col">TIME SLOT</th>`;
+  days.forEach(d => { tableHtml += `<th>${d}</th>`; });
+  tableHtml += `</tr></thead><tbody>`;
+
+  TIME_SLOTS.forEach((slotName, sIdx) => {
+    tableHtml += `<tr><td class="tt-sticky-col">${slotName}</td>`;
+    days.forEach(d => {
+      if (skip[d][sIdx]) return;
+      const raw = (grid[d] || [])[sIdx] || "";
+      const { text, isLab } = extractBatchEntry(raw, batchLetter);
+      const sf = matchSubjectShort(text, courses);
+      const rSpan = spanMap[d][sIdx] || 1;
+      const st = sf ? statsMap[sf] : null;
+
+      let cls = "cell-blue"; let sub = "";
+      if (raw.includes("BREAK")) { cls = "cell-red"; }
+      else if (st) {
+        cls = st.pct >= targetPct ? "cell-green" : "cell-yellow";
+        sub = `<div class="text-[11px] mt-1.5 opacity-95 font-medium">Att: ${st.pct}% | Missed: ${st.unattended}/${st.dynamicTotal}</div>`;
+      }
+
+      const bulkTag = rSpan > 1 ? `<div class="text-[10px] text-sky-300 font-black">[1 Combined Bulk Unit (${rSpan} Hrs)]</div>` : "";
+      const labTag = isLab ? `<div class="mt-1.5"><span class="batch-badge">YOUR ${escapeHTML((currentUser?.batch || "Batch A").toUpperCase())} LAB</span></div>` : "";
+      tableHtml += `<td class="${cls}" ${rSpan > 1 ? `rowspan="${rSpan}"` : ""}><div>${escapeHTML(text)}</div>${bulkTag}${labTag}${sub}</td>`;
+    });
+    tableHtml += `</tr>`;
+  });
+  tableHtml += `</tbody></table></div>`;
+  document.getElementById("tt-grid-output").innerHTML = tableHtml;
+}
+
+function getDefaultDateForMonth(ym) {
+  return ym === "2026-09" ? SEM1_START_DATE : `${ym}-01`;
+}
+
+function switchTtTab(tab) {
+  ttWeekTab = tab;
+  updateTimetableTabButtons();
+  if (tab === "Img") {
+    document.getElementById("tt-schedule-container").classList.add("hidden");
+    document.getElementById("tt-image-container").classList.remove("hidden");
+  } else {
+    document.getElementById("tt-schedule-container").classList.remove("hidden");
+    document.getElementById("tt-image-container").classList.add("hidden");
+    renderAll();
+  }
+}
+
+function switchTtMode(mode) {
+  ttViewMode = mode;
+  document.getElementById("btn-mode-cards").className = mode === "cards" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-sky-600 text-white" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+  document.getElementById("btn-mode-grid").className = mode === "grid" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-sky-600 text-white" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+
+  if (mode === "cards") {
+    document.getElementById("tt-day-pills").classList.remove("hidden");
+    document.getElementById("tt-cards-output").classList.remove("hidden");
+    document.getElementById("tt-grid-output").classList.add("hidden");
+  } else {
+    document.getElementById("tt-day-pills").classList.add("hidden");
+    document.getElementById("tt-cards-output").classList.add("hidden");
+    document.getElementById("tt-grid-output").classList.remove("hidden");
+  }
+}
+
+function loadSavedTimetableImage() {
+  const dataUrl = localStorage.getItem("att_saved_tt_img");
+  const imgEl = document.getElementById("tt-saved-preview");
+  const rmBtn = document.getElementById("btn-remove-img");
+  if (dataUrl) {
+    imgEl.src = dataUrl;
+    imgEl.classList.remove("hidden");
+    rmBtn.classList.remove("hidden");
+  } else {
+    imgEl.src = "";
+    imgEl.classList.add("hidden");
+    rmBtn.classList.add("hidden");
+  }
+}
+
+window.addEventListener("DOMContentLoaded", async () => {
+  const semSel = document.getElementById("dash-semester");
+  Object.keys(SEMESTER_DATA).forEach(s => {
+    const opt = document.createElement("option"); opt.value = s; opt.textContent = s; semSel.appendChild(opt);
+  });
+  const todayIso = new Date().toISOString().slice(0, 10);
+  selectedCalDate = (todayIso >= SEM1_START_DATE && todayIso <= "2026-12-31") ? todayIso : SEM1_START_DATE;
+  const ym = selectedCalDate.slice(0, 7);
+  if (MONTHS_LIST.includes(ym)) document.getElementById("cal-month-select").value = ym;
+  syncTimetableToDate(selectedCalDate);
+
+  setupEventListeners();
+
+  const rememberedEmail = localStorage.getItem("att_remembered_user_v9");
+  const db = getAllUsersDB();
+  if (rememberedEmail && db[rememberedEmail] && db[rememberedEmail].passwordHash) {
+    currentUser = db[rememberedEmail];
+    currentUser.branch = normalizeBranchName(currentUser.branch);
+    purgeNonInstructionalDates(currentUser);
+    enterDashboard();
+
+    const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
+    if (remote && remote.semData) {
+      if ((remote.updatedAt || 0) >= (currentUser.updatedAt || 0)) {
+        currentUser = remote;
+        currentUser.branch = normalizeBranchName(currentUser.branch);
+        purgeNonInstructionalDates(currentUser);
+        db[currentUser.email] = currentUser;
+        saveAllUsersDB(db);
+        renderAll();
+      } else await pushToFirebaseSilent();
+    } else await pushToFirebaseSilent();
+    startRealtimeCloudListener();
+  } else {
+    document.getElementById("login-view").classList.remove("hidden");
+  }
+});
+
 function setupEventListeners() {
   document.getElementById("btn-toggle-login-pw")?.addEventListener("click", () => {
     const inp = document.getElementById("login-password");
@@ -1359,7 +1675,7 @@ function setupEventListeners() {
     const email = document.getElementById("login-email").value.trim().toLowerCase();
     const pw = document.getElementById("login-password").value.trim();
     const name = escapeHTML(document.getElementById("login-name").value.trim());
-    const branch = document.getElementById("login-branch").value;
+    const branch = normalizeBranchName(document.getElementById("login-branch").value);
     const batch = document.getElementById("login-batch").value;
     const remember = document.getElementById("login-remember").checked;
 
@@ -1376,12 +1692,9 @@ function setupEventListeners() {
     if (cloudProfile && cloudProfile.semData) {
       candidateUser = cloudProfile;
       candidateUser.passwordHash = pwDigest;
-      
-      // Force profile overwrite with latest UI selections on login
       candidateUser.branch = branch;
       candidateUser.batch = batch;
       if (name) candidateUser.name = name;
-      
     } else if (db[email]) {
       if (db[email].passwordHash && db[email].passwordHash !== pwDigest) {
         submitBtn.textContent = "Login / Register & Enter Dashboard";
@@ -1397,7 +1710,7 @@ function setupEventListeners() {
         submitBtn.textContent = "Login / Register & Enter Dashboard";
         errEl.textContent = "Please enter your Full Name for first-time registration."; errEl.classList.remove("hidden"); return;
       }
-      candidateUser = { email, name: name, branch, batch, passwordHash: pwDigest, targetPct: 75, semData: {}, dailyLogs: {}, dailyTicks: {}, slot7Map: {}, updatedAt: Date.now() };
+      candidateUser = { email, name, branch, batch, passwordHash: pwDigest, targetPct: 75, semData: {}, dailyLogs: {}, dailyTicks: {}, slot7Map: {}, customHolidays: {}, removedHolidays: {}, globalExtras: {}, updatedAt: Date.now() };
     }
 
     ensureUserSemData(candidateUser);
@@ -1429,33 +1742,23 @@ function setupEventListeners() {
   document.getElementById("btn-day-pm-bunk")?.addEventListener("click", () => applyPresetBunkMode("PM"));
   document.getElementById("btn-day-clear-bunk")?.addEventListener("click", () => applyPresetBunkMode("CLEAR"));
 
-  document.getElementById("dash-branch")?.addEventListener("change", (e) => { 
-    currentUser.branch = e.target.value; 
-    document.getElementById("student-meta").innerHTML = `<b>Branch:</b> ${escapeHTML(currentUser.branch)} &nbsp;|&nbsp; <b>Batch:</b> ${escapeHTML(currentUser.batch)} &nbsp;|&nbsp; <b>Account:</b> ${escapeHTML(currentUser.email)}`; 
-    persistCurrentUser(); 
-    renderAll(); 
+  document.getElementById("dash-branch")?.addEventListener("change", (e) => {
+    if (!currentUser) return;
+    currentUser.branch = normalizeBranchName(e.target.value);
+    persistCurrentUser();
+    renderAll();
   });
   document.getElementById("dash-semester")?.addEventListener("change", (e) => { currentSem = e.target.value; populatePersonalPanel(); renderAll(); });
-  document.getElementById("dash-batch")?.addEventListener("change", (e) => { currentUser.batch = e.target.value; document.getElementById("student-meta").innerHTML = `<b>Branch:</b> ${escapeHTML(currentUser.branch)} &nbsp;|&nbsp; <b>Batch:</b> ${escapeHTML(currentUser.batch)} &nbsp;|&nbsp; <b>Account:</b> ${escapeHTML(currentUser.email)}`; persistCurrentUser(); renderAll(); });
+  document.getElementById("dash-batch")?.addEventListener("change", (e) => {
+    if (!currentUser) return;
+    currentUser.batch = e.target.value;
+    persistCurrentUser();
+    renderAll();
+  });
 
   document.getElementById("btn-reset-sem")?.addEventListener("click", () => {
     SEMESTER_DATA[currentSem].forEach(c => { currentUser.semData[currentSem][c.code] = { unattended: 0, extra: 0, manualUnattended: 0, manualExtra: 0, imp: c.imp }; });
     currentUser.dailyLogs = {}; currentUser.dailyTicks = {}; currentUser.slot7Map = {}; persistCurrentUser(); renderAll();
-  });
-
-  document.getElementById("btn-logout")?.addEventListener("click", () => {
-    if (livePollTimer) { clearInterval(livePollTimer); livePollTimer = null; }
-    localStorage.removeItem("att_remembered_user_v9"); 
-    currentUser = null;
-    
-    const pp = document.getElementById("power-panel");
-    if(pp) pp.classList.add("hidden");
-    const ihm = document.getElementById("inspector-personal-holiday-mount"); 
-    if(ihm) ihm.innerHTML = "";
-    
-    setSyncPill("Connecting to Cloud...", true); 
-    document.getElementById("app-view")?.classList.add("hidden"); 
-    document.getElementById("login-view")?.classList.remove("hidden");
   });
 
   document.querySelectorAll(".target-pill").forEach(btn => {
@@ -1476,18 +1779,18 @@ function setupEventListeners() {
   document.getElementById("btn-personal-add-holiday")?.addEventListener("click", () => {
     window.universalDeclareHoliday(document.getElementById("personal-holiday-date").value, document.getElementById("personal-holiday-name").value);
   });
-  
+
   document.getElementById("btn-personal-remove-holiday")?.addEventListener("click", () => {
     window.universalRemoveHoliday(document.getElementById("personal-holiday-date").value);
   });
-  
+
   document.getElementById("btn-personal-extra")?.addEventListener("click", () => {
     if (!currentUser) return;
     const code = document.getElementById("personal-course-select").value;
     const count = Math.max(0, parseInt(document.getElementById("personal-extra-count").value) || 0);
     currentUser.globalExtras[code] = count;
     persistCurrentUser();
-    document.getElementById("personal-extra-status").textContent = `Added ${count} extra lecture(s) for ${code} to your personal total!`;
+    document.getElementById("personal-extra-status").textContent = `Saved ${count} extra lecture(s) for ${code} to your personal total!`;
     renderAll();
   });
 
@@ -1499,7 +1802,7 @@ function setupEventListeners() {
     else { delete currentUser.slot7Map[selectedCalDate]; if (currentUser.dailyTicks[selectedCalDate]) delete currentUser.dailyTicks[selectedCalDate][8]; }
     const { units } = getMergedDaySlots(selectedCalDate); recomputeDayBadge(selectedCalDate, units, currentUser.dailyTicks[selectedCalDate] || {}); persistCurrentUser(); renderAll();
   });
-  
+
   document.getElementById("btn-clear-slot7")?.addEventListener("click", () => {
     document.getElementById("slot7-input").value = "";
     delete currentUser.slot7Map[selectedCalDate]; if (currentUser.dailyTicks[selectedCalDate]) delete currentUser.dailyTicks[selectedCalDate][8];
@@ -1519,7 +1822,7 @@ function setupEventListeners() {
     const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader(); reader.onload = (ev) => { localStorage.setItem("att_saved_tt_img", ev.target.result); loadSavedTimetableImage(); }; reader.readAsDataURL(file);
   });
-  
+
   document.getElementById("paste-zone")?.addEventListener("paste", (e) => {
     const items = (e.clipboardData || e.originalEvent.clipboardData).items; let found = false;
     for (let i = 0; i < items.length; i++) {
@@ -1531,8 +1834,8 @@ function setupEventListeners() {
     }
     if (!found) document.getElementById("paste-status").textContent = "Clipboard does not contain an image!";
   });
-  
-  document.getElementById("btn-remove-img")?.addEventListener("click", () => { localStorage.setItem("att_saved_tt_img", ""); loadSavedTimetableImage(); });
+
+  document.getElementById("btn-remove-img")?.addEventListener("click", () => { localStorage.removeItem("att_saved_tt_img"); loadSavedTimetableImage(); });
   switchTtMode(ttViewMode);
 }
 </script>
