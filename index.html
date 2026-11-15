@@ -185,6 +185,7 @@
           <p id="student-meta" class="text-xs sm:text-sm text-slate-400 mt-1 font-medium"></p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
+          <!-- Dynamic Admin Button Slot -->
           <span id="admin-btn-mount"></span>
           <select id="dash-semester" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white"></select>
           <select id="dash-batch" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white">
@@ -415,8 +416,11 @@
     </div>
   </div>
 
-  <footer id="secret-admin-footer" class="text-center mt-12 py-6 border-t border-slate-800 text-slate-200 font-black text-sm sm:text-base tracking-wide select-none cursor-pointer">
-    Designed and Created by Kanishka Maya Honrao
+  <footer id="secret-admin-footer" class="text-center mt-12 py-6 border-t border-slate-800 text-slate-200 font-black text-sm sm:text-base tracking-wide flex flex-col items-center gap-2">
+    <div>Designed and Created by Kanishka Maya Honrao</div>
+    <button id="btn-footer-admin-key" type="button" class="text-[10px] text-slate-600 hover:text-amber-400 font-bold transition">
+      &#9889; Admin Key
+    </button>
   </footer>
 
 <script>
@@ -624,6 +628,7 @@ function mountAdminVaultInMemory() {
   if (!isCurrentUserAdmin) {
     document.getElementById("admin-btn-mount").innerHTML = "";
     document.getElementById("admin-vault-mount").innerHTML = "";
+    document.getElementById("inspector-admin-holiday-mount").innerHTML = "";
     adminVaultMounted = false;
     return;
   }
@@ -1737,9 +1742,33 @@ function setupEventListeners() {
   });
 
   document.getElementById("btn-logout").addEventListener("click", () => {
-    if (livePollTimer) { clearInterval(livePollTimer); livePollTimer = null; }
-    localStorage.removeItem("att_remembered_user_v9"); currentUser = null; isCurrentUserAdmin = false;
-    mountAdminVaultInMemory(); document.getElementById("app-view").classList.add("hidden"); document.getElementById("login-view").classList.remove("hidden");
+    // 1. Kill the live background Firebase sync loop
+    if (livePollTimer) {
+      clearInterval(livePollTimer);
+      livePollTimer = null;
+    }
+  
+    // 2. Wipe the local browser storage session keys
+    localStorage.removeItem("att_remembered_user_v9");
+    localStorage.removeItem("att_admin_unlocked_v9");
+  
+    // 3. Reset all memory variables back to default unauthenticated state
+    currentUser = null;
+    isCurrentUserAdmin = false;
+    adminVaultMounted = false;
+    lastSyncedTimestamp = 0;
+    
+    // 4. Force unmount the Admin Power Panel from the HTML
+    document.getElementById("admin-btn-mount").innerHTML = "";
+    document.getElementById("admin-vault-mount").innerHTML = "";
+    document.getElementById("inspector-admin-holiday-mount").innerHTML = "";
+    
+    // 5. Reset the status pill to default text
+    setSyncPill("Connecting to Cloud...", true);
+  
+    // 6. Hide the dashboard and bring back the login screen securely
+    document.getElementById("app-view").classList.add("hidden");
+    document.getElementById("login-view").classList.remove("hidden");
   });
 
   document.querySelectorAll(".target-pill").forEach(btn => {
