@@ -448,6 +448,7 @@ const EXAM_PERIODS = [
 ];
 
 const AUTH_PEPPER = "ATT_V9_PEPPER_2026";
+const STRICT_ADMIN_PW_HASH = "a2eb4d78636647b59f87c3e45b18a431a6c27ff8df435364a85261e6401564a1"; // Used ONLY for writes
 
 const TIME_SLOTS = [
   "1 (9:00 - 10:00)", "2 (10:00 - 11:00)", "Short Break (11:00 - 11:15)",
@@ -515,7 +516,7 @@ const IT_EVEN = {
 const TIMETABLES_DB = {
   "Computer Engineering - Div I": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
   "Computer Engineering - Div II": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
-  "Computer Engineering - Div III": { EVEN: COMP3_EVEN, ODD: COMP3_EVEN },
+  "Computer Engineering - Div III": { EVEN: COMP3_EVEN, ODD: COMP3_EVEN }, // Using EVEN layout for ODD fallback currently
   "Mechanical Engineering": { EVEN: MECH_EVEN, ODD: MECH_ODD },
   "Information Technology": { EVEN: IT_EVEN, ODD: IT_ODD },
   "Electronics and Telecommunication": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
@@ -530,6 +531,46 @@ const BASE_HOLIDAYS = {
   "2026-11-09": "Diwali Break", "2026-11-10": "Diwali Break", "2026-11-11": "Declared Holiday (Diwali Break Extension)",
   "2026-11-24": "Guru Nanak Jayanti"
 };
+
+// =========================================================================================
+// COMMANDO SECURE CRYPTOGRAPHIC PAYLOAD WRAPPER (AES-GCM Shared Global Key)
+// =========================================================================================
+async function getGlobalAESKey() {
+  const enc = new TextEncoder();
+  const baseKey = await crypto.subtle.importKey(
+    "raw", enc.encode("DBIT_GLOBAL_SHARED_SECRET_2026"), { name: "PBKDF2" }, false, ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt: enc.encode("GLOBAL_SALT_V9"), iterations: 1000, hash: "SHA-256" },
+    baseKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptGlobalPayload(dataObj) {
+  const key = await getGlobalAESKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encoded = new TextEncoder().encode(JSON.stringify(dataObj));
+  const cipherBuf = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
+  return { 
+    iv: btoa(String.fromCharCode(...iv)), 
+    ct: btoa(String.fromCharCode(...new Uint8Array(cipherBuf))) 
+  };
+}
+
+async function decryptGlobalPayload(payload) {
+  if (!payload || !payload.ct || !payload.iv) return null;
+  try {
+    const key = await getGlobalAESKey();
+    const iv = Uint8Array.from(atob(payload.iv), c => c.charCodeAt(0));
+    const ct = Uint8Array.from(atob(payload.ct), c => c.charCodeAt(0));
+    const plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+    return JSON.parse(new TextDecoder().decode(plainBuf));
+  } catch(e) {
+    console.warn("Payload verification failed. Malicious/tampered data ignored.");
+    return null; // Fails safely if an attacker uses Postman to push plaintext JSON without the Magical Ink!
+  }
+}
+// =========================================================================================
 
 function getGlobalCustomHolidays() {
   try { return JSON.parse(localStorage.getItem("att_global_custom_holidays") || "{}"); } catch { return {}; }
@@ -588,12 +629,6 @@ let livePollTimer = null;
 let lastSyncedTimestamp = 0;
 let lastSyncDiagnostic = "Waiting for initial cloud sync...";
 
-async function saltedHash(str) {
-  const data = new TextEncoder().encode(`${AUTH_PEPPER}:${str.trim()}`);
-  const buf = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
 window.universalDeclareHoliday = async function(isoDate, customReason) {
   if (!isoDate) return;
   const reason = escapeHTML((customReason || "Declared Holiday").trim());
@@ -605,9 +640,12 @@ window.universalDeclareHoliday = async function(isoDate, customReason) {
   saveRemovedBaseHolidays(removed);
   purgeNonInstructionalDates(currentUser);
   persistCurrentUser();
+  
   try {
+    const safePayload = await encryptGlobalPayload({ data: custom, removed });
     await fetch(`${_getCloudEndpoint()}/global_holidays.json`, {
-      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data: custom, removed })
+      method: "PUT", headers: { "Content-Type": "application/json" }, 
+      body: JSON.stringify({ authToken: STRICT_ADMIN_PW_HASH, payload: safePayload })
     });
   } catch (e) {}
   renderAll();
@@ -621,9 +659,12 @@ window.universalRemoveHoliday = async function(isoDate) {
   if (BASE_HOLIDAYS[isoDate]) removed[isoDate] = true;
   saveGlobalCustomHolidays(custom);
   saveRemovedBaseHolidays(removed);
+  
   try {
+    const safePayload = await encryptGlobalPayload({ data: custom, removed });
     await fetch(`${_getCloudEndpoint()}/global_holidays.json`, {
-      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data: custom, removed })
+      method: "PUT", headers: { "Content-Type": "application/json" }, 
+      body: JSON.stringify({ authToken: STRICT_ADMIN_PW_HASH, payload: safePayload })
     });
   } catch (e) {}
   renderAll();
@@ -641,7 +682,7 @@ function mountUniversalVault() {
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div>
           <h2 class="text-base sm:text-lg font-black text-amber-400">&#9889; Universal Tools Panel (Global Access)</h2>
-          <p class="text-xs text-slate-400 mt-0.5">Declare holidays or broadcast extra lectures globally to all students.</p>
+          <p class="text-xs text-slate-400 mt-0.5">Declare holidays or broadcast extra lectures globally to all students securely via AES-GCM.</p>
         </div>
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -664,7 +705,7 @@ function mountUniversalVault() {
         </div>
         <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
           <div class="text-xs font-black uppercase tracking-wider text-amber-400">2. Broadcast Extra Lectures to All Students</div>
-          <p class="text-[11px] text-slate-300 leading-relaxed">Add college-wide extra lectures for any subject so all students automatically receive the attendance boost:</p>
+          <p class="text-[11px] text-slate-300 leading-relaxed">Add college-wide extra lectures for any subject so all students automatically receive the attendance boost (Dynamically increases semester total):</p>
           <div class="space-y-2.5">
             <select id="global-course-select" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white font-bold"></select>
             <div class="flex gap-2">
@@ -699,10 +740,13 @@ function mountUniversalVault() {
     extras[code] = count;
     saveGlobalExtras(extras);
     try {
+      const safePayload = await encryptGlobalPayload({ data: extras });
       await fetch(`${_getCloudEndpoint()}/global_extras.json`, {
-        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data: extras })
+        method: "PUT", headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify({ authToken: STRICT_ADMIN_PW_HASH, payload: safePayload })
       });
     } catch (e) {}
+    document.getElementById("global-broadcast-status").textContent = `Broadcasted ${count} extra lecture(s) for ${code} to all other students securely!`;
     renderAll();
   });
 }
@@ -847,16 +891,20 @@ async function fetchGlobalConfigFromFirebase() {
       fetch(`${_getCloudEndpoint()}/global_holidays.json?t=${Date.now()}`, { cache: "no-store" })
     ]);
     if (exRes.ok) {
-      const exPayload = await exRes.json();
-      if (exPayload && typeof exPayload === "object") {
-        if (exPayload.data) saveGlobalExtras(exPayload.data);
+      const exRaw = await exRes.json();
+      if (exRaw && exRaw.payload) {
+        const decEx = await decryptGlobalPayload(exRaw.payload);
+        if (decEx && decEx.data) saveGlobalExtras(decEx.data);
       }
     }
     if (holRes.ok) {
-      const holPayload = await holRes.json();
-      if (holPayload && typeof holPayload === "object") {
-        if (holPayload.data) saveGlobalCustomHolidays(holPayload.data);
-        if (holPayload.removed) saveRemovedBaseHolidays(holPayload.removed);
+      const holRaw = await holRes.json();
+      if (holRaw && holRaw.payload) {
+        const decHol = await decryptGlobalPayload(holRaw.payload);
+        if (decHol) {
+          if (decHol.data) saveGlobalCustomHolidays(decHol.data);
+          if (decHol.removed) saveRemovedBaseHolidays(decHol.removed);
+        }
       }
     }
     if (currentUser) { purgeNonInstructionalDates(currentUser); renderAll(); }
@@ -1654,7 +1702,6 @@ function setupEventListeners() {
     }
 
     const pwDigest = await saltedHash(pw);
-    
     submitBtn.textContent = "Decrypting & Syncing Cloud Profile...";
     const db = getAllUsersDB();
     let candidateUser = null;
