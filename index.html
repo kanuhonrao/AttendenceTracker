@@ -251,7 +251,7 @@
             Pick any date (or click a date on the calendar below) to declare it as a holiday or restore it to a working day on your screen:
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <input id="personal-holiday-date" type="date" value="2026-11-11" min="2026-09-07" max="2026-12-23"
+            <input id="personal-holiday-date" type="date" value="2026-11-16" min="2026-09-07" max="2026-12-23"
               class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-bold" />
             <input id="personal-holiday-name" type="text" maxlength="50" placeholder="Reason (e.g. Declared Holiday)"
               value="Declared Holiday"
@@ -275,9 +275,9 @@
         </div>
 
         <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
-          <div class="text-xs font-black uppercase tracking-wider text-amber-400">2. Bulk Add Extra Lectures to Subject Total</div>
+          <div class="text-xs font-black uppercase tracking-wider text-amber-400">2. Bulk Add Extra Lectures Held Till Today</div>
           <p class="text-[11px] text-slate-300 leading-relaxed">
-            Add extra lectures for any subject to dynamically increase your personal semester total:
+            Add extra lectures for any subject to dynamically increase your personal Lectures Held Till Today:
           </p>
           <div class="space-y-2.5">
             <select id="personal-course-select" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white font-bold"></select>
@@ -298,7 +298,7 @@
     <!-- SUMMARY METRICS -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg">
-        <div class="text-[11px] font-black uppercase tracking-wider text-slate-400">Overall Attendance</div>
+        <div class="text-[11px] font-black uppercase tracking-wider text-slate-400">Attendance (Till Today)</div>
         <div id="metric-overall" class="text-xl sm:text-2xl font-black text-white mt-1">100.00%</div>
         <div id="metric-overall-badge" class="text-[11px] font-black mt-1 text-emerald-400">Safe</div>
       </div>
@@ -310,12 +310,12 @@
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg">
         <div id="metric-bunks-label" class="text-[11px] font-black uppercase tracking-wider text-slate-400">Safe Bunks Left (75%)</div>
         <div id="metric-bunks" class="text-xl sm:text-2xl font-black text-emerald-400 mt-1">0 left</div>
-        <div class="text-[11px] text-slate-400 mt-1 font-medium">Without dropping below target</div>
+        <div class="text-[11px] text-slate-400 mt-1 font-medium">Based on lectures held till today</div>
       </div>
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg">
         <div id="metric-needed-label" class="text-[11px] font-black uppercase tracking-wider text-slate-400">Classes Needed (75%)</div>
         <div id="metric-needed" class="text-xl sm:text-2xl font-black text-sky-400 mt-1">0 classes</div>
-        <div class="text-[11px] text-slate-400 mt-1 font-medium">To reach target goal</div>
+        <div class="text-[11px] text-slate-400 mt-1 font-medium">To reach target as of today</div>
       </div>
     </div>
 
@@ -323,8 +323,9 @@
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
       <div class="missed-banner text-sm sm:text-xl">ENTER HOW MANY LECTURES YOU HAVE MISSED</div>
       <div class="bg-sky-950/60 border border-sky-500/40 text-sky-200 text-xs sm:text-sm font-bold px-4 py-3 rounded-xl text-center">
-        Note: Extra Lectures dynamically expand your personal Total Lectures for the semester.
-        <br>Press <b class="text-white">+</b> if you Attended the extra lecture. Press <b class="text-white">-</b> if you Missed the extra lecture!
+        Live Daily Mode: Attendance is calculated strictly from <b>Lectures Held Till Today</b> (auto-updates every day). 
+        <b>Semester Total</b> is shown for reference only and is not used in the calculation.
+        <br>For Extra Lectures: Press <b class="text-white">+</b> if you Attended the extra lecture, or <b class="text-white">-</b> if you Missed it!
       </div>
 
       <div id="mobile-subject-cards" class="grid grid-cols-1 gap-3.5 lg:hidden"></div>
@@ -338,7 +339,8 @@
               <th class="py-3.5 px-3 text-center">Credits</th>
               <th class="py-3.5 px-3 text-center">Unattended (Missed)</th>
               <th class="py-3.5 px-3 text-center">Extra (+ Att / - Miss)</th>
-              <th class="py-3.5 px-3 text-center">Attended / Total</th>
+              <th class="py-3.5 px-3 text-center">Attended / Held Today</th>
+              <th class="py-3.5 px-3 text-center">Sem Total (Info)</th>
               <th class="py-3.5 px-3 text-center">Attendance %</th>
               <th id="th-req-target" class="py-3.5 px-3 text-center">Req (75%)</th>
               <th id="th-need-target" class="py-3.5 px-3 text-center">Need</th>
@@ -358,9 +360,9 @@
       <div class="flex flex-wrap gap-3 text-xs font-bold bg-slate-800/60 p-3.5 rounded-xl border border-slate-700">
         <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-red-500 inline-block"></span> Red ('HOL' / 'WKND'): Holiday &amp; Weekend</span>
         <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-purple-600 border border-purple-400 inline-block"></span> Purple ('MSE' / 'PRAC' / 'ESE'): Midsem, Practical &amp; Endsem</span>
-        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-emerald-500 inline-block"></span> Green ('ATT'): Past Attended (0 Missed)</span>
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-emerald-500 inline-block"></span> Green ('ATT'): Past/Today Attended (0 Missed)</span>
         <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-amber-400 inline-block"></span> Yellow ('F' / Short-Form): Unattended</span>
-        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-blue-500 inline-block"></span> Blue ('EVEN' / 'ODD'): Working Lecture Day</span>
+        <span class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded bg-blue-500 inline-block"></span> Blue ('EVEN' / 'ODD'): Upcoming Working Lecture Day</span>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -406,7 +408,7 @@
           <div id="slot7-editor-box" class="pt-4 border-t border-slate-800">
             <label class="block text-xs font-black text-sky-400 mb-1">Set / Edit 4:00 PM – 5:00 PM Extra Lecture for This Date Only:</label>
             <p class="text-[11px] text-slate-400 mb-2">
-              Type any subject short-form (e.g. <b>eg</b>, <b>ap</b>, <b>cp</b>, <b>fem-i</b>). If ticked, it counts as a missed extra. If unticked, it counts as an attended extra. Both expand your total lectures!
+              Type any subject short-form (e.g. <b>eg</b>, <b>ap</b>, <b>cp</b>, <b>fem-i</b>). If ticked, it counts as a missed extra. If unticked, it counts as an attended extra. Both expand your Lectures Held Till Today!
             </p>
             <div class="flex gap-2">
               <input id="slot7-input" type="text" maxlength="15" placeholder="e.g. eg, ap, cp, fem-i, uhv, ec..."
@@ -426,7 +428,7 @@
           <div class="flex items-center gap-2 flex-wrap">
             <h2 class="text-base sm:text-lg font-black text-white">5. Official Even &amp; Odd Week Timetables</h2>
             <span id="sec5-auto-badge" class="text-[11px] font-black px-2.5 py-0.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40">
-              Auto-Synced to Even Week
+              Auto-Synced to Odd Week
             </span>
           </div>
           <p class="text-xs text-slate-400 font-medium mt-0.5">Dynamically switches to match your currently selected branch and week type.</p>
@@ -488,6 +490,15 @@ function _getCloudEndpoint() {
 
 function escapeHTML(str) {
   return String(str || "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+}
+
+// Local-timezone YYYY-MM-DD helper so calculations automatically update at midnight local time every day
+function getTodayIsoLocal() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 const SEM1_START_DATE = "2026-09-07";
@@ -616,10 +627,10 @@ const SEMESTER_DATA = {
 
 let currentUser = null;
 let currentSem = "Semester I";
-let selectedCalDate = "2026-11-11";
-let ttWeekTab = "Even";
+let selectedCalDate = getTodayIsoLocal();
+let ttWeekTab = "Odd";
 let ttViewMode = window.innerWidth < 768 ? "cards" : "grid";
-let ttSelectedDay = "WED";
+let ttSelectedDay = "MON";
 let livePollTimer = null;
 let lastSyncedTimestamp = 0;
 
@@ -838,7 +849,7 @@ function isNonInstructionalDay(isoDate) {
 function computeSem1WorkingDaysSummary() {
   const start = new Date(SEM1_START_DATE + "T00:00:00");
   const end = new Date(SEM1_LAST_INSTRUCTION_DATE + "T00:00:00");
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = getTodayIsoLocal();
   let totalWorkingDays = 0; let completedWorkingDays = 0; let remainingWorkingDays = 0;
 
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -850,6 +861,38 @@ function computeSem1WorkingDaysSummary() {
     }
   }
   return { totalWorkingDays, completedWorkingDays, remainingWorkingDays };
+}
+
+// NEW: Dynamically computes exact number of timetable lecture units conducted from Sem Start up to Today!
+function computeLecturesHeldTillToday(sem) {
+  const heldByShort = {};
+  const courses = SEMESTER_DATA[sem] || [];
+  courses.forEach(c => { heldByShort[c.short] = 0; });
+  if (sem !== "Semester I" || !currentUser) return heldByShort;
+
+  const todayIso = getTodayIsoLocal();
+  const effectiveEndIso = todayIso < SEM1_LAST_INSTRUCTION_DATE ? todayIso : SEM1_LAST_INSTRUCTION_DATE;
+  if (effectiveEndIso < SEM1_START_DATE) return heldByShort;
+
+  const start = new Date(SEM1_START_DATE + "T00:00:00");
+  const end = new Date(effectiveEndIso + "T00:00:00");
+
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const iso = `${y}-${m}-${day}`;
+    if (isNonInstructionalDay(iso)) continue;
+    const { isOff, units } = getMergedDaySlots(iso, sem);
+    if (isOff) continue;
+    units.forEach(u => {
+      // Count regular scheduled timetable units (custom 4-5 PM extra slots are tracked in calExtraAttended/Missed)
+      if (u.short && !u.isCustomExtra) {
+        heldByShort[u.short] = (heldByShort[u.short] || 0) + 1;
+      }
+    });
+  }
+  return heldByShort;
 }
 
 function getAllUsersDB() { try { return JSON.parse(localStorage.getItem("att_users_db_v9") || "{}"); } catch { return {}; } }
@@ -1001,6 +1044,7 @@ function getComputedStats() {
   const targetPct = Math.max(75, Math.min(100, parseInt(currentUser.targetPct || 75)));
   const tRatio = targetPct / 100.0;
   const { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort } = computeCalendarTotalsForSem(currentSem);
+  const heldTillTodayByShort = computeLecturesHeldTillToday(currentSem);
 
   const statsMap = {};
   const list = courses.map(c => {
@@ -1017,20 +1061,49 @@ function getComputedStats() {
 
     const totalExtraAttended = calExtraAttended + manualExtraAttended + addedExtra;
     const totalExtraMissed = calExtraMissed + manualExtraMissed;
-    const dynamicTotal = c.total + totalExtraAttended + totalExtraMissed;
-    const unattended = calMissed + manualMissed + totalExtraMissed;
 
-    const effAttended = Math.max(0, dynamicTotal - unattended);
-    const pct = Number(((effAttended / dynamicTotal) * 100).toFixed(2));
-    const reqTarget = Math.ceil(tRatio * dynamicTotal);
+    // Base lectures conducted till today from the timetable (plus any extra lectures conducted)
+    const baseHeldTillToday = heldTillTodayByShort[c.short] || 0;
+    const rawUnattended = calMissed + manualMissed + totalExtraMissed;
+
+    // Lectures Held Till Today (expands if user manually entered more missed lectures than scheduled so far)
+    const heldTillToday = Math.max(baseHeldTillToday + totalExtraAttended + totalExtraMissed, rawUnattended);
+    const unattended = Math.min(heldTillToday, rawUnattended);
+
+    const effAttended = Math.max(0, heldTillToday - unattended);
+    const pct = heldTillToday > 0 ? Number(((effAttended / heldTillToday) * 100).toFixed(2)) : 100.00;
+    const reqTarget = Math.ceil(tRatio * heldTillToday);
     const needed = Math.max(0, reqTarget - effAttended);
-    const maxBunks = Math.max(0, dynamicTotal - reqTarget);
+    const maxBunks = Math.max(0, heldTillToday - reqTarget);
     const safeBunks = Math.max(0, maxBunks - unattended);
 
     const displayUnattended = calMissed + manualMissed;
     const displayExtra = manualExtra;
 
-    const item = { ...c, imp: rec.imp || c.imp, dynamicTotal, unattended, calMissed, manualMissed, calExtraAttended, calExtraMissed, manualExtra, personalExtra: manualExtra, displayUnattended, displayExtra, adminExtra: addedExtra, totalExtra: totalExtraAttended, effAttended, pct, reqTarget, needed, safeBunks, isSafe: pct >= targetPct };
+    const item = {
+      ...c,
+      imp: rec.imp || c.imp,
+      semTotal: c.total, // Kept for display only! Not used in calculation
+      heldTillToday,
+      dynamicTotal: heldTillToday,
+      unattended,
+      calMissed,
+      manualMissed,
+      calExtraAttended,
+      calExtraMissed,
+      manualExtra,
+      personalExtra: manualExtra,
+      displayUnattended,
+      displayExtra,
+      adminExtra: addedExtra,
+      totalExtra: totalExtraAttended,
+      effAttended,
+      pct,
+      reqTarget,
+      needed,
+      safeBunks,
+      isSafe: pct >= targetPct
+    };
     statsMap[c.short] = item;
     return item;
   });
@@ -1067,11 +1140,11 @@ function renderAll() {
   const wdBar = document.getElementById("term-working-days-bar");
   if (currentSem === "Semester I") {
     const { totalWorkingDays, completedWorkingDays, remainingWorkingDays } = computeSem1WorkingDaysSummary();
-    const minDaysForTarget = Math.ceil((targetPct / 100) * totalWorkingDays);
+    const minDaysSoFar = Math.ceil((targetPct / 100) * completedWorkingDays);
     wdBar.innerHTML = `
-      <span class="font-bold text-sky-300">Instructional Lecture Days (Excl. MSE, PRAC, ESE &amp; Holidays): <b>${totalWorkingDays}</b></span>
-      <span class="font-bold text-emerald-400">Completed Lecture Days: <b>${completedWorkingDays}</b></span>
-      <span class="font-bold text-amber-300">Remaining Lecture Days: <b>${remainingWorkingDays}</b> (Min ${minDaysForTarget} days for ${targetPct}%)</span>
+      <span class="font-bold text-emerald-400">Working Days Held Till Today (${getTodayIsoLocal()}): <b>${completedWorkingDays} days</b> (Min ${minDaysSoFar} days for ${targetPct}%)</span>
+      <span class="font-bold text-sky-300">Upcoming Working Days (Blue): <b>${remainingWorkingDays} days</b></span>
+      <span class="font-bold text-slate-400">Total Semester Working Days (Info Only): <b>${totalWorkingDays} days</b></span>
     `;
     wdBar.classList.remove("hidden");
   } else wdBar.classList.add("hidden");
@@ -1082,8 +1155,8 @@ function renderAll() {
   });
 
   const totEff = list.reduce((a, b) => a + b.effAttended, 0);
-  const totLecs = list.reduce((a, b) => a + b.dynamicTotal, 0);
-  const overallPct = totLecs ? ((totEff / totLecs) * 100).toFixed(2) : "100.00";
+  const totHeld = list.reduce((a, b) => a + b.heldTillToday, 0);
+  const overallPct = totHeld ? ((totEff / totHeld) * 100).toFixed(2) : "100.00";
   const totMissed = list.reduce((a, b) => a + b.unattended, 0);
   const totBunks = list.reduce((a, b) => a + b.safeBunks, 0);
   const totNeeded = list.reduce((a, b) => a + b.needed, 0);
@@ -1092,9 +1165,9 @@ function renderAll() {
   document.getElementById("metric-overall").textContent = `${overallPct}%`;
   const badgeEl = document.getElementById("metric-overall-badge");
   if (parseFloat(overallPct) >= targetPct) {
-    badgeEl.textContent = `Safe (>=${targetPct}%)`; badgeEl.className = "text-[11px] font-black mt-1 text-emerald-400";
+    badgeEl.textContent = `Safe (>=${targetPct}% of ${totHeld} held)`; badgeEl.className = "text-[11px] font-black mt-1 text-emerald-400";
   } else {
-    badgeEl.textContent = `Shortage (<${targetPct}%)`; badgeEl.className = "text-[11px] font-black mt-1 text-amber-400";
+    badgeEl.textContent = `Shortage (<${targetPct}% of ${totHeld} held)`; badgeEl.className = "text-[11px] font-black mt-1 text-amber-400";
   }
   document.getElementById("metric-unattended").textContent = `${totMissed} missed`;
   document.getElementById("metric-bunks-label").textContent = `Safe Bunks Left (${targetPct}%)`;
@@ -1104,7 +1177,7 @@ function renderAll() {
 
   const bannerEl = document.getElementById("personal-extra-banner");
   if (totAdminEx > 0) {
-    bannerEl.textContent = `Personal Extra Lectures Active: ${totAdminEx} extra lecture(s) added to your semester total!`;
+    bannerEl.textContent = `Personal Extra Lectures Active: ${totAdminEx} extra lecture(s) added to your Lectures Held Till Today!`;
     bannerEl.classList.remove("hidden");
   } else if (bannerEl) bannerEl.classList.add("hidden");
 
@@ -1161,7 +1234,7 @@ function renderSubjectsUI(list, targetPct) {
           <div>
             <span class="text-xs font-black px-2.5 py-0.5 rounded-lg bg-slate-800 text-sky-300 border border-slate-700">${item.short}</span>
             <h3 class="text-sm font-black text-white mt-1.5">${item.name}</h3>
-            <p class="text-[11px] text-slate-400 font-medium">Code: ${item.code} | Credits: ${item.credits}</p>
+            <p class="text-[11px] text-slate-400 font-medium">Code: ${item.code} | Credits: ${item.credits} | Sem Total (Info): <b>${item.semTotal}</b></p>
           </div>
           <div class="text-right shrink-0">
             <div class="text-lg font-black ${pctCol}">${item.pct}%</div>
@@ -1176,7 +1249,7 @@ function renderSubjectsUI(list, targetPct) {
             </div>
             <div class="flex items-center justify-between">
               <button type="button" onclick="stepSubject('${item.code}', 'unattended', -1)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-base transition">-</button>
-              <input type="number" min="0" max="${item.dynamicTotal}" value="${item.displayUnattended}" onchange="setSubjectVal('${item.code}', 'unattended', this.value)" class="w-12 bg-transparent text-center font-black text-sm text-amber-300 focus:outline-none" />
+              <input type="number" min="0" value="${item.displayUnattended}" onchange="setSubjectVal('${item.code}', 'unattended', this.value)" class="w-12 bg-transparent text-center font-black text-sm text-amber-300 focus:outline-none" />
               <button type="button" onclick="stepSubject('${item.code}', 'unattended', 1)" class="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-base transition">+</button>
             </div>
           </div>
@@ -1192,8 +1265,9 @@ function renderSubjectsUI(list, targetPct) {
             </div>
           </div>
         </div>
-        <div class="flex justify-between text-xs text-slate-300 pt-2 border-t border-slate-800/80 font-semibold">
-          <span>Attended: <b>${item.effAttended}/${item.dynamicTotal}</b></span>
+        <div class="flex flex-wrap justify-between gap-2 text-xs text-slate-300 pt-2 border-t border-slate-800/80 font-semibold">
+          <span>Attended / Held Today: <b class="text-white">${item.effAttended} / ${item.heldTillToday}</b></span>
+          <span>Sem Total: <b class="text-slate-400">${item.semTotal}</b></span>
           <span>Req (${targetPct}%): <b>${item.reqTarget}</b></span>
           <span>Safe Bunks: <b>${item.safeBunks}</b></span>
         </div>
@@ -1212,7 +1286,7 @@ function renderSubjectsUI(list, targetPct) {
         <td class="py-3 px-3 text-center">
           <div class="inline-flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-2 py-1">
             <button type="button" onclick="stepSubject('${item.code}', 'unattended', -1)" class="px-2 py-0.5 text-slate-300 hover:text-white font-black">-</button>
-            <input type="number" min="0" max="${item.dynamicTotal}" value="${item.displayUnattended}" onchange="setSubjectVal('${item.code}', 'unattended', this.value)" class="w-12 bg-transparent text-center font-black text-amber-300 focus:outline-none" />
+            <input type="number" min="0" value="${item.displayUnattended}" onchange="setSubjectVal('${item.code}', 'unattended', this.value)" class="w-12 bg-transparent text-center font-black text-amber-300 focus:outline-none" />
             <button type="button" onclick="stepSubject('${item.code}', 'unattended', 1)" class="px-2 py-0.5 text-sky-400 hover:text-sky-300 font-black">+</button>
           </div>
           <div class="text-[10px] text-amber-300/80 font-bold mt-0.5">Cal: ${item.calMissed} | Man: ${item.manualMissed}</div>
@@ -1225,7 +1299,8 @@ function renderSubjectsUI(list, targetPct) {
           </div>
           <div class="text-[10px] text-emerald-300/80 font-bold mt-0.5">Cal: ${item.calExtraAttended} | Man: ${item.manualExtra}</div>
         </td>
-        <td class="py-3 px-3 text-center font-black">${item.effAttended} / ${item.dynamicTotal}</td>
+        <td class="py-3 px-3 text-center font-black text-white">${item.effAttended} / ${item.heldTillToday}</td>
+        <td class="py-3 px-3 text-center font-bold text-slate-400">${item.semTotal}</td>
         <td class="py-3 px-3 text-center font-black">${item.pct}%</td>
         <td class="py-3 px-3 text-center font-bold">${item.reqTarget}</td>
         <td class="py-3 px-3 text-center font-black">${item.needed}</td>
@@ -1242,7 +1317,7 @@ function renderCalendarGrid() {
   const firstDay = new Date(year, month - 1, 1);
   const startOffset = (firstDay.getDay() + 6) % 7;
   const daysInMonth = new Date(year, month, 0).getDate();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = getTodayIsoLocal();
   const gridEl = document.getElementById("calendar-grid");
   let html = "";
   for (let i = 0; i < startOffset; i++) html += `<div class="min-h-[54px] bg-slate-950/40 border border-slate-800/70 rounded-xl"></div>`;
@@ -1260,6 +1335,7 @@ function renderCalendarGrid() {
     const extraSlot7 = (isPreTerm || isPostTerm || isHoliday || examInfo) ? "" : (currentUser.slot7Map[iso] || "");
     const isSelected = iso === selectedCalDate;
 
+    // Default for upcoming working days (iso > todayIso): Marked as BLUE ('EVEN' / 'ODD')
     let bg = "bg-blue-600 text-white border-blue-400";
     let sub = getWeekType(iso).split(" ")[0].toUpperCase();
 
@@ -1270,7 +1346,11 @@ function renderCalendarGrid() {
     else if (isPostTerm) { bg = "bg-red-600/80 text-white border-red-400"; sub = "END"; }
     else if (bunkVal) { bg = "bg-amber-400 text-slate-950 border-amber-200"; sub = escapeHTML(bunkVal); }
     else if (iso <= todayIso) { bg = "bg-emerald-600 text-white border-emerald-400"; sub = extraSlot7 ? `+${escapeHTML(extraSlot7)}` : "ATT"; }
-    else if (extraSlot7) { sub = `+${escapeHTML(extraSlot7)}`; }
+    else {
+      // Future working days (iso > todayIso) stay strictly BLUE
+      bg = "bg-blue-600 text-white border-blue-400";
+      sub = extraSlot7 ? `+${escapeHTML(extraSlot7)}` : getWeekType(iso).split(" ")[0].toUpperCase();
+    }
 
     const ring = isSelected ? "ring-2 ring-white scale-[1.04] z-10 shadow-lg" : "opacity-95 hover:opacity-100";
     html += `<button type="button" onclick="selectDate('${iso}')" class="min-h-[54px] p-1 rounded-xl border ${bg} ${ring} flex flex-col items-center justify-center transition active:scale-95"><span class="text-xs sm:text-sm font-black leading-none">${d}</span><span class="text-[9px] font-black mt-1 leading-tight truncate max-w-full px-0.5">${sub}</span></button>`;
@@ -1338,8 +1418,10 @@ function renderDailyInspector(statsMap, targetPct) {
   const wkType = getWeekType(selectedCalDate);
   const examInfo = getExamPeriodInfo(selectedCalDate);
   const holidayLabel = getHolidayName(selectedCalDate);
+  const todayIso = getTodayIsoLocal();
+  const isFutureDay = selectedCalDate > todayIso;
 
-  document.getElementById("inspected-date-title").textContent = dObj.toDateString();
+  document.getElementById("inspected-date-title").textContent = `${dObj.toDateString()} ${isFutureDay ? "(Upcoming Day)" : ""}`;
   document.getElementById("inspected-date-meta").textContent = `Schedule Status: ${holidayLabel ? holidayLabel : (examInfo ? `${examInfo.label}` : wkType)} | Your Batch: ${currentUser.batch}`;
 
   const personalHolMount = document.getElementById("inspector-personal-holiday-mount");
@@ -1398,15 +1480,15 @@ function renderDailyInspector(statsMap, targetPct) {
     let statusHtml = `<span class="text-slate-400">Non-Credit / Free Slot (Editable in 4–5 PM box below)</span>`;
     if (u.text.includes("BREAK")) statusHtml = `<span class="text-slate-400">Official Break</span>`;
     else if (st) {
-      if (u.isCustomExtra) statusHtml = isTicked ? `<span class="text-amber-300 font-bold">+1 Missed to ${u.short} (Missed: ${st.unattended}/${st.dynamicTotal} | ${st.pct}%)</span>` : `<span class="text-emerald-400 font-bold">+1 Attended to ${u.short} (Extra: ${st.personalExtra} | ${st.pct}%)</span>`;
-      else if (st.needed > 0) statusHtml = `<span class="text-amber-300 font-bold">Missed: ${st.unattended}/${st.dynamicTotal} | Need ${st.needed} for ${targetPct}% (${st.pct}%)</span>`;
-      else statusHtml = `<span class="text-emerald-400 font-bold">Missed: ${st.unattended}/${st.dynamicTotal} | Safe: Bunk ${st.safeBunks} (${st.pct}%)</span>`;
+      if (u.isCustomExtra) statusHtml = isTicked ? `<span class="text-amber-300 font-bold">+1 Missed to ${u.short} (Missed: ${st.unattended}/${st.heldTillToday} | ${st.pct}%)</span>` : `<span class="text-emerald-400 font-bold">+1 Attended to ${u.short} (Extra: ${st.personalExtra} | ${st.pct}%)</span>`;
+      else if (st.needed > 0) statusHtml = `<span class="text-amber-300 font-bold">Held Today: ${st.effAttended}/${st.heldTillToday} (Sem: ${st.semTotal}) | Need ${st.needed} for ${targetPct}% (${st.pct}%)</span>`;
+      else statusHtml = `<span class="text-emerald-400 font-bold">Held Today: ${st.effAttended}/${st.heldTillToday} (Sem: ${st.semTotal}) | Safe: Bunk ${st.safeBunks} (${st.pct}%)</span>`;
     }
     const labBadge = u.isLab ? `<span class="batch-badge ml-1">YOUR ${escapeHTML((currentUser?.batch || "Batch A").toUpperCase())} LAB</span>` : "";
     const canTick = Boolean(u.short);
 
     return `
-      <div class="flex items-center justify-between gap-2.5 bg-slate-900 border ${isTicked ? 'border-amber-500/60 bg-amber-950/20' : 'border-slate-800'} rounded-xl px-3.5 py-2.5 text-xs">
+      <div class="flex items-center justify-between gap-2.5 bg-slate-900 border ${isTicked ? 'border-amber-500/60 bg-amber-950/20' : (isFutureDay ? 'border-blue-500/40 bg-blue-950/15' : 'border-slate-800')} rounded-xl px-3.5 py-2.5 text-xs">
         <div class="flex items-center gap-3">
           ${canTick ? `<input type="checkbox" ${isTicked ? "checked" : ""} onchange="toggleDailyUnitTick('${selectedCalDate}', ${uIdx}, this.checked)" class="w-4 h-4 rounded accent-amber-400 cursor-pointer shrink-0" />` : `<span class="w-4 h-4 inline-block shrink-0"></span>`}
           <div>
@@ -1414,7 +1496,7 @@ function renderDailyInspector(statsMap, targetPct) {
             <div class="text-[11px] text-slate-400 font-medium mt-0.5">${u.slotLabel} &bull; ${statusHtml}</div>
           </div>
         </div>
-        ${canTick ? `<span class="text-[10px] font-black ${isTicked ? 'text-amber-400' : 'text-emerald-400'}">${isTicked ? 'MISSED (+1 UNATTENDED)' : (u.isCustomExtra ? 'ATTENDED (+1 EXTRA)' : 'ATTENDED')}</span>` : ''}
+        ${canTick ? `<span class="text-[10px] font-black ${isTicked ? 'text-amber-400' : (isFutureDay ? 'text-sky-400' : 'text-emerald-400')}">${isTicked ? 'MISSED (+1 UNATTENDED)' : (u.isCustomExtra ? 'ATTENDED (+1 EXTRA)' : (isFutureDay ? 'UPCOMING (BLUE)' : 'ATTENDED'))}</span>` : ''}
       </div>
     `;
   }).join("");
@@ -1496,7 +1578,7 @@ function renderTimetableSection(statsMap, targetPct) {
     if (raw.includes("BREAK")) { cardClass = "cell-red"; meta = "Official Break"; }
     else if (st) {
       cardClass = st.pct >= targetPct ? "cell-green" : "cell-yellow";
-      meta = `Attendance: <b>${st.pct}%</b> | Missed: <b>${st.unattended}/${st.dynamicTotal}</b> | Extra: <b>${st.personalExtra}</b> | ${st.needed > 0 ? `Need ${st.needed} for ${targetPct}%` : `Safe (Bunk ${st.safeBunks})`}`;
+      meta = `Attendance: <b>${st.pct}%</b> | Attended/Held: <b>${st.effAttended}/${st.heldTillToday}</b> (Sem Total: ${st.semTotal}) | ${st.needed > 0 ? `Need ${st.needed} for ${targetPct}%` : `Safe (Bunk ${st.safeBunks})`}`;
     }
 
     const slotText = span > 1 ? `Slots ${i + 1}–${i + span} [1 Combined Bulk Unit]` : TIME_SLOTS[i];
@@ -1560,7 +1642,7 @@ function renderTimetableSection(statsMap, targetPct) {
       if (raw.includes("BREAK")) { cls = "cell-red"; }
       else if (st) {
         cls = st.pct >= targetPct ? "cell-green" : "cell-yellow";
-        sub = `<div class="text-[11px] mt-1.5 opacity-95 font-medium">Att: ${st.pct}% | Missed: ${st.unattended}/${st.dynamicTotal}</div>`;
+        sub = `<div class="text-[11px] mt-1.5 opacity-95 font-medium">Att: ${st.pct}% | Held: ${st.effAttended}/${st.heldTillToday} (Sem: ${st.semTotal})</div>`;
       }
 
       const bulkTag = rSpan > 1 ? `<div class="text-[10px] text-sky-300 font-black">[1 Combined Bulk Unit (${rSpan} Hrs)]</div>` : "";
@@ -1574,6 +1656,8 @@ function renderTimetableSection(statsMap, targetPct) {
 }
 
 function getDefaultDateForMonth(ym) {
+  const todayIso = getTodayIsoLocal();
+  if (todayIso.slice(0, 7) === ym) return todayIso;
   return ym === "2026-09" ? SEM1_START_DATE : `${ym}-01`;
 }
 
@@ -1626,13 +1710,23 @@ window.addEventListener("DOMContentLoaded", async () => {
   Object.keys(SEMESTER_DATA).forEach(s => {
     const opt = document.createElement("option"); opt.value = s; opt.textContent = s; semSel.appendChild(opt);
   });
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = getTodayIsoLocal();
   selectedCalDate = (todayIso >= SEM1_START_DATE && todayIso <= "2026-12-31") ? todayIso : SEM1_START_DATE;
   const ym = selectedCalDate.slice(0, 7);
   if (MONTHS_LIST.includes(ym)) document.getElementById("cal-month-select").value = ym;
   syncTimetableToDate(selectedCalDate);
 
   setupEventListeners();
+
+  // Automatic daily rollover check: refreshes calculation if the date changes while the tab is open
+  let lastCheckedDay = getTodayIsoLocal();
+  setInterval(() => {
+    const nowDay = getTodayIsoLocal();
+    if (nowDay !== lastCheckedDay) {
+      lastCheckedDay = nowDay;
+      if (currentUser) renderAll();
+    }
+  }, 60000);
 
   const rememberedEmail = localStorage.getItem("att_remembered_user_v9");
   const db = getAllUsersDB();
