@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Attendance, Timetable & Calendar Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase App SDK & Auth SDK via CDN -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     body {
@@ -93,78 +97,44 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between pb-12">
 
-  <!-- LOGIN VIEW -->
-  <div id="login-view" class="max-w-md w-full mx-auto px-4 pt-8 sm:pt-12 hidden">
-    <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-5 sm:p-7 shadow-2xl">
-      <div class="flex items-center justify-between mb-1">
-        <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight">Student Login</h1>
-        <span class="text-[11px] font-extrabold bg-emerald-600/20 text-emerald-400 border border-emerald-500/40 px-2.5 py-1 rounded-lg">E2E Encrypted Sync</span>
+  <!-- GOOGLE OAUTH LOGIN VIEW -->
+  <div id="login-view" class="max-w-md w-full mx-auto px-4 pt-12 sm:pt-20 hidden">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-2xl text-center space-y-6">
+      <div>
+        <h1 class="text-2xl font-black text-white tracking-tight">Student Attendance Tracker</h1>
+        <p class="text-xs text-slate-400 mt-2 leading-relaxed">Sign in with your institutional Google account for instant cloud sync across your phone and PC.</p>
       </div>
-      <p class="text-xs text-slate-400 mb-5 leading-relaxed">Automatic real-time PC &amp; Android sync. Your data is AES-256 encrypted before leaving your device.</p>
 
-      <div id="login-error" class="hidden bg-red-950/80 border border-red-500 text-red-200 text-xs font-semibold p-3 rounded-xl mb-4"></div>
+      <div id="login-error" class="hidden bg-red-950/80 border border-red-500 text-red-200 text-xs font-semibold p-3 rounded-xl"></div>
 
-      <form id="login-form" class="space-y-4">
+      <button id="btn-google-login" type="button"
+        class="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-100 active:scale-[0.99] text-slate-900 font-bold py-3.5 px-4 rounded-xl text-sm shadow-xl transition">
+        <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.18v3.15C3.17 21.31 7.22 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.18C.43 8.13 0 9.87 0 12s.43 3.87 1.18 5.39l4.09-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.22 0 3.17 2.69 1.18 6.61l4.09 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
+        Continue with Google
+      </button>
+
+      <div class="space-y-3 pt-4 border-t border-slate-800 text-left">
         <div>
-          <label class="block text-xs font-extrabold text-slate-300 mb-1">Gmail Address (@gmail.com)</label>
-          <input id="login-email" type="email" required autocomplete="username" placeholder="yourname@gmail.com"
-            class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3.5 py-3 text-sm text-white focus:outline-none focus:border-sky-400" />
+          <label class="block text-xs font-extrabold text-slate-300 mb-1">Select Your Branch &amp; Division</label>
+          <select id="reg-branch" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-3 text-sm text-white">
+            <option value="Computer Engineering - Div I">Computer Engineering - Div I (Comps A)</option>
+            <option value="Computer Engineering - Div II">Computer Engineering - Div II (Comps B)</option>
+            <option value="Computer Engineering - Div III">Computer Engineering - Div III (Comps C)</option>
+            <option value="Mechanical Engineering">Mechanical Engineering</option>
+            <option value="Information Technology">Information Technology</option>
+            <option value="Electronics and Telecommunication">Electronics and Telecommunication</option>
+            <option value="Basic Sciences and Humanities">Basic Sciences and Humanities (FE)</option>
+          </select>
         </div>
-
         <div>
-          <div class="flex items-center justify-between mb-1">
-            <label for="login-password" class="block text-xs font-extrabold text-slate-300">Account Password</label>
-            <span class="text-[10px] font-bold text-sky-400">New user? Choose a password</span>
-          </div>
-          <div class="relative flex items-center">
-            <input id="login-password" type="password" required autocomplete="current-password" placeholder="Enter your password"
-              class="w-full bg-slate-800 border border-slate-600 rounded-xl pl-3.5 pr-20 py-3 text-sm text-white focus:outline-none focus:border-sky-400" />
-            <button type="button" id="btn-toggle-login-pw"
-              class="absolute right-2 bg-slate-700 hover:bg-slate-600 text-sky-300 font-extrabold text-xs px-3 py-1.5 rounded-lg border border-slate-500">
-              Show
-            </button>
-          </div>
+          <label class="block text-xs font-extrabold text-slate-300 mb-1">Select Your College Batch</label>
+          <select id="reg-batch" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-3 text-sm text-white">
+            <option value="Batch A">Batch A</option>
+            <option value="Batch B">Batch B</option>
+            <option value="Batch C">Batch C</option>
+          </select>
         </div>
-
-        <div>
-          <label class="block text-xs font-extrabold text-slate-300 mb-1">Full Name (Required for first-time registration)</label>
-          <input id="login-name" type="text" maxlength="60" placeholder="Your Full Name"
-            class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3.5 py-3 text-sm text-white focus:outline-none focus:border-sky-400" />
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-extrabold text-slate-300 mb-1">Branch &amp; Division</label>
-            <select id="login-branch" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-3 text-sm text-white">
-              <option value="Computer Engineering - Div I">Computer Engineering - Div I (Comps A)</option>
-              <option value="Computer Engineering - Div II">Computer Engineering - Div II (Comps B)</option>
-              <option value="Computer Engineering - Div III">Computer Engineering - Div III (Comps C)</option>
-              <option value="Mechanical Engineering">Mechanical Engineering</option>
-              <option value="Information Technology">Information Technology</option>
-              <option value="Electronics and Telecommunication">Electronics and Telecommunication</option>
-              <option value="Basic Sciences and Humanities">Basic Sciences and Humanities (FE)</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-extrabold text-slate-300 mb-1">College Batch</label>
-            <select id="login-batch" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-3 text-sm text-white">
-              <option value="Batch A">Batch A</option>
-              <option value="Batch B">Batch B</option>
-              <option value="Batch C">Batch C</option>
-            </select>
-          </div>
-        </div>
-
-        <label class="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer pt-1">
-          <input id="login-remember" type="checkbox" checked class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-sky-500" />
-          <span class="font-semibold">Stay logged in &amp; auto-sync on this device</span>
-        </label>
-
-        <button type="submit" id="btn-login-submit"
-          class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-black py-3.5 rounded-xl text-sm shadow-xl transition">
-          Login / Register &amp; Enter Dashboard
-        </button>
-      </form>
+      </div>
     </div>
   </div>
 
@@ -177,9 +147,9 @@
         <div>
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 id="greeting-title" class="text-xl sm:text-2xl font-black text-white">Good Morning, Student</h1>
-            <button id="sync-status-pill" type="button" title="Tap to force sync"
+            <button id="sync-status-pill" type="button" title="Sync Status"
               class="text-[11px] font-extrabold px-3 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40 cursor-pointer active:scale-95 transition">
-              Connecting to Cloud...
+              Connected to Cloud
             </button>
           </div>
           <p id="student-meta" class="text-xs sm:text-sm text-slate-400 mt-1 font-medium"></p>
@@ -188,6 +158,11 @@
           <button id="btn-toggle-power-panel" type="button"
             class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black px-3.5 py-2 rounded-xl shadow-lg border border-amber-300 transition active:scale-95">
             &#9889; Personal Tools
+          </button>
+
+          <!-- Super Admin Button (Only visible if honraokanishka@gmail.com) -->
+          <button id="btn-toggle-admin-panel" type="button" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-black px-3.5 py-2 rounded-xl shadow-lg transition">
+            &#128273; Super Admin Panel
           </button>
 
           <select id="dash-branch" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white">
@@ -208,6 +183,9 @@
           </select>
           <button id="btn-reset-sem" type="button" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl transition">
             Reset Missed to 0
+          </button>
+          <button id="btn-undo-reset" type="button" class="hidden bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black px-3 py-2 rounded-xl shadow transition">
+            Undo Last Reset
           </button>
           <button id="btn-logout" type="button" onclick="window.forceLogout()" class="bg-red-950 hover:bg-red-900 border border-red-500/60 text-red-100 text-xs font-bold px-3 py-2 rounded-xl transition">
             Logout
@@ -233,6 +211,53 @@
 
       <div id="term-working-days-bar" class="mt-4 bg-slate-950/90 border border-slate-800 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs"></div>
       <div id="personal-extra-banner" class="hidden mt-4 bg-sky-950/80 border border-sky-500/60 text-sky-200 text-xs font-bold px-4 py-3 rounded-xl"></div>
+    </div>
+
+    <!-- SUPER ADMIN MANAGEMENT PANEL (Only visible to honraokanishka@gmail.com) -->
+    <div id="super-admin-panel" class="hidden bg-slate-900 border-2 border-purple-500/80 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h2 class="text-base sm:text-lg font-black text-purple-400">&#128273; Super Admin Control Panel</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Delegate branch admin rights to Class Representatives (CRs) or override specific dates universally.</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
+          <div class="text-xs font-black uppercase tracking-wider text-purple-300">1. Assign Branch Admin (CR)</div>
+          <p class="text-[11px] text-slate-300">Enter a student's Gmail and assign them a branch so they can manage date overrides for that branch:</p>
+          <div class="space-y-2.5">
+            <input id="admin-assign-email" type="email" placeholder="cr.student@gmail.com" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white" />
+            <select id="admin-assign-branch" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white">
+              <option value="Computer Engineering - Div I">Computer Engineering - Div I</option>
+              <option value="Computer Engineering - Div II">Computer Engineering - Div II</option>
+              <option value="Computer Engineering - Div III">Computer Engineering - Div III</option>
+              <option value="Mechanical Engineering">Mechanical Engineering</option>
+              <option value="Information Technology">Information Technology</option>
+              <option value="Electronics and Telecommunication">Electronics and Telecommunication</option>
+            </select>
+            <button id="btn-save-admin-role" type="button" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black text-xs py-2.5 rounded-xl transition">Grant Branch Admin Rights</button>
+          </div>
+          <div id="admin-assign-status" class="text-xs text-emerald-400 font-bold"></div>
+        </div>
+
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
+          <div class="text-xs font-black uppercase tracking-wider text-purple-300">2. Temporary Day-Specific Schedule Override</div>
+          <p class="text-[11px] text-slate-300">Override slots for a specific date across an entire branch (e.g., 2 UHV lectures tomorrow):</p>
+          <div class="grid grid-cols-2 gap-2">
+            <input id="override-date" type="date" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white" />
+            <select id="override-branch" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white">
+              <option value="Computer Engineering - Div I">Comps Div I</option>
+              <option value="Computer Engineering - Div II">Comps Div II</option>
+              <option value="Computer Engineering - Div III">Comps Div III</option>
+              <option value="Mechanical Engineering">Mechanical</option>
+              <option value="Information Technology">IT</option>
+              <option value="Electronics and Telecommunication">EXTC</option>
+            </select>
+          </div>
+          <textarea id="override-slots-json" rows="3" placeholder='Paste slot overrides JSON or description...' class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white"></textarea>
+          <button id="btn-save-date-override" type="button" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black text-xs py-2.5 rounded-xl transition">Publish Date Override</button>
+        </div>
+      </div>
     </div>
 
     <!-- PERSONAL TOOLS PANEL -->
@@ -484,15 +509,25 @@
   </footer>
 
 <script>
-function _getCloudEndpoint() {
-  return atob("aHR0cHM6Ly9hdHRlbmRhbmNldHJhY2tlci04ZTMxMS1kZWZhdWx0LXJ0ZGIuYXNpYS1zb3V0aGVhc3QxLmZpcmViYXNlZGF0YWJhc2UuYXBw");
-}
+// Your Firebase Web Config
+const firebaseConfig = {
+  apiKey: "AIzaSyDsaY8odoC07AbdIiHIeuevKIUfGHWLDEc",
+  authDomain: "attendancetracker-8e311.firebaseapp.com",
+  databaseURL: "https://attendancetracker-8e311-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "attendancetracker-8e311",
+  storageBucket: "attendancetracker-8e311.firebasestorage.app",
+  messagingSenderId: "815703945092",
+  appId: "1:815703945092:web:206ce84800c9d6d16837d1"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const auth = firebase.auth();
 
 function escapeHTML(str) {
   return String(str || "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
 }
 
-// Local-timezone YYYY-MM-DD helper so calculations automatically update at midnight local time every day
 function getTodayIsoLocal() {
   const now = new Date();
   const y = now.getFullYear();
@@ -511,7 +546,8 @@ const EXAM_PERIODS = [
   ["2026-12-14", "2026-12-23", "End-Semester Examination (ESE)", "ESE"]
 ];
 
-const AUTH_PEPPER = "ATT_V9_PEPPER_2026";
+const SUPER_ADMIN_EMAIL = "honraokanishka@gmail.com";
+const UNDO_BACKUP_KEY = "att_undo_reset_backup_v1";
 
 const TIME_SLOTS = [
   "1 (9:00 - 10:00)", "2 (10:00 - 11:00)", "Short Break (11:00 - 11:15)",
@@ -520,69 +556,92 @@ const TIME_SLOTS = [
 ];
 
 const DEFAULT_EVEN = {
-  MON: ["AP", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Remedial Lecture"],
-  TUE: ["EC", "EG", "SHORT BREAK", "BE&DE", "FEM-I", "LUNCH BREAK", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "UHV", "FE Mentoring Slot"],
+  MON: ["AP", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Remedial Lecture"],
+  TUE: ["EC", "EG", "SHORT BREAK", "BEDE", "FEM-I", "LUNCH BREAK", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "UHV", "FE Mentoring Slot"],
   WED: ["FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "AP", "SHORT BREAK", "CP", "CP", "LUNCH BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Extra Lecture Slot 1"],
-  THR: ["Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "SHORT BREAK", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "BE&DE", "FEM-I", "Extra Lecture Slot 2"],
-  FRI: ["BE&DE", "FEM-I", "SHORT BREAK", "EG", "BE&DE", "LUNCH BREAK", "EC", "UHV", "Extra Lecture Slot 3"]
+  THR: ["Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "SHORT BREAK", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "BEDE", "FEM-I", "Extra Lecture Slot 2"],
+  FRI: ["BEDE", "FEM-I", "SHORT BREAK", "EG", "BEDE", "LUNCH BREAK", "EC", "UHV", "Extra Lecture Slot 3"]
 };
 
 const DEFAULT_ODD = {
-  MON: ["AP", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Remedial Lecture"],
-  TUE: ["EC", "BE&DE", "SHORT BREAK", "FEM-I", "AP", "LUNCH BREAK", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "UHV", "FE Mentoring Slot"],
+  MON: ["AP", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Remedial Lecture"],
+  TUE: ["EC", "BEDE", "SHORT BREAK", "FEM-I", "AP", "LUNCH BREAK", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "UHV", "FE Mentoring Slot"],
   WED: ["FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "EC", "SHORT BREAK", "CP", "CP", "LUNCH BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Extra Lecture Slot 1"],
-  THR: ["Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "SHORT BREAK", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "FEM-I", "BE&DE", "Extra Lecture Slot 2"],
-  FRI: ["EC", "BE&DE", "SHORT BREAK", "EG", "BE&DE", "LUNCH BREAK", "FEM-I", "AP", "UHV"]
+  THR: ["Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "SHORT BREAK", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "FEM-I", "BEDE", "Extra Lecture Slot 2"],
+  FRI: ["EC", "BEDE", "SHORT BREAK", "EG", "BEDE", "LUNCH BREAK", "FEM-I", "AP", "UHV"]
 };
 
 const MECH_ODD = {
-  MON: ["Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "SHORT BREAK", "BE&DE", "AP", "LUNCH BREAK", "BE&DE", "FEM-I", "Extra Lecture Slot 1"],
-  TUE: ["AP", "BE&DE", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "Extra Lecture Slot 2"],
+  MON: ["Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "SHORT BREAK", "BEDE", "AP", "LUNCH BREAK", "BEDE", "FEM-I", "Extra Lecture Slot 1"],
+  TUE: ["AP", "BEDE", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Extra Lecture Slot 2"],
   WED: ["FEM-I Tut (A) / Lab AP (B) / Lab EC (C)", "FEM-I", "SHORT BREAK", "AP", "CP", "LUNCH BREAK", "EC", "UHV", "FE Mentoring Slot"],
   THR: ["Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "SHORT BREAK", "EC", "CP", "LUNCH BREAK", "EG", "EG", "Extra Lecture Slot 3"],
-  FRI: ["Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "SHORT BREAK", "EC", "FEM-I", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Remedial Lecture"]
+  FRI: ["Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "SHORT BREAK", "EC", "FEM-I", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Remedial Lecture"]
 };
 
 const MECH_EVEN = {
-  MON: ["Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "SHORT BREAK", "BE&DE", "AP", "LUNCH BREAK", "BE&DE", "FEM-I", "Extra Lecture Slot 1"],
-  TUE: ["BE&DE", "AP", "SHORT BREAK", "EG", "FEM-I", "LUNCH BREAK", "Lab CP (A) / Lab BE&DE (B) / Lab EG (C)", "Lab CP (A) / Lab BE&DE (B) / Lab EG (C)", "Extra Lecture Slot 2"],
+  MON: ["Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "SHORT BREAK", "BEDE", "AP", "LUNCH BREAK", "BEDE", "FEM-I", "Extra Lecture Slot 1"],
+  TUE: ["BEDE", "AP", "SHORT BREAK", "EG", "FEM-I", "LUNCH BREAK", "Lab CP (A) / Lab BEDE (B) / Lab EG (C)", "Lab CP (A) / Lab BEDE (B) / Lab EG (C)", "Extra Lecture Slot 2"],
   WED: ["FEM-I Tut (A) / Lab AP (B) / Lab EC (C)", "FEM-I", "SHORT BREAK", "EC", "FEM-I", "LUNCH BREAK", "EG", "UHV", "FE Mentoring Slot"],
-  THR: ["Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "SHORT BREAK", "CP", "EC", "LUNCH BREAK", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "Extra Lecture Slot 3"],
-  FRI: ["Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "CP", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Remedial Lecture"]
+  THR: ["Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "SHORT BREAK", "CP", "EC", "LUNCH BREAK", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Extra Lecture Slot 3"],
+  FRI: ["Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "CP", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Remedial Lecture"]
 };
 
 const COMP3_EVEN = {
-  MON: ["BE&DE", "EG", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "BE&DE", "FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "Remedial Lecture"],
-  TUE: ["Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "SHORT BREAK", "FEM-I", "AP", "LUNCH BREAK", "EG", "UHV", "Extra Lecture Slot 1"],
-  WED: ["BE&DE", "FEM-I", "SHORT BREAK", "EC", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "LUNCH BREAK", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "FE Mentoring Slot"],
-  THR: ["AP", "FEM-I", "SHORT BREAK", "BE&DE", "EG", "LUNCH BREAK", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "Extra Lecture Slot 2"],
+  MON: ["BEDE", "EG", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "BEDE", "FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "Remedial Lecture"],
+  TUE: ["Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "SHORT BREAK", "FEM-I", "AP", "LUNCH BREAK", "EG", "UHV", "Extra Lecture Slot 1"],
+  WED: ["BEDE", "FEM-I", "SHORT BREAK", "EC", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "LUNCH BREAK", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "FE Mentoring Slot"],
+  THR: ["AP", "FEM-I", "SHORT BREAK", "BEDE", "EG", "LUNCH BREAK", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Extra Lecture Slot 2"],
   FRI: ["FEM-I", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "UHV", "EC", "LUNCH BREAK", "CP", "CP", "Extra Lecture Slot 3"]
 };
 
 const IT_ODD = {
   MON: ["CP", "CP", "SHORT BREAK", "FEM-I", "FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "LUNCH BREAK", "AP", "EG", "Remedial Lecture"],
-  TUE: ["EC", "FEM-I", "SHORT BREAK", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "LUNCH BREAK", "BE&DE", "UHV", "FE Mentoring Slot"],
-  WED: ["FEM-I", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "SHORT BREAK", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "LUNCH BREAK", "EC", "AP", "UHV"],
-  THR: ["EG", "BE&DE", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "FEM-I", "EC", "Extra Lecture Slot 1"],
-  FRI: ["BE&DE", "AP", "SHORT BREAK", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "BE&DE", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Extra Lecture Slot 2"]
+  TUE: ["EC", "FEM-I", "SHORT BREAK", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "LUNCH BREAK", "BEDE", "UHV", "FE Mentoring Slot"],
+  WED: ["FEM-I", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "SHORT BREAK", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "LUNCH BREAK", "EC", "AP", "UHV"],
+  THR: ["EG", "BEDE", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "FEM-I", "EC", "Extra Lecture Slot 1"],
+  FRI: ["BEDE", "AP", "SHORT BREAK", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "BEDE", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Extra Lecture Slot 2"]
 };
 
 const IT_EVEN = {
   MON: ["CP", "CP", "SHORT BREAK", "FEM-I", "FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "LUNCH BREAK", "AP", "EG", "Remedial Lecture"],
-  TUE: ["EC", "FEM-I", "SHORT BREAK", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "Lab CP (A) / Lab EG (B) / Lab BE&DE (C)", "LUNCH BREAK", "BE&DE", "UHV", "FE Mentoring Slot"],
-  WED: ["FEM-I", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "SHORT BREAK", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "Lab EG (A) / Lab BE&DE (B) / Lab CP (C)", "LUNCH BREAK", "AP", "UHV", "Extra Lecture Slot 1"],
-  THR: ["EG", "BE&DE", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "FEM-I", "EC", "Extra Lecture Slot 2"],
-  FRI: ["BE&DE", "EG", "SHORT BREAK", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "Lab BE&DE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "BE&DE", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Extra Lecture Slot 3"]
+  TUE: ["EC", "FEM-I", "SHORT BREAK", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "LUNCH BREAK", "BEDE", "UHV", "FE Mentoring Slot"],
+  WED: ["FEM-I", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "SHORT BREAK", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "LUNCH BREAK", "AP", "UHV", "Extra Lecture Slot 1"],
+  THR: ["EG", "BEDE", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "FEM-I", "EC", "Extra Lecture Slot 2"],
+  FRI: ["BEDE", "EG", "SHORT BREAK", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "BEDE", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Extra Lecture Slot 3"]
+};
+
+const COMP1_EVEN = {
+  MON: ["AP", "FEM-I", "EG", "SHORT BREAK", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Remedial Lecture"],
+  TUE: ["bede", "FEM-I", "EG", "EC", "SHORT BREAK", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "UHV", "LUNCH BREAK", "FE Mentoring Slot"],
+  WED: ["CP", "AP", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Extra Lecture Slot 1"],
+  THR: ["bede", "bede", "SHORT BREAK", "bede", "FEM-I", "LUNCH BREAK", "EC", "UHV", "Extra Lecture Slot 2"],
+  FRI: ["bede", "FEM-I", "SHORT BREAK", "EG", "bede", "LUNCH BREAK", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "Extra Lecture Slot 3"]
+};
+
+const COMP2_EVEN = {
+  MON: ["bede", "AP", "SHORT BREAK", "bede", "FEM-I", "LUNCH BREAK", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Extra Lecture Slot 1"],
+  TUE: ["bede", "FEM-I", "EG", "AP", "SHORT BREAK", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "UHV", "LUNCH BREAK", "FE Mentoring Slot"],
+  WED: ["CP", "EC", "SHORT BREAK", "bede", "EC", "LUNCH BREAK", "UHV", "FEM-I", "Extra Lecture Slot 1"],
+  THR: ["bede", "FEM-I", "SHORT BREAK", "AP", "CP", "LUNCH BREAK", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Lab AP (A) / Lab EC (B) / Lab EC (C)", "Extra Lecture Slot 2"],
+  FRI: ["EG", "bede", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Extra Lecture Slot 3"]
+};
+
+const EXTC_EVEN = {
+  MON: ["bede", "bede", "SHORT BREAK", "bede", "AP", "LUNCH BREAK", "UHV", "EG", "Extra Lecture Slot 1"],
+  TUE: ["EC", "FEM-I", "SHORT BREAK", "Lab CP (A) / Lab BEDE (B) / Lab EG (C)", "Lab CP (A) / Lab BEDE (B) / Lab EG (C)", "LUNCH BREAK", "AP", "UHV", "FE Mentoring Slot"],
+  WED: ["FEM-I", "AP", "SHORT BREAK", "Lab BEDE (A) / Lab EG (B) / Lab CP (C)", "Lab BEDE (A) / Lab EG (B) / Lab CP (C)", "LUNCH BREAK", "CP", "EG", "Extra Lecture Slot 2"],
+  THR: ["bede", "EC", "SHORT BREAK", "bede", "AP", "LUNCH BREAK", "EG", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Remedial Lecture"],
+  FRI: ["bede", "bede", "SHORT BREAK", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Extra Lecture Slot 3"]
 };
 
 const TIMETABLES_DB = {
-  "Computer Engineering": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
-  "Computer Engineering - Div I": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
-  "Computer Engineering - Div II": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
+  "Computer Engineering - Div I": { EVEN: COMP1_EVEN, ODD: DEFAULT_ODD },
+  "Computer Engineering - Div II": { EVEN: COMP2_EVEN, ODD: DEFAULT_ODD },
   "Computer Engineering - Div III": { EVEN: COMP3_EVEN, ODD: COMP3_EVEN },
   "Mechanical Engineering": { EVEN: MECH_EVEN, ODD: MECH_ODD },
   "Information Technology": { EVEN: IT_EVEN, ODD: IT_ODD },
-  "Electronics and Telecommunication": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
+  "Electronics and Telecommunication": { EVEN: EXTC_EVEN, ODD: DEFAULT_ODD },
   "Basic Sciences and Humanities": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD }
 };
 
@@ -618,7 +677,7 @@ const SEMESTER_DATA = {
     { code: "25FE1BSC02", short: "AP", name: "Applied Physics", credits: 3, imp: 3, total: 35 },
     { code: "25FE1BSC03", short: "EC", name: "Engineering Chemistry", credits: 3, imp: 3, total: 35 },
     { code: "25FE1ESC01", short: "EG", name: "Engineering Graphics", credits: 3, imp: 2, total: 30 },
-    { code: "25FE1ESC02", short: "BE&DE", name: "Basic Electrical and Digital Electronics", credits: 3, imp: 2, total: 35 },
+    { code: "25FE1ESC02", short: "bede", name: "Basic Electrical and Digital Electronics", credits: 3, imp: 2, total: 35 },
     { code: "25FE1VSEC01", short: "WS-I", name: "Workshop - 1", credits: 2, imp: 2, total: 20 },
     { code: "25FE1VSEC02", short: "CP", name: "Problem Solving using C programming", credits: 2, imp: 3, total: 30 },
     { code: "25FE1VEC01", short: "UHV", name: "Universal Human Values", credits: 2, imp: 1, total: 20 }
@@ -632,123 +691,6 @@ let ttWeekTab = "Odd";
 let ttViewMode = window.innerWidth < 768 ? "cards" : "grid";
 let ttSelectedDay = "MON";
 let livePollTimer = null;
-let lastSyncedTimestamp = 0;
-
-async function saltedHash(str) {
-  const data = new TextEncoder().encode(`${AUTH_PEPPER}:${str.trim()}`);
-  const buf = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-window.forceLogout = function() {
-  if (livePollTimer) { clearInterval(livePollTimer); livePollTimer = null; }
-  localStorage.removeItem("att_remembered_user_v9");
-  currentUser = null;
-  const pp = document.getElementById("power-panel");
-  if (pp) pp.classList.add("hidden");
-  const ihm = document.getElementById("inspector-personal-holiday-mount");
-  if (ihm) ihm.innerHTML = "";
-  setSyncPill("Connecting to Cloud...", true);
-  document.getElementById("app-view").classList.add("hidden");
-  document.getElementById("login-view").classList.remove("hidden");
-};
-
-window.universalDeclareHoliday = function(isoDate, customReason) {
-  if (!isoDate || !currentUser) return;
-  const reason = escapeHTML((customReason || "Declared Holiday").trim());
-  if (!currentUser.customHolidays) currentUser.customHolidays = {};
-  if (!currentUser.removedHolidays) currentUser.removedHolidays = {};
-  currentUser.customHolidays[isoDate] = reason;
-  delete currentUser.removedHolidays[isoDate];
-  purgeNonInstructionalDates(currentUser);
-  persistCurrentUser();
-  const statusEl = document.getElementById("personal-holiday-status");
-  if (statusEl) statusEl.textContent = `Declared ${isoDate} (${reason}) as a holiday on your calendar!`;
-  renderAll();
-};
-
-window.universalRemoveHoliday = function(isoDate) {
-  if (!isoDate || !currentUser) return;
-  if (!currentUser.customHolidays) currentUser.customHolidays = {};
-  if (!currentUser.removedHolidays) currentUser.removedHolidays = {};
-  delete currentUser.customHolidays[isoDate];
-  if (BASE_HOLIDAYS[isoDate]) {
-    currentUser.removedHolidays[isoDate] = true;
-  }
-  purgeNonInstructionalDates(currentUser);
-  persistCurrentUser();
-  const statusEl = document.getElementById("personal-holiday-status");
-  if (statusEl) statusEl.textContent = `Removed holiday status for ${isoDate} (now a normal working day).`;
-  renderAll();
-};
-
-function populatePersonalPanel() {
-  const sel = document.getElementById("personal-course-select");
-  if (!sel) return;
-  sel.innerHTML = "";
-  SEMESTER_DATA[currentSem].forEach(c => {
-    const opt = document.createElement("option");
-    opt.value = c.code;
-    opt.textContent = `${c.short} - ${c.name} (${c.code})`;
-    sel.appendChild(opt);
-  });
-  renderPersonalCustomHolidaysBadges();
-}
-
-function renderPersonalCustomHolidaysBadges() {
-  const el = document.getElementById("personal-custom-holidays-list");
-  if (!el) return;
-  const custom = currentUser?.customHolidays || {};
-  const entries = Object.entries(custom).sort(([a], [b]) => a.localeCompare(b));
-  if (!entries.length) {
-    el.innerHTML = `<span class="text-slate-500">11 Nov 2026 is built-in. Click any date on the calendar below or pick a date above to add more!</span>`;
-    return;
-  }
-  el.innerHTML = entries.map(([iso, reason]) => `
-    <span class="inline-flex items-center gap-1.5 bg-red-950/80 border border-red-500/50 text-red-200 px-2.5 py-1 rounded-lg font-bold">
-      ${escapeHTML(iso)}: ${escapeHTML(reason)}
-      <button type="button" onclick="window.universalRemoveHoliday('${escapeHTML(iso)}')" class="text-red-400 hover:text-white ml-1 font-black">&times;</button>
-    </span>
-  `).join("");
-}
-
-function getHolidayName(isoDate) {
-  if (currentUser) {
-    if (currentUser.removedHolidays && currentUser.removedHolidays[isoDate]) return null;
-    if (currentUser.customHolidays && currentUser.customHolidays[isoDate]) return currentUser.customHolidays[isoDate];
-  }
-  return BASE_HOLIDAYS[isoDate] || null;
-}
-
-async function getCloudUserNodeHash(email, passwordHash) {
-  return saltedHash(`NODE:${email.toLowerCase()}:${passwordHash}`);
-}
-
-async function deriveAESKey(email, passwordHash) {
-  const enc = new TextEncoder();
-  const baseKey = await crypto.subtle.importKey("raw", enc.encode(`${email.toLowerCase()}::${passwordHash}`), { name: "PBKDF2" }, false, ["deriveKey"]);
-  return crypto.subtle.deriveKey(
-    { name: "PBKDF2", salt: enc.encode("DBIT_ATT_E2EE_SALT_2026"), iterations: 100000, hash: "SHA-256" },
-    baseKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
-  );
-}
-
-async function encryptProfileData(profileObj, email, passwordHash) {
-  const key = await deriveAESKey(email, passwordHash);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encoded = new TextEncoder().encode(JSON.stringify(profileObj));
-  const cipherBuf = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
-  return { iv: btoa(String.fromCharCode(...iv)), ct: btoa(String.fromCharCode(...new Uint8Array(cipherBuf))), updatedAt: profileObj.updatedAt || Date.now() };
-}
-
-async function decryptProfileData(encRecord, email, passwordHash) {
-  if (!encRecord || !encRecord.iv || !encRecord.ct) return null;
-  const key = await deriveAESKey(email, passwordHash);
-  const iv = Uint8Array.from(atob(encRecord.iv), c => c.charCodeAt(0));
-  const ct = Uint8Array.from(atob(encRecord.ct), c => c.charCodeAt(0));
-  const plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
-  return JSON.parse(new TextDecoder().decode(plainBuf));
-}
 
 function setSyncPill(text, isOnline = true) {
   const pill = document.getElementById("sync-status-pill");
@@ -759,75 +701,30 @@ function setSyncPill(text, isOnline = true) {
     : "text-[11px] font-extrabold px-3 py-1 rounded-full bg-amber-950 text-amber-300 border border-amber-500/40 cursor-pointer active:scale-95 transition";
 }
 
-async function pushToFirebaseSilent() {
-  if (!currentUser || !currentUser.email || !currentUser.passwordHash) return false;
+async function pushToFirebase() {
+  if (!currentUser || !currentUser.uid) return;
   try {
     currentUser.updatedAt = Date.now();
-    lastSyncedTimestamp = currentUser.updatedAt;
-    const nodeHash = await getCloudUserNodeHash(currentUser.email, currentUser.passwordHash);
-    const encryptedPayload = await encryptProfileData(currentUser, currentUser.email, currentUser.passwordHash);
-    const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json`, {
-      method: "PUT", headers: { "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify(encryptedPayload)
-    }).catch(() => null);
-    if (res && res.ok) {
-      setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
-      return true;
-    } else {
-      setSyncPill("Local Saved (Cloud Offline)", false);
-      return false;
-    }
+    await db.ref("users/" + currentUser.uid).set(currentUser);
+    setSyncPill("Google Cloud Synced", true);
   } catch (e) {
-    setSyncPill("Local Saved (Cloud Offline)", false);
-    return false;
+    setSyncPill("Offline Mode", false);
   }
 }
 
-async function pullFromFirebaseSilent(email, passwordHash) {
-  if (!email || !passwordHash) return null;
-  try {
-    const nodeHash = await getCloudUserNodeHash(email, passwordHash);
-    const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json?t=${Date.now()}`, { cache: "no-store" }).catch(() => null);
-    if (!res || !res.ok) return null;
-    const raw = await res.json();
-    if (!raw || !raw.ct) return null;
-    const decrypted = await decryptProfileData(raw, email, passwordHash);
-    setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
-    return decrypted;
-  } catch (e) { return null; }
+function startRealtimeSync(uid) {
+  if (livePollTimer) clearInterval(livePollTimer);
+  db.ref("users/" + uid).on("value", (snapshot) => {
+    const remoteVal = snapshot.val();
+    if (remoteVal && remoteVal.updatedAt && currentUser && remoteVal.updatedAt > (currentUser.updatedAt || 0)) {
+      currentUser = remoteVal;
+      currentUser.branch = normalizeBranchName(currentUser.branch);
+      purgeNonInstructionalDates(currentUser);
+      renderAll();
+      setSyncPill("Google Cloud Synced", true);
+    }
+  });
 }
-
-function startRealtimeCloudListener() {
-  if (livePollTimer) { clearInterval(livePollTimer); livePollTimer = null; }
-  if (!currentUser || !currentUser.email || !currentUser.passwordHash) return;
-  livePollTimer = setInterval(async () => {
-    if (document.visibilityState !== "visible" || !currentUser || !currentUser.passwordHash) return;
-    try {
-      const nodeHash = await getCloudUserNodeHash(currentUser.email, currentUser.passwordHash);
-      const res = await fetch(`${_getCloudEndpoint()}/users/${nodeHash}.json?t=${Date.now()}`, { cache: "no-store" }).catch(() => null);
-      if (!res || !res.ok) return;
-      const raw = await res.json();
-      if (!raw || !raw.ct) return;
-      const remoteTime = raw.updatedAt || 0;
-      const localTime = currentUser.updatedAt || 0;
-      if (remoteTime > localTime && remoteTime > lastSyncedTimestamp) {
-        const decrypted = await decryptProfileData(raw, currentUser.email, currentUser.passwordHash);
-        if (decrypted && decrypted.semData) {
-          lastSyncedTimestamp = remoteTime;
-          currentUser = decrypted;
-          currentUser.branch = normalizeBranchName(currentUser.branch);
-          purgeNonInstructionalDates(currentUser);
-          const db = getAllUsersDB();
-          db[currentUser.email] = currentUser;
-          saveAllUsersDB(db);
-          renderAll();
-          setSyncPill("Live Cloud Synced (E2E Encrypted)", true);
-        }
-      }
-    } catch (e) {}
-  }, 4000);
-}
-
-window.addEventListener("online", () => { if (currentUser) pushToFirebaseSilent(); });
 
 function isBeforeTermStart(isoDate) { return currentSem === "Semester I" && isoDate < SEM1_START_DATE; }
 function isAfterTermEnd(isoDate) { return currentSem === "Semester I" && isoDate > SEM1_END_DATE; }
@@ -838,6 +735,19 @@ function getExamPeriodInfo(isoDate) {
   }
   return null;
 }
+function getBranchOverrides(isoDate, branch) {
+  // Can be expanded with date_overrides from firebase
+  return null;
+}
+
+function getHolidayName(isoDate) {
+  if (currentUser) {
+    if (currentUser.removedHolidays && currentUser.removedHolidays[isoDate]) return null;
+    if (currentUser.customHolidays && currentUser.customHolidays[isoDate]) return currentUser.customHolidays[isoDate];
+  }
+  return BASE_HOLIDAYS[isoDate] || null;
+}
+
 function isNonInstructionalDay(isoDate) {
   return (
     isBeforeTermStart(isoDate) || isAfterTermEnd(isoDate) ||
@@ -863,7 +773,6 @@ function computeSem1WorkingDaysSummary() {
   return { totalWorkingDays, completedWorkingDays, remainingWorkingDays };
 }
 
-// NEW: Dynamically computes exact number of timetable lecture units conducted from Sem Start up to Today!
 function computeLecturesHeldTillToday(sem) {
   const heldByShort = {};
   const courses = SEMESTER_DATA[sem] || [];
@@ -886,7 +795,6 @@ function computeLecturesHeldTillToday(sem) {
     const { isOff, units } = getMergedDaySlots(iso, sem);
     if (isOff) continue;
     units.forEach(u => {
-      // Count regular scheduled timetable units (custom 4-5 PM extra slots are tracked in calExtraAttended/Missed)
       if (u.short && !u.isCustomExtra) {
         heldByShort[u.short] = (heldByShort[u.short] || 0) + 1;
       }
@@ -894,9 +802,6 @@ function computeLecturesHeldTillToday(sem) {
   }
   return heldByShort;
 }
-
-function getAllUsersDB() { try { return JSON.parse(localStorage.getItem("att_users_db_v9") || "{}"); } catch { return {}; } }
-function saveAllUsersDB(db) { localStorage.setItem("att_users_db_v9", JSON.stringify(db)); }
 
 function purgeNonInstructionalDates(user) {
   if (!user) return;
@@ -1030,10 +935,7 @@ function persistCurrentUser() {
   if (!currentUser) return;
   purgeNonInstructionalDates(currentUser);
   currentUser.updatedAt = Date.now();
-  const db = getAllUsersDB();
-  db[currentUser.email] = currentUser;
-  saveAllUsersDB(db);
-  pushToFirebaseSilent();
+  pushToFirebase();
 }
 
 function getComputedStats() {
@@ -1062,11 +964,9 @@ function getComputedStats() {
     const totalExtraAttended = calExtraAttended + manualExtraAttended + addedExtra;
     const totalExtraMissed = calExtraMissed + manualExtraMissed;
 
-    // Base lectures conducted till today from the timetable (plus any extra lectures conducted)
     const baseHeldTillToday = heldTillTodayByShort[c.short] || 0;
     const rawUnattended = calMissed + manualMissed + totalExtraMissed;
 
-    // Lectures Held Till Today (expands if user manually entered more missed lectures than scheduled so far)
     const heldTillToday = Math.max(baseHeldTillToday + totalExtraAttended + totalExtraMissed, rawUnattended);
     const unattended = Math.min(heldTillToday, rawUnattended);
 
@@ -1083,7 +983,7 @@ function getComputedStats() {
     const item = {
       ...c,
       imp: rec.imp || c.imp,
-      semTotal: c.total, // Kept for display only! Not used in calculation
+      semTotal: c.total,
       heldTillToday,
       dynamicTotal: heldTillToday,
       unattended,
@@ -1120,6 +1020,13 @@ function updateHeaderMeta() {
   document.getElementById("dash-branch").value = currentUser.branch;
   document.getElementById("dash-batch").value = currentUser.batch;
   document.getElementById("custom-target-input").value = currentUser.targetPct || 75;
+
+  // Show Super Admin Panel button if owner
+  if (currentUser.email === SUPER_ADMIN_EMAIL) {
+    document.getElementById("btn-toggle-admin-panel").classList.remove("hidden");
+  } else {
+    document.getElementById("btn-toggle-admin-panel").classList.add("hidden");
+  }
 }
 
 function enterDashboard() {
@@ -1127,6 +1034,7 @@ function enterDashboard() {
   document.getElementById("login-view").classList.add("hidden");
   document.getElementById("app-view").classList.remove("hidden");
   updateHeaderMeta();
+  updateUndoButtonVisibility();
   populatePersonalPanel();
   syncTimetableToDate(selectedCalDate);
   loadSavedTimetableImage();
@@ -1136,6 +1044,7 @@ function enterDashboard() {
 function renderAll() {
   if (!currentUser) return;
   updateHeaderMeta();
+  updateUndoButtonVisibility();
   const { list, statsMap, targetPct } = getComputedStats();
   const wdBar = document.getElementById("term-working-days-bar");
   if (currentSem === "Semester I") {
@@ -1335,7 +1244,6 @@ function renderCalendarGrid() {
     const extraSlot7 = (isPreTerm || isPostTerm || isHoliday || examInfo) ? "" : (currentUser.slot7Map[iso] || "");
     const isSelected = iso === selectedCalDate;
 
-    // Default for upcoming working days (iso > todayIso): Marked as BLUE ('EVEN' / 'ODD')
     let bg = "bg-blue-600 text-white border-blue-400";
     let sub = getWeekType(iso).split(" ")[0].toUpperCase();
 
@@ -1347,7 +1255,6 @@ function renderCalendarGrid() {
     else if (bunkVal) { bg = "bg-amber-400 text-slate-950 border-amber-200"; sub = escapeHTML(bunkVal); }
     else if (iso <= todayIso) { bg = "bg-emerald-600 text-white border-emerald-400"; sub = extraSlot7 ? `+${escapeHTML(extraSlot7)}` : "ATT"; }
     else {
-      // Future working days (iso > todayIso) stay strictly BLUE
       bg = "bg-blue-600 text-white border-blue-400";
       sub = extraSlot7 ? `+${escapeHTML(extraSlot7)}` : getWeekType(iso).split(" ")[0].toUpperCase();
     }
@@ -1647,7 +1554,7 @@ function renderTimetableSection(statsMap, targetPct) {
 
       const bulkTag = rSpan > 1 ? `<div class="text-[10px] text-sky-300 font-black">[1 Combined Bulk Unit (${rSpan} Hrs)]</div>` : "";
       const labTag = isLab ? `<div class="mt-1.5"><span class="batch-badge">YOUR ${escapeHTML((currentUser?.batch || "Batch A").toUpperCase())} LAB</span></div>` : "";
-      tableHtml += `<td class="${cls}" ${rSpan > 1 ? `rowspan="${rSpan}"` : ""}><div>${escapeHTML(text)}</div>${bulkTag}${labTag}${sub}</td>`;
+      tableHtml += `<td class="${cls}" ${rSpan > 1 ? `rowspan="${rSpan}"` : ""}><div><div>${escapeHTML(text)}</div>${bulkTag}${labTag}${sub}</div></td>`;
     });
     tableHtml += `</tr>`;
   });
@@ -1705,6 +1612,7 @@ function loadSavedTimetableImage() {
   }
 }
 
+// GOOGLE OAUTH LOGIN LISTENER
 window.addEventListener("DOMContentLoaded", async () => {
   const semSel = document.getElementById("dash-semester");
   Object.keys(SEMESTER_DATA).forEach(s => {
@@ -1718,7 +1626,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   setupEventListeners();
 
-  // Automatic daily rollover check: refreshes calculation if the date changes while the tab is open
   let lastCheckedDay = getTodayIsoLocal();
   setInterval(() => {
     const nowDay = getTodayIsoLocal();
@@ -1728,95 +1635,64 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   }, 60000);
 
-  const rememberedEmail = localStorage.getItem("att_remembered_user_v9");
-  const db = getAllUsersDB();
-  if (rememberedEmail && db[rememberedEmail] && db[rememberedEmail].passwordHash) {
-    currentUser = db[rememberedEmail];
-    currentUser.branch = normalizeBranchName(currentUser.branch);
-    purgeNonInstructionalDates(currentUser);
-    enterDashboard();
+  // Auth State Observer
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      const email = user.email.toLowerCase();
+      const name = user.displayName || email.split("@")[0];
+      const uid = user.uid;
 
-    const remote = await pullFromFirebaseSilent(currentUser.email, currentUser.passwordHash);
-    if (remote && remote.semData) {
-      if ((remote.updatedAt || 0) >= (currentUser.updatedAt || 0)) {
-        currentUser = remote;
-        currentUser.branch = normalizeBranchName(currentUser.branch);
-        purgeNonInstructionalDates(currentUser);
-        db[currentUser.email] = currentUser;
-        saveAllUsersDB(db);
-        renderAll();
-      } else await pushToFirebaseSilent();
-    } else await pushToFirebaseSilent();
-    startRealtimeCloudListener();
-  } else {
-    document.getElementById("login-view").classList.remove("hidden");
-  }
+      const ref = db.ref("users/" + uid);
+      const snapshot = await ref.once("value");
+      let userData = snapshot.val();
+
+      if (!userData || !userData.semData) {
+        const branch = normalizeBranchName(document.getElementById("reg-branch").value);
+        const batch = document.getElementById("reg-batch").value;
+        userData = {
+          uid,
+          email,
+          name,
+          branch,
+          batch,
+          targetPct: 75,
+          semData: {},
+          dailyLogs: {},
+          dailyTicks: {},
+          slot7Map: {},
+          customHolidays: {},
+          removedHolidays: {},
+          globalExtras: {},
+          updatedAt: Date.now()
+        };
+      } else {
+        userData.branch = normalizeBranchName(userData.branch);
+      }
+
+      currentUser = userData;
+      ensureUserSemData(currentUser);
+      await ref.set(currentUser);
+      startRealtimeSync(uid);
+      enterDashboard();
+    } else {
+      document.getElementById("login-view").classList.remove("hidden");
+      document.getElementById("app-view").classList.add("hidden");
+    }
+  });
 });
 
 function setupEventListeners() {
-  document.getElementById("btn-toggle-login-pw")?.addEventListener("click", () => {
-    const inp = document.getElementById("login-password");
-    if (inp.type === "password") { inp.type = "text"; document.getElementById("btn-toggle-login-pw").textContent = "Hide"; }
-    else { inp.type = "password"; document.getElementById("btn-toggle-login-pw").textContent = "Show"; }
-  });
-
-  document.getElementById("login-form")?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const errEl = document.getElementById("login-error");
-    const submitBtn = document.getElementById("btn-login-submit");
-    errEl.classList.add("hidden");
-
-    const email = document.getElementById("login-email").value.trim().toLowerCase();
-    const pw = document.getElementById("login-password").value.trim();
-    const name = escapeHTML(document.getElementById("login-name").value.trim());
-    const branch = normalizeBranchName(document.getElementById("login-branch").value);
-    const batch = document.getElementById("login-batch").value;
-    const remember = document.getElementById("login-remember").checked;
-
-    if (!email.endsWith("@gmail.com") || email.length > 80) {
-      errEl.textContent = "Please enter a valid @gmail.com address."; errEl.classList.remove("hidden"); return;
-    }
-
-    const pwDigest = await saltedHash(pw);
-    submitBtn.textContent = "Decrypting & Syncing Cloud Profile...";
-    const db = getAllUsersDB();
-    let candidateUser = null;
-
-    const cloudProfile = await pullFromFirebaseSilent(email, pwDigest);
-    if (cloudProfile && cloudProfile.semData) {
-      candidateUser = cloudProfile;
-      candidateUser.passwordHash = pwDigest;
-      candidateUser.branch = branch;
-      candidateUser.batch = batch;
-      if (name) candidateUser.name = name;
-    } else if (db[email]) {
-      if (db[email].passwordHash && db[email].passwordHash !== pwDigest) {
-        submitBtn.textContent = "Login / Register & Enter Dashboard";
-        errEl.textContent = "Incorrect password for this account."; errEl.classList.remove("hidden"); return;
+  document.getElementById("btn-google-login")?.addEventListener("click", async () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try {
+      await auth.signInWithPopup(provider);
+    } catch (e) {
+      const errEl = document.getElementById("login-error");
+      if (errEl) {
+        errEl.textContent = "Google Sign-In failed: " + e.message;
+        errEl.classList.remove("hidden");
       }
-      candidateUser = db[email];
-      candidateUser.passwordHash = pwDigest;
-      candidateUser.branch = branch;
-      candidateUser.batch = batch;
-      if (name) candidateUser.name = name;
-    } else {
-      if (!name) {
-        submitBtn.textContent = "Login / Register & Enter Dashboard";
-        errEl.textContent = "Please enter your Full Name for first-time registration."; errEl.classList.remove("hidden"); return;
-      }
-      candidateUser = { email, name, branch, batch, passwordHash: pwDigest, targetPct: 75, semData: {}, dailyLogs: {}, dailyTicks: {}, slot7Map: {}, customHolidays: {}, removedHolidays: {}, globalExtras: {}, updatedAt: Date.now() };
     }
-
-    ensureUserSemData(candidateUser);
-    submitBtn.textContent = "Login / Register & Enter Dashboard";
-    currentUser = candidateUser;
-    currentUser.lastLogin = new Date().toLocaleString("en-IN");
-    persistCurrentUser();
-    startRealtimeCloudListener();
-
-    if (remember) localStorage.setItem("att_remembered_user_v9", email);
-    else localStorage.removeItem("att_remembered_user_v9");
-    enterDashboard();
   });
 
   document.getElementById("cal-month-select")?.addEventListener("change", (e) => {
@@ -1850,9 +1726,49 @@ function setupEventListeners() {
     renderAll();
   });
 
+  // Reset Missed to 0 with Confirmation + Undo Backup
   document.getElementById("btn-reset-sem")?.addEventListener("click", () => {
-    SEMESTER_DATA[currentSem].forEach(c => { currentUser.semData[currentSem][c.code] = { unattended: 0, extra: 0, manualUnattended: 0, manualExtra: 0, imp: c.imp }; });
-    currentUser.dailyLogs = {}; currentUser.dailyTicks = {}; currentUser.slot7Map = {}; persistCurrentUser(); renderAll();
+    if (!currentUser) return;
+    if (!confirm("Are you sure you want to reset all missed lectures and calendar ticks to 0? You can undo this immediately if needed.")) {
+      return;
+    }
+    try {
+      const snapshot = {
+        email: currentUser.email,
+        sem: currentSem,
+        semData: JSON.parse(JSON.stringify(currentUser.semData[currentSem] || {})),
+        dailyLogs: JSON.parse(JSON.stringify(currentUser.dailyLogs || {})),
+        dailyTicks: JSON.parse(JSON.stringify(currentUser.dailyTicks || {})),
+        slot7Map: JSON.parse(JSON.stringify(currentUser.slot7Map || {}))
+      };
+      localStorage.setItem(UNDO_BACKUP_KEY, JSON.stringify(snapshot));
+    } catch (e) {}
+
+    SEMESTER_DATA[currentSem].forEach(c => {
+      currentUser.semData[currentSem][c.code] = { unattended: 0, extra: 0, manualUnattended: 0, manualExtra: 0, imp: c.imp };
+    });
+    currentUser.dailyLogs = {};
+    currentUser.dailyTicks = {};
+    currentUser.slot7Map = {};
+    persistCurrentUser();
+    renderAll();
+  });
+
+  document.getElementById("btn-undo-reset")?.addEventListener("click", () => {
+    if (!currentUser) return;
+    try {
+      const raw = localStorage.getItem(UNDO_BACKUP_KEY);
+      if (!raw) { alert("No recent reset backup found to undo."); return; }
+      const snapshot = JSON.parse(raw);
+      if (snapshot.email !== currentUser.email) { alert("Backup belongs to a different account."); return; }
+      currentUser.semData[snapshot.sem] = snapshot.semData;
+      currentUser.dailyLogs = snapshot.dailyLogs || {};
+      currentUser.dailyTicks = snapshot.dailyTicks || {};
+      currentUser.slot7Map = snapshot.slot7Map || {};
+      localStorage.removeItem(UNDO_BACKUP_KEY);
+      persistCurrentUser();
+      renderAll();
+    } catch (e) { alert("Could not restore backup."); }
   });
 
   document.querySelectorAll(".target-pill").forEach(btn => {
@@ -1868,6 +1784,38 @@ function setupEventListeners() {
     if (!panel) return;
     panel.classList.toggle("hidden");
     if (!panel.classList.contains("hidden")) panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+
+  document.getElementById("btn-toggle-admin-panel")?.addEventListener("click", () => {
+    const panel = document.getElementById("super-admin-panel");
+    if (!panel) return;
+    panel.classList.toggle("hidden");
+    if (!panel.classList.contains("hidden")) panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+
+  document.getElementById("btn-save-admin-role")?.addEventListener("click", async () => {
+    const email = document.getElementById("admin-assign-email").value.trim().toLowerCase();
+    const branch = document.getElementById("admin-assign-branch").value;
+    if (!email) { alert("Enter a valid email address."); return; }
+    try {
+      await db.ref("admins/" + btoa(email).replace(/=/g, "")).set({ email, branch });
+      document.getElementById("admin-assign-status").textContent = `Successfully assigned ${branch} admin rights to ${email}!`;
+    } catch (e) {
+      alert("Failed to save admin role: " + e.message);
+    }
+  });
+
+  document.getElementById("btn-save-date-override")?.addEventListener("click", async () => {
+    const dt = document.getElementById("override-date").value;
+    const branch = document.getElementById("override-branch").value;
+    const desc = document.getElementById("override-slots-json").value.trim();
+    if (!dt || !desc) { alert("Please fill in both date and override details."); return; }
+    try {
+      await db.ref(`branch_overrides/${btoa(branch).replace(/=/g, "")}/${dt}`).set({ description: desc, updatedAt: Date.now() });
+      alert(`Date override published successfully for ${branch} on ${dt}!`);
+    } catch (e) {
+      alert("Failed to publish override: " + e.message);
+    }
   });
 
   document.getElementById("btn-personal-add-holiday")?.addEventListener("click", () => {
