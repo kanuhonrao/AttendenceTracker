@@ -96,7 +96,7 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between pb-12">
 
-  <!-- GOOGLE OAUTH LOGIN VIEW (Visible by default until Auth state resolves) -->
+  <!-- GOOGLE OAUTH LOGIN VIEW -->
   <div id="login-view" class="max-w-md w-full mx-auto px-4 pt-10 sm:pt-16">
     <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-2xl text-center space-y-6">
       <div>
@@ -161,6 +161,12 @@
 
           <button id="btn-toggle-admin-panel" type="button" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-black px-3.5 py-2 rounded-xl shadow-lg transition">
             &#128273; Admin Panel
+          </button>
+
+          <!-- NEW: RECOVER OLD PASSWORD DATA BUTTON -->
+          <button id="btn-recover-legacy" type="button"
+            class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black px-3.5 py-2 rounded-xl shadow-lg border border-emerald-400 transition active:scale-95">
+            &#128260; Recover Old Data
           </button>
 
           <select id="dash-branch" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white">
@@ -577,6 +583,7 @@ const EXAM_PERIODS = [
 
 const SUPER_ADMIN_EMAIL = "honraokanishka@gmail.com";
 const UNDO_BACKUP_KEY = "att_undo_reset_backup_v1";
+const LEGACY_PEPPER = "ATT_V9_PEPPER_2026";
 
 const TIME_SLOTS = [
   "1 (9:00 - 10:00)", "2 (10:00 - 11:00)", "Short Break (11:00 - 11:15)",
@@ -715,6 +722,67 @@ let ttSelectedDay = "MON";
 let globalHolidaysCache = {};
 let branchOverridesCache = {};
 let adminsCache = {};
+
+// Legacy Decryption Helpers for "Recover Old Data" Button
+async function legacySaltedHash(str) {
+  const data = new TextEncoder().encode(`${LEGACY_PEPPER}:${str.trim()}`);
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function legacyDeriveAESKey(email, passwordHash) {
+  const enc = new TextEncoder();
+  const baseKey = await crypto.subtle.importKey("raw", enc.encode(`${email.toLowerCase()}::${passwordHash}`), { name: "PBKDF2" }, false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt: enc.encode("DBIT_ATT_E2EE_SALT_2026"), iterations: 100000, hash: "SHA-256" },
+    baseKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+  );
+}
+
+async function legacyDecryptProfile(encRecord, email, passwordHash) {
+  if (!encRecord || !encRecord.iv || !encRecord.ct) return null;
+  const key = await legacyDeriveAESKey(email, passwordHash);
+  const iv = Uint8Array.from(atob(encRecord.iv), c => c.charCodeAt(0));
+  const ct = Uint8Array.from(atob(encRecord.ct), c => c.charCodeAt(0));
+  const plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+  return JSON.parse(new TextDecoder().decode(plainBuf));
+}
+
+function findLegacyLocalProfile(email) {
+  try {
+    const undoRaw = localStorage.getItem(UNDO_BACKUP_KEY);
+    if (undoRaw) {
+      const undoSnap = JSON.parse(undoRaw);
+      if (undoSnap && undoSnap.semData) {
+        return {
+          semData: { [undoSnap.sem || "Semester I"]: undoSnap.semData },
+          dailyLogs: undoSnap.dailyLogs || {},
+          dailyTicks: undoSnap.dailyTicks || {},
+          slot7Map: undoSnap.slot7Map || {}
+        };
+      }
+    }
+    const dbRaw = localStorage.getItem("att_users_db_v9");
+    if (!dbRaw) return null;
+    const localDb = JSON.parse(dbRaw);
+    if (localDb[email] && localDb[email].semData) return localDb[email];
+    const allProfiles = Object.values(localDb).filter(p => p && p.semData);
+    if (allProfiles.length > 0) return allProfiles[0];
+  } catch (e) {}
+  return null;
+}
+
+function hasNonZeroAttendance(profile) {
+  if (!profile) return false;
+  const ticks = Object.keys(profile.dailyTicks || {}).length;
+  const logs = Object.keys(profile.dailyLogs || {}).length;
+  let manualTotal = 0;
+  const sem1 = (profile.semData && profile.semData["Semester I"]) || {};
+  Object.values(sem1).forEach(c => {
+    manualTotal += (parseInt(c.manualUnattended) || 0) + (parseInt(c.unattended) || 0) + Math.abs(parseInt(c.manualExtra) || 0);
+  });
+  return (ticks + logs + manualTotal) > 0;
+}
 
 function updateUndoButtonVisibility() {
   const btn = document.getElementById("btn-undo-reset");
@@ -1861,7 +1929,26 @@ window.addEventListener("DOMContentLoaded", async () => {
         if (cached) userData = JSON.parse(cached);
       }
 
-      if (!userData || !userData.semData) {
+      // AUTO-MIGRATE FROM LEGACY LOCALSTORAGE IF GOOGLE PROFILE IS BLANK
+      const legacyProfile = findLegacyLocalProfile(email);
+      if ((!userData || !hasNonZeroAttendance(userData)) && legacyProfile && hasNonZeroAttendance(legacyProfile)) {
+        userData = {
+          uid,
+          email,
+          name: legacyProfile.name || name,
+          branch: normalizeBranchName(legacyProfile.branch || document.getElementById("reg-branch").value),
+          batch: legacyProfile.batch || document.getElementById("reg-batch").value,
+          targetPct: legacyProfile.targetPct || 75,
+          semData: legacyProfile.semData || {},
+          dailyLogs: legacyProfile.dailyLogs || {},
+          dailyTicks: legacyProfile.dailyTicks || {},
+          slot7Map: legacyProfile.slot7Map || {},
+          customHolidays: legacyProfile.customHolidays || {},
+          removedHolidays: legacyProfile.removedHolidays || {},
+          globalExtras: legacyProfile.globalExtras || {},
+          updatedAt: Date.now()
+        };
+      } else if (!userData || !userData.semData) {
         const branch = normalizeBranchName(document.getElementById("reg-branch").value);
         const batch = document.getElementById("reg-batch").value;
         userData = {
@@ -1910,6 +1997,59 @@ function setupEventListeners() {
         errEl.textContent = "Google Sign-In failed: " + e.message;
         errEl.classList.remove("hidden");
       }
+    }
+  });
+
+  // NEW: Manual "Recover Old Data" Button Handler
+  document.getElementById("btn-recover-legacy")?.addEventListener("click", async () => {
+    if (!currentUser) return;
+    // Step 1: Check local device storage first
+    const localFound = findLegacyLocalProfile(currentUser.email);
+    if (localFound && hasNonZeroAttendance(localFound)) {
+      if (confirm("Found your previous attendance data saved on this device! Restore it now?")) {
+        currentUser.semData = localFound.semData || {};
+        currentUser.dailyLogs = localFound.dailyLogs || {};
+        currentUser.dailyTicks = localFound.dailyTicks || {};
+        currentUser.slot7Map = localFound.slot7Map || {};
+        ensureUserSemData(currentUser);
+        persistCurrentUser();
+        renderAll();
+        alert("Restored your previous attendance from this device!");
+        return;
+      }
+    }
+
+    // Step 2: Pull from old encrypted Firebase node using old email + password
+    const oldEmail = prompt("Enter the Gmail address you used with your old password login:", currentUser.email);
+    if (!oldEmail) return;
+    const oldPw = prompt("Enter your old Account Password to decrypt your previous cloud backup:");
+    if (!oldPw) return;
+
+    try {
+      const pwHash = await legacySaltedHash(oldPw);
+      const nodeHash = await legacySaltedHash(`NODE:${oldEmail.trim().toLowerCase()}:${pwHash}`);
+      const snap = await db.ref("users/" + nodeHash).once("value");
+      const encRecord = snap.val();
+      if (!encRecord || !encRecord.ct) {
+        alert("Could not find an encrypted backup under that email and password combination.");
+        return;
+      }
+      const decrypted = await legacyDecryptProfile(encRecord, oldEmail.trim().toLowerCase(), pwHash);
+      if (decrypted && decrypted.semData) {
+        currentUser.semData = decrypted.semData || {};
+        currentUser.dailyLogs = decrypted.dailyLogs || {};
+        currentUser.dailyTicks = decrypted.dailyTicks || {};
+        currentUser.slot7Map = decrypted.slot7Map || {};
+        if (decrypted.customHolidays) currentUser.customHolidays = decrypted.customHolidays;
+        ensureUserSemData(currentUser);
+        persistCurrentUser();
+        renderAll();
+        alert("Successfully decrypted and restored your previous attendance into your Google account!");
+      } else {
+        alert("Backup was found, but could not be decrypted.");
+      }
+    } catch (e) {
+      alert("Decryption failed (check if your old password was typed accurately): " + e.message);
     }
   });
 
