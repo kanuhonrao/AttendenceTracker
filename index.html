@@ -274,7 +274,7 @@
         <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
           <div class="text-xs font-black uppercase tracking-wider text-sky-400">Temporary Day-Specific Schedule Override</div>
           <p class="text-[11px] text-slate-300 leading-relaxed">
-            Type short-forms in any slot (e.g. <b>fem</b>, <b>bede</b>, <b>uhv</b>, <b>ap</b>, <b>ec</b>, <b>eg</b>, <b>cp</b>, <b>ws</b>). They auto-format to official uppercase names (<b>FEM-I</b>, <b>BEDE</b>, <b>UHV</b>, etc.) and sync to the Dashboard, Calendar, and Section 5 Timetable!
+            Type short-forms in any slot (e.g. <b>fem</b>, <b>bede</b>, <b>uhv</b>, <b>ap</b>, <b>ec</b>, <b>eg</b>, <b>cp</b>, <b>ws</b>). Only the specific slots you edit will show the <b>CR OVERRIDE</b> badge!
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input id="override-date" type="date" min="2026-09-07" max="2026-12-04" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white font-bold" />
@@ -497,7 +497,7 @@
               Auto-Synced to Odd Week
             </span>
           </div>
-          <p class="text-xs text-slate-400 font-medium mt-0.5">Dynamically switches to match your currently selected branch, week type, and active date overrides.</p>
+          <p class="text-xs text-slate-400 font-medium mt-0.5">Dynamically switches to match your currently selected branch, week type, and active slot overrides.</p>
         </div>
         <div class="flex flex-wrap gap-2">
           <button id="btn-tt-even" type="button" class="px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300">Even Week</button>
@@ -1078,8 +1078,6 @@ function getSessionKind(entryText) {
   return "theory";
 }
 
-// SMART SHORT-FORM FORMATTER & CANONICAL MATCHER
-// Converts inputs like "fem", "bede", "uhv", "ws", "ap", "ec", "eg", "cp" into official uppercase format ("FEM-I", "BEDE", "UHV", "WS-I", etc.)
 function formatSlotEntry(rawText, semCourses = SEMESTER_DATA["Semester I"]) {
   if (!rawText) return "";
   const trimmed = String(rawText).trim();
@@ -1089,12 +1087,10 @@ function formatSlotEntry(rawText, semCourses = SEMESTER_DATA["Semester I"]) {
   if (up === "SHORT BREAK") return "SHORT BREAK";
   if (up === "LUNCH BREAK") return "LUNCH BREAK";
 
-  // If it's a multi-batch slash entry like "lab ec (a) / fem tut (b) / lab bede (c)", normalize each part
   if (trimmed.includes("/")) {
     return trimmed.split("/").map(part => formatSlotEntry(part, semCourses)).join(" / ");
   }
 
-  // Direct single-subject aliases -> official short-form
   const cleanAlias = up.replace(/\s+/g, "");
   if (cleanAlias === "FEM" || cleanAlias === "FEM-I" || cleanAlias === "FEM1" || cleanAlias === "FEMI" || cleanAlias === "MATH" || cleanAlias === "MATHS") return "FEM-I";
   if (cleanAlias === "BEDE" || cleanAlias === "BE&DE" || cleanAlias === "BEE") return "BEDE";
@@ -1105,7 +1101,6 @@ function formatSlotEntry(rawText, semCourses = SEMESTER_DATA["Semester I"]) {
   if (cleanAlias === "EG" || cleanAlias === "GRAPHICS") return "EG";
   if (cleanAlias === "CP" || cleanAlias === "C" || cleanAlias === "CPROG") return "CP";
 
-  // Normalize tokens inside lab/tut strings (e.g., "lab bede (a)" -> "Lab BEDE (A)", "fem tut (c)" -> "FEM-I Tut (C)")
   let formatted = trimmed
     .replace(/\blab\b/gi, "Lab")
     .replace(/\btut\b/gi, "Tut")
@@ -1145,7 +1140,6 @@ function matchSubjectShort(text, semCourses = SEMESTER_DATA["Semester I"]) {
   const up = text.trim().toUpperCase();
   if (!up || up.includes("REMEDIAL LECTURE") || up.includes("MENTORING SLOT") || up.includes("EXTRA LECTURE SLOT") || up.includes("SHORT BREAK") || up.includes("LUNCH BREAK")) return null;
 
-  // Check aliases for FEM-I, BEDE, WS-I, etc.
   if (/\b(WORKSHOP|WS-I|WS1|WS)\b/.test(up)) return semCourses.some(c => c.short === "WS-I") ? "WS-I" : null;
   if (/\b(BE&DE|BEDE|BEE)\b/.test(up)) return semCourses.some(c => c.short === "BEDE") ? "BEDE" : null;
   if (/\b(FEM-I|FEM1|FEMI|FEM|MATH|MATHS)\b/.test(up)) return semCourses.some(c => c.short === "FEM-I") ? "FEM-I" : null;
@@ -1161,7 +1155,6 @@ function matchSubjectShort(text, semCourses = SEMESTER_DATA["Semester I"]) {
   return null;
 }
 
-// Helper to get the active week's Mon-Fri ISO dates so Section 5 Timetable shows active date overrides
 function getMondayOfIsoDate(isoDate) {
   const effectiveIso = isoDate < SEM1_START_DATE ? SEM1_START_DATE : (isoDate > SEM1_LAST_INSTRUCTION_DATE ? SEM1_LAST_INSTRUCTION_DATE : isoDate);
   const d = new Date(effectiveIso + "T00:00:00");
@@ -1218,7 +1211,6 @@ function ensureUserSemData(user) {
   if (!user.targetPct) user.targetPct = 75;
   user.branch = normalizeBranchName(user.branch);
 
-  // Normalize any lowercase slot7Map entries (like "uhv" or "fem") into official uppercase short-forms ("UHV", "FEM-I")
   Object.keys(user.slot7Map).forEach(iso => {
     const canonical = matchSubjectShort(user.slot7Map[iso], SEMESTER_DATA["Semester I"]);
     if (canonical) user.slot7Map[iso] = canonical;
@@ -1385,18 +1377,21 @@ function renderOverrideSlotsEditor() {
   const wkType = getWeekType(iso);
   const branchGrids = TIMETABLES_DB[branch] || TIMETABLES_DB["Computer Engineering - Div I"];
   const defaultGrid = wkType === "Even Week" ? (branchGrids.EVEN || {}) : (branchGrids.ODD || {});
-  const baseSlots = existingOverride || defaultGrid[dayKey] || [];
+  const defaultSlots = defaultGrid[dayKey] || [];
+  const baseSlots = existingOverride || defaultSlots;
 
   listEl.innerHTML = TIME_SLOTS.map((slotLabel, idx) => {
     const val = formatSlotEntry(baseSlots[idx] || "", SEMESTER_DATA[currentSem]);
+    const defVal = formatSlotEntry(defaultSlots[idx] || "", SEMESTER_DATA[currentSem]);
+    const isSlotModified = existingOverride && val.toUpperCase() !== defVal.toUpperCase();
     const isBreak = idx === 2 || idx === 5;
     return `
       <div class="flex items-center gap-2">
-        <span class="w-36 text-[10px] font-bold text-slate-400 shrink-0">${escapeHTML(slotLabel)}</span>
+        <span class="w-36 text-[10px] font-bold ${isSlotModified ? 'text-purple-300' : 'text-slate-400'} shrink-0">${escapeHTML(slotLabel)} ${isSlotModified ? '★' : ''}</span>
         <input type="text" data-slot-idx="${idx}" value="${escapeHTML(val)}" ${isBreak ? "readonly" : ""}
           placeholder="e.g. fem, bede, uhv, ap, ec..."
           onchange="this.value = formatSlotEntry(this.value)"
-          class="override-slot-input flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-semibold" />
+          class="override-slot-input flex-1 bg-slate-800 border ${isSlotModified ? 'border-purple-500' : 'border-slate-700'} rounded-lg px-2.5 py-1 text-xs text-white font-semibold" />
       </div>
     `;
   }).join("");
@@ -1665,9 +1660,10 @@ function getMergedDaySlots(isoDate, semOverride = null) {
   const branchGrids = TIMETABLES_DB[branchKey] || TIMETABLES_DB["Computer Engineering - Div I"];
 
   const grid = wkType === "Even Week" ? (branchGrids.EVEN || {}) : (branchGrids.ODD || {});
+  const defaultDaySlots = grid[dayKey] || [];
   const brEncoded = encodeKey(branchKey);
   const dateOverrideSlots = branchOverridesCache?.[brEncoded]?.[isoDate]?.slots || null;
-  const rawSlots = dateOverrideSlots || grid[dayKey] || [];
+  const rawSlots = dateOverrideSlots || defaultDaySlots;
 
   const batchLetter = (currentUser?.batch || "Batch A").slice(-1).toUpperCase();
   const courses = SEMESTER_DATA[activeSem] || [];
@@ -1675,12 +1671,14 @@ function getMergedDaySlots(isoDate, semOverride = null) {
   const savedSlot7 = rawSlot7 ? (matchSubjectShort(rawSlot7, courses) || formatSlotEntry(rawSlot7, courses)) : "";
 
   const extracted = rawSlots.map((raw, idx) => {
-    if (idx === 8 && savedSlot7) return { idx, slotLabel: TIME_SLOTS[idx], text: `Extra Lecture: ${savedSlot7} (4–5 PM)`, short: savedSlot7, isLab: false, kind: "extra", isCustomExtra: true };
+    if (idx === 8 && savedSlot7) return { idx, slotLabel: TIME_SLOTS[idx], text: `Extra Lecture: ${savedSlot7} (4–5 PM)`, short: savedSlot7, isLab: false, kind: "extra", isCustomExtra: true, isSlotOverridden: false };
     const { text, isLab } = extractBatchEntry(raw, batchLetter);
+    const defaultExtracted = extractBatchEntry(defaultDaySlots[idx] || "", batchLetter);
+    // Compare this specific slot against the default slot for that day so ONLY edited slots get flagged
+    const isSlotOverridden = Boolean(dateOverrideSlots) && (text.trim().toUpperCase() !== defaultExtracted.text.trim().toUpperCase());
     const matchedShort = matchSubjectShort(text, courses);
-    // Display canonical uppercase short-form (e.g. "UHV", "FEM-I", "BEDE") when a single subject is entered
     const displayText = (!isLab && matchedShort && text.toUpperCase() === matchedShort.toUpperCase()) ? matchedShort : text;
-    return { idx, slotLabel: TIME_SLOTS[idx], text: displayText, short: matchedShort, isLab, kind: getSessionKind(displayText), isCustomExtra: false };
+    return { idx, slotLabel: TIME_SLOTS[idx], text: displayText, short: matchedShort, isLab, kind: getSessionKind(displayText), isCustomExtra: false, isSlotOverridden };
   });
 
   const units = [];
@@ -1692,15 +1690,20 @@ function getMergedDaySlots(isoDate, semOverride = null) {
       while (endI < extracted.length && extracted[endI].short === curr.short && extracted[endI].kind === curr.kind && extracted[endI].idx < 8) endI++;
       endI--;
       const indices = [];
-      for (let k = i; k <= endI; k++) indices.push(extracted[k].idx);
-      units.push({ headIdx: curr.idx, indices, slotLabel: `Bulk Unit (Slots ${i + 1}–${endI + 1})`, text: `${curr.text} [1 Combined Bulk Unit]`, short: curr.short, isLab: curr.isLab, kind: curr.kind, isCustomExtra: false });
+      let anyOverridden = false;
+      for (let k = i; k <= endI; k++) {
+        indices.push(extracted[k].idx);
+        if (extracted[k].isSlotOverridden) anyOverridden = true;
+      }
+      units.push({ headIdx: curr.idx, indices, slotLabel: `Bulk Unit (Slots ${i + 1}–${endI + 1})`, text: `${curr.text} [1 Combined Bulk Unit]`, short: curr.short, isLab: curr.isLab, kind: curr.kind, isCustomExtra: false, isSlotOverridden: anyOverridden });
       i = endI + 1;
     } else {
-      units.push({ headIdx: curr.idx, indices: [curr.idx], slotLabel: curr.slotLabel, text: curr.text, short: curr.short, isLab: curr.isLab, kind: curr.kind, isCustomExtra: curr.isCustomExtra });
+      units.push({ headIdx: curr.idx, indices: [curr.idx], slotLabel: curr.slotLabel, text: curr.text, short: curr.short, isLab: curr.isLab, kind: curr.kind, isCustomExtra: curr.isCustomExtra, isSlotOverridden: curr.isSlotOverridden });
       i++;
     }
   }
-  return { dow, isOff: false, wkType, units, isOverridden: Boolean(dateOverrideSlots) };
+  const hasAnyEditedSlot = units.some(u => u.isSlotOverridden);
+  return { dow, isOff: false, wkType, units, isOverridden: hasAnyEditedSlot };
 }
 
 function renderDailyInspector(statsMap, targetPct) {
@@ -1711,10 +1714,10 @@ function renderDailyInspector(statsMap, targetPct) {
   const todayIso = getTodayIsoLocal();
   const isFutureDay = selectedCalDate > todayIso;
 
-  const { isOff, units, isOverridden } = getMergedDaySlots(selectedCalDate);
+  const { isOff, units } = getMergedDaySlots(selectedCalDate);
 
   document.getElementById("inspected-date-title").textContent = `${dObj.toDateString()} ${isFutureDay ? "(Upcoming Day)" : ""}`;
-  document.getElementById("inspected-date-meta").textContent = `Schedule Status: ${holidayLabel ? holidayLabel : (examInfo ? `${examInfo.label}` : (isOverridden ? `${wkType} [CR Override Active]` : wkType))} | Your Batch: ${currentUser.batch}`;
+  document.getElementById("inspected-date-meta").textContent = `Schedule Status: ${holidayLabel ? holidayLabel : (examInfo ? `${examInfo.label}` : wkType)} | Your Batch: ${currentUser.batch}`;
 
   const personalHolMount = document.getElementById("inspector-personal-holiday-mount");
   if (personalHolMount) {
@@ -1776,7 +1779,8 @@ function renderDailyInspector(statsMap, targetPct) {
       else statusHtml = `<span class="text-emerald-400 font-bold">Held Today: ${st.effAttended}/${st.heldTillToday} (Sem: ${st.semTotal}) | Safe: Bunk ${st.safeBunks} (${st.pct}%)</span>`;
     }
     const labBadge = u.isLab ? `<span class="batch-badge ml-1">YOUR ${escapeHTML((currentUser?.batch || "Batch A").toUpperCase())} LAB</span>` : "";
-    const overrideTag = isOverridden && u.short && !u.isCustomExtra ? `<span class="override-badge ml-1">CR OVERRIDE</span>` : "";
+    // Only display CR OVERRIDE badge on the specific slot(s) that were actually edited
+    const overrideTag = u.isSlotOverridden ? `<span class="override-badge ml-1">CR OVERRIDE</span>` : "";
     const canTick = Boolean(u.short);
 
     return `
@@ -1848,23 +1852,27 @@ function renderTimetableSection(statsMap, targetPct) {
   const batchLetter = (currentUser?.batch || "Batch A").slice(-1).toUpperCase();
   const courses = SEMESTER_DATA[currentSem] || [];
 
-  // Build effective 5-day grid incorporating any active CR Date Overrides for the selected week
   const selectedWeekType = getWeekType(selectedCalDate) === "Odd Week" ? "Odd" : "Even";
   const effectiveGrid = {};
+  const defaultFormattedGrid = {};
   const overriddenDays = {};
+
   ["MON", "TUE", "WED", "THR", "FRI"].forEach(d => {
     const dayIso = getIsoForDayInSelectedWeek(d);
+    defaultFormattedGrid[d] = (baseGrid[d] || []).map(s => formatSlotEntry(s, courses));
     const ovSlots = (ttWeekTab === selectedWeekType && dayIso) ? (branchOverridesCache?.[brEncoded]?.[dayIso]?.slots || null) : null;
     if (ovSlots) {
       effectiveGrid[d] = ovSlots.map(s => formatSlotEntry(s, courses));
       overriddenDays[d] = dayIso;
     } else {
-      effectiveGrid[d] = (baseGrid[d] || []).map(s => formatSlotEntry(s, courses));
+      effectiveGrid[d] = [...defaultFormattedGrid[d]];
     }
   });
 
   const daySlots = effectiveGrid[ttSelectedDay] || [];
-  const isSelectedDayOverridden = Boolean(overriddenDays[ttSelectedDay]);
+  const defaultDaySlots = defaultFormattedGrid[ttSelectedDay] || [];
+  const overrideDateForSelectedDay = overriddenDays[ttSelectedDay] || null;
+
   let cardsHtml = ""; let i = 0;
   while (i < TIME_SLOTS.length) {
     const raw = daySlots[i] || "";
@@ -1884,6 +1892,19 @@ function renderTimetableSection(statsMap, targetPct) {
       }
     }
 
+    // Check if any slot in this span was actually modified compared to defaultDaySlots
+    let isThisCardOverridden = false;
+    if (overrideDateForSelectedDay) {
+      for (let k = i; k < i + span; k++) {
+        const curExt = extractBatchEntry(daySlots[k] || "", batchLetter).text.trim().toUpperCase();
+        const defExt = extractBatchEntry(defaultDaySlots[k] || "", batchLetter).text.trim().toUpperCase();
+        if (curExt !== defExt) {
+          isThisCardOverridden = true;
+          break;
+        }
+      }
+    }
+
     const st = short ? statsMap[short] : null;
     let cardClass = "cell-blue"; let meta = "Non-Credit / Extra Slot";
     if (raw.includes("BREAK")) { cardClass = "cell-red"; meta = "Official Break"; }
@@ -1894,7 +1915,7 @@ function renderTimetableSection(statsMap, targetPct) {
 
     const slotText = span > 1 ? `Slots ${i + 1}–${i + span} [1 Combined Bulk Unit]` : TIME_SLOTS[i];
     const labBadge = isLab ? `<span class="batch-badge ml-1.5">YOUR ${escapeHTML((currentUser?.batch || "Batch A").toUpperCase())} LAB</span>` : "";
-    const ovBadge = isSelectedDayOverridden && short ? `<span class="override-badge ml-1.5">CR OVERRIDE (${overriddenDays[ttSelectedDay]})</span>` : "";
+    const ovBadge = isThisCardOverridden ? `<span class="override-badge ml-1.5">CR OVERRIDE (${overrideDateForSelectedDay})</span>` : "";
 
     cardsHtml += `
       <div class="${cardClass} rounded-2xl p-4 border border-slate-700 flex items-center justify-between gap-3 shadow-md">
@@ -1939,8 +1960,7 @@ function renderTimetableSection(statsMap, targetPct) {
 
   let tableHtml = `<div class="tt-scroll"><table class="tt-table"><thead><tr><th class="tt-sticky-col">TIME SLOT</th>`;
   days.forEach(d => {
-    const ovLabel = overriddenDays[d] ? `<div class="text-[9px] text-purple-300 font-extrabold mt-0.5">[CR Override: ${overriddenDays[d]}]</div>` : "";
-    tableHtml += `<th>${d}${ovLabel}</th>`;
+    tableHtml += `<th>${d}</th>`;
   });
   tableHtml += `</tr></thead><tbody>`;
 
@@ -1955,6 +1975,19 @@ function renderTimetableSection(statsMap, targetPct) {
       const rSpan = spanMap[d][sIdx] || 1;
       const st = sf ? statsMap[sf] : null;
 
+      // Check if this specific cell (or merged span) differs from defaultFormattedGrid[d]
+      let isCellOverridden = false;
+      if (overriddenDays[d]) {
+        for (let k = sIdx; k < sIdx + rSpan; k++) {
+          const curExt = extractBatchEntry((effectiveGrid[d] || [])[k] || "", batchLetter).text.trim().toUpperCase();
+          const defExt = extractBatchEntry((defaultFormattedGrid[d] || [])[k] || "", batchLetter).text.trim().toUpperCase();
+          if (curExt !== defExt) {
+            isCellOverridden = true;
+            break;
+          }
+        }
+      }
+
       let cls = "cell-blue"; let sub = "";
       if (raw.includes("BREAK")) { cls = "cell-red"; }
       else if (st) {
@@ -1964,7 +1997,8 @@ function renderTimetableSection(statsMap, targetPct) {
 
       const bulkTag = rSpan > 1 ? `<div class="text-[10px] text-sky-300 font-black">[1 Combined Bulk Unit (${rSpan} Hrs)]</div>` : "";
       const labTag = isLab ? `<div class="mt-1.5"><span class="batch-badge">YOUR ${escapeHTML((currentUser?.batch || "Batch A").toUpperCase())} LAB</span></div>` : "";
-      tableHtml += `<td class="${cls}" ${rSpan > 1 ? `rowspan="${rSpan}"` : ""}><div><div>${escapeHTML(displayText)}</div>${bulkTag}${labTag}${sub}</div></td>`;
+      const cellOvBadge = isCellOverridden ? `<div class="mt-1"><span class="override-badge">CR OVERRIDE</span></div>` : "";
+      tableHtml += `<td class="${cls}" ${rSpan > 1 ? `rowspan="${rSpan}"` : ""}><div><div>${escapeHTML(displayText)}</div>${bulkTag}${labTag}${cellOvBadge}${sub}</div></td>`;
     });
     tableHtml += `</tr>`;
   });
@@ -2340,6 +2374,7 @@ function setupEventListeners() {
         updatedBy: currentUser.email,
         updatedAt: Date.now()
       });
+      renderOverrideSlotsEditor();
       document.getElementById("override-status-msg").textContent = `Published schedule override for ${branch} on ${dt}!`;
       renderAll();
     } catch (e) {
