@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Attendance, Timetable & Calendar Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase App, Auth & Realtime Database SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -97,12 +96,12 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between pb-12">
 
-  <!-- GOOGLE OAUTH LOGIN VIEW -->
-  <div id="login-view" class="max-w-md w-full mx-auto px-4 pt-12 sm:pt-20 hidden">
+  <!-- GOOGLE OAUTH LOGIN VIEW (Visible by default until Auth state resolves) -->
+  <div id="login-view" class="max-w-md w-full mx-auto px-4 pt-10 sm:pt-16">
     <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-2xl text-center space-y-6">
       <div>
         <h1 class="text-2xl font-black text-white tracking-tight">Student Attendance Tracker</h1>
-        <p class="text-xs text-slate-400 mt-2 leading-relaxed">Sign in with your Google account for instant real-time cloud sync across your phone and PC.</p>
+        <p class="text-xs text-slate-400 mt-2 leading-relaxed">Sign in with your Google account for instant cloud sync across your phone and PC.</p>
       </div>
 
       <div id="login-error" class="hidden bg-red-950/80 border border-red-500 text-red-200 text-xs font-semibold p-3 rounded-xl"></div>
@@ -160,7 +159,6 @@
             &#9889; Personal Tools
           </button>
 
-          <!-- Admin Panel Button (Visible to Super Admin or assigned Branch CRs) -->
           <button id="btn-toggle-admin-panel" type="button" class="hidden bg-purple-600 hover:bg-purple-500 text-white text-xs font-black px-3.5 py-2 rounded-xl shadow-lg transition">
             &#128273; Admin Panel
           </button>
@@ -213,65 +211,77 @@
       <div id="personal-extra-banner" class="hidden mt-4 bg-sky-950/80 border border-sky-500/60 text-sky-200 text-xs font-bold px-4 py-3 rounded-xl"></div>
     </div>
 
-    <!-- SUPER ADMIN & BRANCH CR MANAGEMENT PANEL -->
+    <!-- SUPER ADMIN & BRANCH CR PANEL -->
     <div id="super-admin-panel" class="hidden bg-slate-900 border-2 border-purple-500/80 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div>
-          <h2 id="admin-panel-heading" class="text-base sm:text-lg font-black text-purple-400">&#128273; Super Admin &amp; CR Control Panel</h2>
-          <p class="text-xs text-slate-400 mt-0.5">Manage Branch CRs or publish temporary day-specific timetable overrides (updates Lectures Held Till Today automatically).</p>
+          <h2 id="admin-panel-heading" class="text-base sm:text-lg font-black text-purple-400">&#128273; Admin Control Panel</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Manage universal holidays, branch CR permissions, and temporary date-specific lecture overrides.</p>
         </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <!-- 1. Super Admin CR Manager (Only visible to honraokanishka@gmail.com) -->
-        <div id="super-admin-cr-box" class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
-          <div class="text-xs font-black uppercase tracking-wider text-purple-300">1. Assign / Remove Branch Admin (CR)</div>
-          <p class="text-[11px] text-slate-300">Enter a CR's Gmail address and assign their branch so they can edit daily overrides for their division:</p>
+        <div id="super-admin-only-box" class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-4">
           <div class="space-y-2.5">
+            <div class="text-xs font-black uppercase tracking-wider text-purple-300">1. Assign / Remove Branch Admin (CR)</div>
+            <p class="text-[11px] text-slate-300">Enter a CR's Gmail so they can edit day-specific schedules for their branch:</p>
             <input id="admin-assign-email" type="email" placeholder="cr.student@gmail.com" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white" />
             <select id="admin-assign-branch" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white">
-              <option value="Computer Engineering - Div I">Computer Engineering - Div I</option>
-              <option value="Computer Engineering - Div II">Computer Engineering - Div II</option>
-              <option value="Computer Engineering - Div III">Computer Engineering - Div III</option>
+              <option value="Computer Engineering - Div I">Computer Engineering - Div I (Comps A)</option>
+              <option value="Computer Engineering - Div II">Computer Engineering - Div II (Comps B)</option>
+              <option value="Computer Engineering - Div III">Computer Engineering - Div III (Comps C)</option>
               <option value="Mechanical Engineering">Mechanical Engineering</option>
               <option value="Information Technology">Information Technology</option>
               <option value="Electronics and Telecommunication">Electronics and Telecommunication</option>
+              <option value="Basic Sciences and Humanities">Basic Sciences and Humanities</option>
             </select>
-            <div class="flex gap-2">
-              <button id="btn-save-admin-role" type="button" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs py-2.5 rounded-xl transition">Grant CR Admin</button>
-              <button id="btn-remove-admin-role" type="button" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-red-300 font-bold text-xs py-2.5 px-3 rounded-xl transition">Remove CR</button>
+            <button id="btn-save-admin-role" type="button" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black text-xs py-2.5 rounded-xl transition">Grant Branch Admin Rights</button>
+            <div id="admin-assign-status" class="text-xs text-emerald-400 font-bold"></div>
+            <div class="pt-2 border-t border-slate-800">
+              <div class="text-[11px] font-bold text-slate-400 mb-1.5">Active Branch Admins (CRs):</div>
+              <div id="active-admins-list" class="flex flex-wrap gap-1.5 text-[11px]"></div>
             </div>
           </div>
-          <div id="admin-assign-status" class="text-xs text-emerald-400 font-bold"></div>
-          <div class="pt-2 border-t border-slate-800/80">
-            <div class="text-[11px] font-bold text-slate-400 mb-1.5">Active Branch CR Admins:</div>
-            <div id="active-crs-list" class="flex flex-wrap gap-1.5 text-[11px]"></div>
+
+          <div class="pt-3 border-t border-slate-800 space-y-2.5">
+            <div class="text-xs font-black uppercase tracking-wider text-red-400">2. Universal College Holiday (All Branches)</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input id="global-holiday-date" type="date" value="2026-11-17" min="2026-09-07" max="2026-12-23" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white font-bold" />
+              <input id="global-holiday-name" type="text" placeholder="Holiday Reason" value="Declared College Holiday" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white font-bold" />
+            </div>
+            <div class="flex gap-2">
+              <button id="btn-add-global-holiday" type="button" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-black text-xs py-2 rounded-xl transition">Declare Universal Holiday</button>
+              <button id="btn-remove-global-holiday" type="button" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs py-2 px-3 rounded-xl transition">Remove</button>
+            </div>
           </div>
         </div>
 
-        <!-- 2. Day-Specific Timetable Override Editor -->
         <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
-          <div class="text-xs font-black uppercase tracking-wider text-purple-300">2. Temporary Day-Specific Timetable Override</div>
-          <p class="text-[11px] text-slate-300">
-            Pick a date &amp; branch, then type comma-separated subjects for the 6 regular 1-hour slots (Slots 1, 2, 3, 4, 5, 6). Example: <code class="text-sky-300">AP, FEM-I, CP, CP, UHV, UHV</code>
+          <div class="text-xs font-black uppercase tracking-wider text-sky-400">Temporary Day-Specific Schedule Override</div>
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            Pick a date and edit any slot for that day (past, today, or upcoming). Changes automatically update <b>Lectures Held Till Today</b> and the <b>Daily Absentee Marker</b> for everyone in that branch!
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <input id="override-date" type="date" value="2026-11-17" min="2026-09-07" max="2026-12-04" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white font-bold" />
+            <input id="override-date" type="date" min="2026-09-07" max="2026-12-04" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white font-bold" />
             <select id="override-branch" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white font-bold">
-              <option value="Computer Engineering - Div I">Comps Div I</option>
-              <option value="Computer Engineering - Div II">Comps Div II</option>
-              <option value="Computer Engineering - Div III">Comps Div III</option>
+              <option value="Computer Engineering - Div I">Comps Div I (A)</option>
+              <option value="Computer Engineering - Div II">Comps Div II (B)</option>
+              <option value="Computer Engineering - Div III">Comps Div III (C)</option>
               <option value="Mechanical Engineering">Mechanical</option>
               <option value="Information Technology">IT</option>
               <option value="Electronics and Telecommunication">EXTC</option>
+              <option value="Basic Sciences and Humanities">FE Basics</option>
             </select>
           </div>
-          <input id="override-slots-input" type="text" placeholder="e.g. AP, EG, FEM-I, bede, UHV, UHV" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white font-bold" />
-          <div class="flex gap-2">
-            <button id="btn-save-date-override" type="button" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs py-2.5 rounded-xl transition">Publish Day Override</button>
+          <button id="btn-load-day-slots" type="button" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-300 font-bold text-xs py-2 rounded-xl transition">
+            Load Current Schedule for Selected Date
+          </button>
+          <div id="override-slots-list" class="space-y-1.5 max-h-64 overflow-y-auto pr-1"></div>
+          <div class="flex gap-2 pt-1">
+            <button id="btn-save-date-override" type="button" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs py-2.5 rounded-xl transition">Publish Date Override</button>
             <button id="btn-clear-date-override" type="button" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-bold text-xs py-2.5 px-3 rounded-xl transition">Restore Default</button>
           </div>
-          <div id="override-status" class="text-xs text-emerald-400 font-bold"></div>
+          <div id="override-status-msg" class="text-xs text-emerald-400 font-bold"></div>
         </div>
       </div>
     </div>
@@ -281,7 +291,7 @@
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div>
           <h2 class="text-base sm:text-lg font-black text-amber-400">&#9889; Personal Tools Panel (Private to Your Account)</h2>
-          <p class="text-xs text-slate-400 mt-0.5">Declare holidays or adjust extra lecture totals strictly for your own profile.</p>
+          <p class="text-xs text-slate-400 mt-0.5">Declare personal holidays or adjust extra lecture totals strictly for your own profile.</p>
         </div>
       </div>
 
@@ -449,10 +459,10 @@
           <div id="slot7-editor-box" class="pt-4 border-t border-slate-800">
             <label class="block text-xs font-black text-sky-400 mb-1">Set / Edit 4:00 PM – 5:00 PM Extra Lecture for This Date Only:</label>
             <p class="text-[11px] text-slate-400 mb-2">
-              Type any subject short-form (e.g. <b>eg</b>, <b>ap</b>, <b>cp</b>, <b>fem-i</b>, <b>bede</b>). If ticked, it counts as a missed extra. If unticked, it counts as an attended extra. Both expand your Lectures Held Till Today!
+              Type any subject short-form (e.g. <b>eg</b>, <b>ap</b>, <b>cp</b>, <b>fem-i</b>, <b>bede</b>, <b>uhv</b>, <b>ec</b>). If ticked, it counts as a missed extra. If unticked, it counts as an attended extra. Both expand your Lectures Held Till Today!
             </p>
             <div class="flex gap-2">
-              <input id="slot7-input" type="text" maxlength="15" placeholder="e.g. eg, ap, cp, fem-i, uhv, bede..."
+              <input id="slot7-input" type="text" maxlength="15" placeholder="e.g. eg, ap, cp, fem-i, bede, uhv, ec..."
                 class="min-w-0 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white flex-grow focus:outline-none focus:border-sky-400" />
               <button id="btn-save-slot7" type="button" class="bg-blue-600 hover:bg-blue-500 text-white font-black text-xs px-4 py-2.5 rounded-xl shrink-0 transition">Save 4–5 PM</button>
               <button id="btn-clear-slot7" type="button" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-bold text-xs px-3 py-2.5 rounded-xl shrink-0 transition">Clear</button>
@@ -543,20 +553,16 @@ function escapeHTML(str) {
   return String(str || "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
 }
 
+function encodeKey(str) {
+  return btoa(String(str || "").trim().toLowerCase()).replace(/=/g, "");
+}
+
 function getTodayIsoLocal() {
   const now = new Date();
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, "0");
   const d = String(now.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
-}
-
-function emailToKey(email) {
-  return btoa(String(email || "").trim().toLowerCase()).replace(/=/g, "");
-}
-
-function branchToKey(branch) {
-  return btoa(String(branch || "").trim()).replace(/=/g, "");
 }
 
 const SEM1_START_DATE = "2026-09-07";
@@ -578,86 +584,86 @@ const TIME_SLOTS = [
   "5 (14:00 - 15:00)", "6 (15:00 - 16:00)", "7 (16:00 - 17:00)"
 ];
 
-const DEFAULT_EVEN = {
-  MON: ["AP", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab bede (C)", "Lab CP (A) / Lab EG (B) / Lab bede (C)", "Remedial Lecture"],
-  TUE: ["EC", "EG", "SHORT BREAK", "bede", "FEM-I", "LUNCH BREAK", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "UHV", "FE Mentoring Slot"],
+const COMP1_EVEN = {
+  MON: ["AP", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Remedial Lecture"],
+  TUE: ["EC", "EG", "SHORT BREAK", "BEDE", "FEM-I", "LUNCH BREAK", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "UHV", "FE Mentoring Slot"],
   WED: ["FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "AP", "SHORT BREAK", "CP", "CP", "LUNCH BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Extra Lecture Slot 1"],
-  THR: ["Lab EG (A) / Lab bede (B) / Lab CP (C)", "Lab EG (A) / Lab bede (B) / Lab CP (C)", "SHORT BREAK", "Lab bede (A) / Lab CP (B) / Lab EG (C)", "Lab bede (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "bede", "FEM-I", "Extra Lecture Slot 2"],
-  FRI: ["bede", "FEM-I", "SHORT BREAK", "EG", "bede", "LUNCH BREAK", "EC", "UHV", "Extra Lecture Slot 3"]
+  THR: ["Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "SHORT BREAK", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "BEDE", "FEM-I", "Extra Lecture Slot 2"],
+  FRI: ["BEDE", "FEM-I", "SHORT BREAK", "EG", "BEDE", "LUNCH BREAK", "EC", "UHV", "Extra Lecture Slot 3"]
 };
 
-const DEFAULT_ODD = {
-  MON: ["AP", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab bede (C)", "Lab CP (A) / Lab EG (B) / Lab bede (C)", "Remedial Lecture"],
-  TUE: ["EC", "bede", "SHORT BREAK", "FEM-I", "AP", "LUNCH BREAK", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "UHV", "FE Mentoring Slot"],
+const COMP1_ODD = {
+  MON: ["AP", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Remedial Lecture"],
+  TUE: ["EC", "BEDE", "SHORT BREAK", "FEM-I", "AP", "LUNCH BREAK", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "UHV", "FE Mentoring Slot"],
   WED: ["FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "EC", "SHORT BREAK", "CP", "CP", "LUNCH BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Extra Lecture Slot 1"],
-  THR: ["Lab EG (A) / Lab bede (B) / Lab CP (C)", "Lab EG (A) / Lab bede (B) / Lab CP (C)", "SHORT BREAK", "Lab bede (A) / Lab CP (B) / Lab EG (C)", "Lab bede (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "FEM-I", "bede", "Extra Lecture Slot 2"],
-  FRI: ["EC", "bede", "SHORT BREAK", "EG", "bede", "LUNCH BREAK", "FEM-I", "AP", "UHV"]
-};
-
-const MECH_ODD = {
-  MON: ["Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "SHORT BREAK", "bede", "AP", "LUNCH BREAK", "bede", "FEM-I", "Extra Lecture Slot 1"],
-  TUE: ["AP", "bede", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab bede (A) / Lab CP (B) / Lab EG (C)", "Lab bede (A) / Lab CP (B) / Lab EG (C)", "Extra Lecture Slot 2"],
-  WED: ["FEM-I Tut (A) / Lab AP (B) / Lab EC (C)", "FEM-I", "SHORT BREAK", "AP", "CP", "LUNCH BREAK", "EC", "UHV", "FE Mentoring Slot"],
-  THR: ["Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "SHORT BREAK", "EC", "CP", "LUNCH BREAK", "EG", "EG", "Extra Lecture Slot 3"],
-  FRI: ["Lab EG (A) / Lab bede (B) / Lab CP (C)", "Lab EG (A) / Lab bede (B) / Lab CP (C)", "SHORT BREAK", "EC", "FEM-I", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab bede (C)", "Lab CP (A) / Lab EG (B) / Lab bede (C)", "Remedial Lecture"]
-};
-
-const MECH_EVEN = {
-  MON: ["Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "SHORT BREAK", "bede", "AP", "LUNCH BREAK", "bede", "FEM-I", "Extra Lecture Slot 1"],
-  TUE: ["bede", "AP", "SHORT BREAK", "EG", "FEM-I", "LUNCH BREAK", "Lab CP (A) / Lab bede (B) / Lab EG (C)", "Lab CP (A) / Lab bede (B) / Lab EG (C)", "Extra Lecture Slot 2"],
-  WED: ["FEM-I Tut (A) / Lab AP (B) / Lab EC (C)", "FEM-I", "SHORT BREAK", "EC", "FEM-I", "LUNCH BREAK", "EG", "UHV", "FE Mentoring Slot"],
-  THR: ["Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "SHORT BREAK", "CP", "EC", "LUNCH BREAK", "Lab EG (A) / Lab bede (B) / Lab CP (C)", "Lab EG (A) / Lab bede (B) / Lab CP (C)", "Extra Lecture Slot 3"],
-  FRI: ["Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "CP", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab bede (C)", "Lab CP (A) / Lab EG (B) / Lab bede (C)", "Remedial Lecture"]
+  THR: ["Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "SHORT BREAK", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "FEM-I", "BEDE", "Extra Lecture Slot 2"],
+  FRI: ["EC", "BEDE", "SHORT BREAK", "EG", "BEDE", "LUNCH BREAK", "FEM-I", "AP", "UHV"]
 };
 
 const COMP2_EVEN = {
-  MON: ["Lab EG (A) / Lab bede (B) / Lab CP (C)", "Lab EG (A) / Lab bede (B) / Lab CP (C)", "SHORT BREAK", "bede", "AP", "LUNCH BREAK", "CP", "EC", "UHV"],
-  TUE: ["FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "FEM-I", "SHORT BREAK", "bede", "EG", "LUNCH BREAK", "bede", "EC", "Extra Lecture Slot 1"],
-  WED: ["Lab CP (A) / Lab EG (B) / Lab bede (C)", "Lab CP (A) / Lab EG (B) / Lab bede (C)", "SHORT BREAK", "EG", "bede", "LUNCH BREAK", "UHV", "FEM-I", "FE Mentoring Slot"],
+  MON: ["Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "SHORT BREAK", "BEDE", "FEM-I", "LUNCH BREAK", "CP", "EC", "UHV"],
+  TUE: ["FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "AP", "SHORT BREAK", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "LUNCH BREAK", "BEDE", "EC", "Extra Lecture Slot 1"],
+  WED: ["BEDE", "EG", "SHORT BREAK", "BEDE", "EG", "LUNCH BREAK", "UHV", "FEM-I", "FE Mentoring Slot"],
   THR: ["Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "FEM-I", "SHORT BREAK", "AP", "CP", "LUNCH BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Extra Lecture Slot 3"],
-  FRI: ["EG", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "SHORT BREAK", "FEM-I", "AP", "LUNCH BREAK", "Lab bede (A) / Lab CP (B) / Lab EG (C)", "Lab bede (A) / Lab CP (B) / Lab EG (C)", "Remedial Lecture"]
+  FRI: ["EG", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "SHORT BREAK", "FEM-I", "AP", "LUNCH BREAK", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Remedial Lecture"]
 };
 
 const COMP3_EVEN = {
-  MON: ["bede", "EG", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "bede", "FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "Remedial Lecture"],
-  TUE: ["Lab CP (A) / Lab EG (B) / Lab bede (C)", "Lab CP (A) / Lab EG (B) / Lab bede (C)", "SHORT BREAK", "FEM-I", "AP", "LUNCH BREAK", "EG", "UHV", "Extra Lecture Slot 1"],
-  WED: ["bede", "FEM-I", "SHORT BREAK", "EC", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "LUNCH BREAK", "Lab EG (A) / Lab bede (B) / Lab CP (C)", "Lab EG (A) / Lab bede (B) / Lab CP (C)", "FE Mentoring Slot"],
-  THR: ["AP", "FEM-I", "SHORT BREAK", "bede", "EG", "LUNCH BREAK", "Lab bede (A) / Lab CP (B) / Lab EG (C)", "Lab bede (A) / Lab CP (B) / Lab EG (C)", "Extra Lecture Slot 2"],
+  MON: ["BEDE", "EG", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "BEDE", "FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "Remedial Lecture"],
+  TUE: ["Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "SHORT BREAK", "FEM-I", "AP", "LUNCH BREAK", "EG", "UHV", "Extra Lecture Slot 1"],
+  WED: ["BEDE", "FEM-I", "SHORT BREAK", "EC", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "LUNCH BREAK", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "FE Mentoring Slot"],
+  THR: ["AP", "FEM-I", "SHORT BREAK", "BEDE", "EG", "LUNCH BREAK", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Extra Lecture Slot 2"],
   FRI: ["FEM-I", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "UHV", "EC", "LUNCH BREAK", "CP", "CP", "Extra Lecture Slot 3"]
 };
 
 const IT_ODD = {
   MON: ["CP", "CP", "SHORT BREAK", "FEM-I", "FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "LUNCH BREAK", "AP", "EG", "Remedial Lecture"],
-  TUE: ["EC", "FEM-I", "SHORT BREAK", "Lab CP (A) / Lab EG (B) / Lab bede (C)", "Lab CP (A) / Lab EG (B) / Lab bede (C)", "LUNCH BREAK", "bede", "UHV", "FE Mentoring Slot"],
-  WED: ["FEM-I", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "SHORT BREAK", "Lab EG (A) / Lab bede (B) / Lab CP (C)", "Lab EG (A) / Lab bede (B) / Lab CP (C)", "LUNCH BREAK", "EC", "AP", "UHV"],
-  THR: ["EG", "bede", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "FEM-I", "EC", "Extra Lecture Slot 1"],
-  FRI: ["bede", "AP", "SHORT BREAK", "Lab bede (A) / Lab CP (B) / Lab EG (C)", "Lab bede (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "bede", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Extra Lecture Slot 2"]
+  TUE: ["EC", "FEM-I", "SHORT BREAK", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "LUNCH BREAK", "BEDE", "UHV", "FE Mentoring Slot"],
+  WED: ["FEM-I", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "SHORT BREAK", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "LUNCH BREAK", "EC", "AP", "UHV"],
+  THR: ["EG", "BEDE", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "FEM-I", "EC", "Extra Lecture Slot 1"],
+  FRI: ["BEDE", "AP", "SHORT BREAK", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "BEDE", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Extra Lecture Slot 2"]
 };
 
 const IT_EVEN = {
   MON: ["CP", "CP", "SHORT BREAK", "FEM-I", "FEM-I Tut (A) / Lab EC (B) / Lab AP (C)", "LUNCH BREAK", "AP", "EG", "Remedial Lecture"],
-  TUE: ["EC", "FEM-I", "SHORT BREAK", "Lab CP (A) / Lab EG (B) / Lab bede (C)", "Lab CP (A) / Lab EG (B) / Lab bede (C)", "LUNCH BREAK", "bede", "UHV", "FE Mentoring Slot"],
-  WED: ["FEM-I", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "SHORT BREAK", "Lab EG (A) / Lab bede (B) / Lab CP (C)", "Lab EG (A) / Lab bede (B) / Lab CP (C)", "LUNCH BREAK", "AP", "UHV", "Extra Lecture Slot 1"],
-  THR: ["EG", "bede", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "FEM-I", "EC", "Extra Lecture Slot 2"],
-  FRI: ["bede", "EG", "SHORT BREAK", "Lab bede (A) / Lab CP (B) / Lab EG (C)", "Lab bede (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "bede", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Extra Lecture Slot 3"]
+  TUE: ["EC", "FEM-I", "SHORT BREAK", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "LUNCH BREAK", "BEDE", "UHV", "FE Mentoring Slot"],
+  WED: ["FEM-I", "Lab AP (A) / FEM-I Tut (B) / Lab EC (C)", "SHORT BREAK", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "LUNCH BREAK", "AP", "UHV", "Extra Lecture Slot 1"],
+  THR: ["EG", "BEDE", "SHORT BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "LUNCH BREAK", "FEM-I", "EC", "Extra Lecture Slot 2"],
+  FRI: ["BEDE", "EG", "SHORT BREAK", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "LUNCH BREAK", "BEDE", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Extra Lecture Slot 3"]
 };
 
 const EXTC_EVEN = {
-  MON: ["Lab CP (A) / Lab bede (B) / Lab EG (C)", "Lab CP (A) / Lab bede (B) / Lab EG (C)", "SHORT BREAK", "bede", "FEM-I", "LUNCH BREAK", "AP", "UHV", "Extra Lecture Slot 1"],
-  TUE: ["FEM-I Tut (A) / Lab AP (B) / Lab EC (C)", "FEM-I", "SHORT BREAK", "EC", "bede", "LUNCH BREAK", "EG", "EG", "UHV"],
-  WED: ["Lab bede (A) / Lab EG (B) / Lab CP (C)", "Lab bede (A) / Lab EG (B) / Lab CP (C)", "SHORT BREAK", "FEM-I", "bede", "LUNCH BREAK", "CP", "CP", "FE Mentoring Slot"],
-  THR: ["EC", "bede", "SHORT BREAK", "Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "AP", "LUNCH BREAK", "Lab EC (A) / FEM-I Tut (B) / Lab AP (C)", "EG", "Extra Lecture Slot 2"],
-  FRI: ["Lab EG (A) / Lab CP (B) / Lab bede (C)", "Lab EG (A) / Lab CP (B) / Lab bede (C)", "SHORT BREAK", "AP", "FEM-I", "LUNCH BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Remedial Lecture"]
+  MON: ["Lab CP (A) / Lab BEDE (B) / Lab EG (C)", "Lab CP (A) / Lab BEDE (B) / Lab EG (C)", "SHORT BREAK", "BEDE", "FEM-I", "LUNCH BREAK", "AP", "UHV", "Extra Lecture Slot 1"],
+  TUE: ["FEM-I Tut (A) / Lab AP (B) / Lab EC (C)", "FEM-I", "SHORT BREAK", "EC", "BEDE", "LUNCH BREAK", "EG", "EG", "UHV"],
+  WED: ["Lab BEDE (A) / Lab EG (B) / Lab CP (C)", "Lab BEDE (A) / Lab EG (B) / Lab CP (C)", "SHORT BREAK", "FEM-I", "BEDE", "LUNCH BREAK", "CP", "CP", "FE Mentoring Slot"],
+  THR: ["EC", "BEDE", "SHORT BREAK", "Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "AP", "LUNCH BREAK", "Lab EC (A) / FEM-I Tut (B) / Lab AP (C)", "EG", "Extra Lecture Slot 2"],
+  FRI: ["Lab EG (A) / Lab CP (B) / Lab BEDE (C)", "Lab EG (A) / Lab CP (B) / Lab BEDE (C)", "SHORT BREAK", "AP", "FEM-I", "LUNCH BREAK", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Remedial Lecture"]
+};
+
+const MECH_ODD = {
+  MON: ["Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "SHORT BREAK", "BEDE", "AP", "LUNCH BREAK", "BEDE", "FEM-I", "Extra Lecture Slot 1"],
+  TUE: ["AP", "BEDE", "SHORT BREAK", "FEM-I", "EG", "LUNCH BREAK", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Lab BEDE (A) / Lab CP (B) / Lab EG (C)", "Extra Lecture Slot 2"],
+  WED: ["FEM-I Tut (A) / Lab AP (B) / Lab EC (C)", "FEM-I", "SHORT BREAK", "AP", "CP", "LUNCH BREAK", "EC", "UHV", "FE Mentoring Slot"],
+  THR: ["Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "SHORT BREAK", "EC", "CP", "LUNCH BREAK", "EG", "EG", "Extra Lecture Slot 3"],
+  FRI: ["Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "SHORT BREAK", "EC", "FEM-I", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Remedial Lecture"]
+};
+
+const MECH_EVEN = {
+  MON: ["Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "Workshop-I [WS-I] (A) / Workshop-I [WS-I] (B) / Workshop-I [WS-I] (C)", "SHORT BREAK", "BEDE", "AP", "LUNCH BREAK", "BEDE", "FEM-I", "Extra Lecture Slot 1"],
+  TUE: ["BEDE", "AP", "SHORT BREAK", "EG", "FEM-I", "LUNCH BREAK", "Lab CP (A) / Lab BEDE (B) / Lab EG (C)", "Lab CP (A) / Lab BEDE (B) / Lab EG (C)", "Extra Lecture Slot 2"],
+  WED: ["FEM-I Tut (A) / Lab AP (B) / Lab EC (C)", "FEM-I", "SHORT BREAK", "EC", "FEM-I", "LUNCH BREAK", "EG", "UHV", "FE Mentoring Slot"],
+  THR: ["Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "Lab AP (A) / Lab EC (B) / FEM-I Tut (C)", "SHORT BREAK", "CP", "EC", "LUNCH BREAK", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Lab EG (A) / Lab BEDE (B) / Lab CP (C)", "Extra Lecture Slot 3"],
+  FRI: ["Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "Lab EC (A) / Lab AP (B) / FEM-I Tut (C)", "SHORT BREAK", "FEM-I", "CP", "LUNCH BREAK", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Lab CP (A) / Lab EG (B) / Lab BEDE (C)", "Remedial Lecture"]
 };
 
 const TIMETABLES_DB = {
-  "Computer Engineering - Div I": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD },
+  "Computer Engineering - Div I": { EVEN: COMP1_EVEN, ODD: COMP1_ODD },
   "Computer Engineering - Div II": { EVEN: COMP2_EVEN, ODD: COMP2_EVEN },
   "Computer Engineering - Div III": { EVEN: COMP3_EVEN, ODD: COMP3_EVEN },
   "Mechanical Engineering": { EVEN: MECH_EVEN, ODD: MECH_ODD },
   "Information Technology": { EVEN: IT_EVEN, ODD: IT_ODD },
   "Electronics and Telecommunication": { EVEN: EXTC_EVEN, ODD: EXTC_EVEN },
-  "Basic Sciences and Humanities": { EVEN: DEFAULT_EVEN, ODD: DEFAULT_ODD }
+  "Basic Sciences and Humanities": { EVEN: COMP1_EVEN, ODD: COMP1_ODD }
 };
 
 function normalizeBranchName(b) {
@@ -687,37 +693,1464 @@ const ODD_RANGES = [
 const MONTHS_LIST = ["2026-09", "2026-10", "2026-11", "2026-12"];
 
 const SEMESTER_DATA = {
-Your calendar, subject cards, and timetable are blank right now because the previous Google OAuth code accidentally dropped five helper functions (`updateUndoButtonVisibility`, `populatePersonalPanel`, `renderPersonalCustomHolidaysBadges`, `universalDeclareHoliday`, and `universalRemoveHoliday`) when the password hashing block was removed. As soon as Google Sign-In completed, JavaScript threw a `ReferenceError: updateUndoButtonVisibility is not defined` inside `enterDashboard()` and stopped before calling `renderAll()`[span_1](start_span)[span_1](end_span).
+  "Semester I": [
+    { code: "25FE1BSC01", short: "FEM-I", name: "Fundamentals of Engineering Mathematics I", credits: 4, imp: 3, total: 45 },
+    { code: "25FE1BSC02", short: "AP", name: "Applied Physics", credits: 3, imp: 3, total: 35 },
+    { code: "25FE1BSC03", short: "EC", name: "Engineering Chemistry", credits: 3, imp: 3, total: 35 },
+    { code: "25FE1ESC01", short: "EG", name: "Engineering Graphics", credits: 3, imp: 2, total: 30 },
+    { code: "25FE1ESC02", short: "BEDE", name: "Basic Electrical and Digital Electronics", credits: 3, imp: 2, total: 35 },
+    { code: "25FE1VSEC01", short: "WS-I", name: "Workshop - 1", credits: 2, imp: 2, total: 20 },
+    { code: "25FE1VSEC02", short: "CP", name: "Problem Solving using C programming", credits: 2, imp: 3, total: 30 },
+    { code: "25FE1VEC01", short: "UHV", name: "Universal Human Values", credits: 2, imp: 1, total: 20 }
+  ]
+};
 
-### What Is Fixed & Upgraded in This Complete Code:
-1. **Restored All Missing Functions:** `enterDashboard()` and `renderAll()` now run cleanly without crashing, bringing back your full Subject Cards, Calendar Grid, Daily Absentee Marker, and Section 5 Timetables immediately[span_2](start_span)[span_2](end_span).
-2. **Real-Time Branch CR Admin & Date Override Engine:**
-   * You (`honraokanishka@gmail.com`) are the **Super Admin** and can assign or remove Class Representatives (CRs) for any branch. Assigned CRs automatically see the **Branch Admin Panel** locked to their branch.
-   * **Interactive Date Overrides:** In the Admin Panel, you or a CR can pick any date (past, today, or tomorrow) and edit the 9 time slots for that date. It immediately updates **Lectures Held Till Today**, the **Daily Absentee Marker**, and the **Calendar** for everyone in that branch—even if you edit a lecture after it has already happened.
+let currentUser = null;
+let currentSem = "Semester I";
+let selectedCalDate = getTodayIsoLocal();
+let ttWeekTab = "Odd";
+let ttViewMode = window.innerWidth < 768 ? "cards" : "grid";
+let ttSelectedDay = "MON";
 
-### Step 1: Update Your Firebase Realtime Database Rules
-Because Firebase paths cannot contain `@` or `.`, the app encodes email addresses and branch names into safe keys when checking CR permissions. Paste these exact rules in **Firebase Console → Realtime Database → Rules** and click **Publish**:
+let globalHolidaysCache = {};
+let branchOverridesCache = {};
+let adminsCache = {};
 
-```json
-{
-  "rules": {
-    "admins": {
-      ".read": "auth != null",
-      ".write": "auth != null && auth.token.email == 'honraokanishka@gmail.com' && auth.token.email_verified == true"
-    },
-    "global_holidays": {
-      ".read": "auth != null",
-      ".write": "auth != null && auth.token.email == 'honraokanishka@gmail.com' && auth.token.email_verified == true"
-    },
-    "branch_overrides": {
-      ".read": "auth != null",
-      ".write": "auth != null"
-    },
-    "users": {
-      "$uid": {
-        ".read": "auth != null && (auth.uid == $uid || auth.token.email == 'honraokanishka@gmail.com')",
-        ".write": "auth != null && auth.uid == $uid"
-      }
+function updateUndoButtonVisibility() {
+  const btn = document.getElementById("btn-undo-reset");
+  if (!btn || !currentUser) return;
+  try {
+    const raw = localStorage.getItem(UNDO_BACKUP_KEY);
+    if (!raw) { btn.classList.add("hidden"); return; }
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.email === currentUser.email && parsed.sem === currentSem) {
+      btn.classList.remove("hidden");
+    } else {
+      btn.classList.add("hidden");
     }
+  } catch {
+    btn.classList.add("hidden");
   }
 }
+
+window.forceLogout = async function() {
+  try { await auth.signOut(); } catch (e) {}
+  currentUser = null;
+  document.getElementById("power-panel")?.classList.add("hidden");
+  document.getElementById("super-admin-panel")?.classList.add("hidden");
+  document.getElementById("app-view").classList.add("hidden");
+  document.getElementById("login-view").classList.remove("hidden");
+};
+
+window.universalDeclareHoliday = function(isoDate, customReason) {
+  if (!isoDate || !currentUser) return;
+  const reason = escapeHTML((customReason || "Declared Holiday").trim());
+  if (!currentUser.customHolidays) currentUser.customHolidays = {};
+  if (!currentUser.removedHolidays) currentUser.removedHolidays = {};
+  currentUser.customHolidays[isoDate] = reason;
+  delete currentUser.removedHolidays[isoDate];
+  purgeNonInstructionalDates(currentUser);
+  persistCurrentUser();
+  const statusEl = document.getElementById("personal-holiday-status");
+  if (statusEl) statusEl.textContent = `Declared ${isoDate} (${reason}) as a holiday on your calendar!`;
+  renderAll();
+};
+
+window.universalRemoveHoliday = function(isoDate) {
+  if (!isoDate || !currentUser) return;
+  if (!currentUser.customHolidays) currentUser.customHolidays = {};
+  if (!currentUser.removedHolidays) currentUser.removedHolidays = {};
+  delete currentUser.customHolidays[isoDate];
+  if (BASE_HOLIDAYS[isoDate] || globalHolidaysCache[isoDate]) {
+    currentUser.removedHolidays[isoDate] = true;
+  }
+  purgeNonInstructionalDates(currentUser);
+  persistCurrentUser();
+  const statusEl = document.getElementById("personal-holiday-status");
+  if (statusEl) statusEl.textContent = `Removed holiday status for ${isoDate} (now a normal working day).`;
+  renderAll();
+};
+
+function populatePersonalPanel() {
+  const sel = document.getElementById("personal-course-select");
+  if (!sel) return;
+  sel.innerHTML = "";
+  SEMESTER_DATA[currentSem].forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.code;
+    opt.textContent = `${c.short} - ${c.name} (${c.code})`;
+    sel.appendChild(opt);
+  });
+  renderPersonalCustomHolidaysBadges();
+}
+
+function renderPersonalCustomHolidaysBadges() {
+  const el = document.getElementById("personal-custom-holidays-list");
+  if (!el) return;
+  const custom = currentUser?.customHolidays || {};
+  const entries = Object.entries(custom).sort(([a], [b]) => a.localeCompare(b));
+  if (!entries.length) {
+    el.innerHTML = `<span class="text-slate-500">11 Nov 2026 is built-in. Click any date on the calendar below or pick a date above to add more!</span>`;
+    return;
+  }
+  el.innerHTML = entries.map(([iso, reason]) => `
+    <span class="inline-flex items-center gap-1.5 bg-red-950/80 border border-red-500/50 text-red-200 px-2.5 py-1 rounded-lg font-bold">
+      ${escapeHTML(iso)}: ${escapeHTML(reason)}
+      <button type="button" onclick="window.universalRemoveHoliday('${escapeHTML(iso)}')" class="text-red-400 hover:text-white ml-1 font-black">&times;</button>
+    </span>
+  `).join("");
+}
+
+function renderActiveAdminsList() {
+  const el = document.getElementById("active-admins-list");
+  if (!el) return;
+  const entries = Object.entries(adminsCache || {});
+  if (!entries.length) {
+    el.innerHTML = `<span class="text-slate-500">No branch CRs assigned yet.</span>`;
+    return;
+  }
+  el.innerHTML = entries.map(([k, item]) => `
+    <span class="inline-flex items-center gap-1.5 bg-purple-950/80 border border-purple-500/50 text-purple-200 px-2.5 py-1 rounded-lg font-bold">
+      ${escapeHTML(item.email)} (${escapeHTML(item.branch)})
+      <button type="button" onclick="window.removeBranchAdmin('${escapeHTML(k)}')" class="text-purple-300 hover:text-white ml-1 font-black">&times;</button>
+    </span>
+  `).join("");
+}
+
+window.removeBranchAdmin = async function(key) {
+  if (!currentUser || currentUser.email !== SUPER_ADMIN_EMAIL) return;
+  await db.ref("admins/" + key).remove();
+};
+
+function setSyncPill(text, isOnline = true) {
+  const pill = document.getElementById("sync-status-pill");
+  if (!pill) return;
+  pill.textContent = text;
+  pill.className = isOnline
+    ? "text-[11px] font-extrabold px-3 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40 cursor-pointer active:scale-95 transition"
+    : "text-[11px] font-extrabold px-3 py-1 rounded-full bg-amber-950 text-amber-300 border border-amber-500/40 cursor-pointer active:scale-95 transition";
+}
+
+async function pushToFirebase() {
+  if (!currentUser || !currentUser.uid) return;
+  try {
+    currentUser.updatedAt = Date.now();
+    localStorage.setItem("att_local_backup_" + currentUser.uid, JSON.stringify(currentUser));
+    await db.ref("users/" + currentUser.uid).set(currentUser);
+    setSyncPill("Google Cloud Synced", true);
+  } catch (e) {
+    setSyncPill("Saved Locally (Offline)", false);
+  }
+}
+
+function startRealtimeListeners(uid) {
+  db.ref("users/" + uid).on("value", (snapshot) => {
+    const remoteVal = snapshot.val();
+    if (remoteVal && remoteVal.updatedAt && currentUser && remoteVal.updatedAt > (currentUser.updatedAt || 0)) {
+      currentUser = remoteVal;
+      currentUser.branch = normalizeBranchName(currentUser.branch);
+      purgeNonInstructionalDates(currentUser);
+      renderAll();
+      setSyncPill("Google Cloud Synced", true);
+    }
+  });
+
+  db.ref("global_holidays").on("value", (snap) => {
+    globalHolidaysCache = snap.val() || {};
+    if (currentUser) renderAll();
+  });
+
+  db.ref("branch_overrides").on("value", (snap) => {
+    branchOverridesCache = snap.val() || {};
+    if (currentUser) renderAll();
+  });
+
+  db.ref("admins").on("value", (snap) => {
+    adminsCache = snap.val() || {};
+    renderActiveAdminsList();
+    if (currentUser) updateHeaderMeta();
+  });
+}
+
+function isBeforeTermStart(isoDate) { return currentSem === "Semester I" && isoDate < SEM1_START_DATE; }
+function isAfterTermEnd(isoDate) { return currentSem === "Semester I" && isoDate > SEM1_END_DATE; }
+function getExamPeriodInfo(isoDate) {
+  if (currentSem !== "Semester I") return null;
+  for (const [start, end, label, code] of EXAM_PERIODS) {
+    if (isoDate >= start && isoDate <= end) return { label, code };
+  }
+  return null;
+}
+
+function getHolidayName(isoDate) {
+  if (currentUser) {
+    if (currentUser.removedHolidays && currentUser.removedHolidays[isoDate]) return null;
+    if (currentUser.customHolidays && currentUser.customHolidays[isoDate]) return currentUser.customHolidays[isoDate];
+  }
+  if (globalHolidaysCache && globalHolidaysCache[isoDate]) return globalHolidaysCache[isoDate];
+  return BASE_HOLIDAYS[isoDate] || null;
+}
+
+function isNonInstructionalDay(isoDate) {
+  return (
+    isBeforeTermStart(isoDate) || isAfterTermEnd(isoDate) ||
+    (currentSem === "Semester I" && isoDate > SEM1_LAST_INSTRUCTION_DATE) ||
+    Boolean(getHolidayName(isoDate)) || Boolean(getExamPeriodInfo(isoDate))
+  );
+}
+
+function computeSem1WorkingDaysSummary() {
+  const start = new Date(SEM1_START_DATE + "T00:00:00");
+  const end = new Date(SEM1_LAST_INSTRUCTION_DATE + "T00:00:00");
+  const todayIso = getTodayIsoLocal();
+  let totalWorkingDays = 0; let completedWorkingDays = 0; let remainingWorkingDays = 0;
+
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, "0"); const day = String(d.getDate()).padStart(2, "0");
+    const iso = `${y}-${m}-${day}`; const dow = (d.getDay() + 6) % 7;
+    if (dow < 5 && !getHolidayName(iso) && !getExamPeriodInfo(iso)) {
+      totalWorkingDays++;
+      if (iso <= todayIso) completedWorkingDays++; else remainingWorkingDays++;
+    }
+  }
+  return { totalWorkingDays, completedWorkingDays, remainingWorkingDays };
+}
+
+function computeLecturesHeldTillToday(sem) {
+  const heldByShort = {};
+  const courses = SEMESTER_DATA[sem] || [];
+  courses.forEach(c => { heldByShort[c.short] = 0; });
+  if (sem !== "Semester I" || !currentUser) return heldByShort;
+
+  const todayIso = getTodayIsoLocal();
+  const effectiveEndIso = todayIso < SEM1_LAST_INSTRUCTION_DATE ? todayIso : SEM1_LAST_INSTRUCTION_DATE;
+  if (effectiveEndIso < SEM1_START_DATE) return heldByShort;
+
+  const start = new Date(SEM1_START_DATE + "T00:00:00");
+  const end = new Date(effectiveEndIso + "T00:00:00");
+
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const iso = `${y}-${m}-${day}`;
+    if (isNonInstructionalDay(iso)) continue;
+    const { isOff, units } = getMergedDaySlots(iso, sem);
+    if (isOff) continue;
+    units.forEach(u => {
+      if (u.short && !u.isCustomExtra) {
+        heldByShort[u.short] = (heldByShort[u.short] || 0) + 1;
+      }
+    });
+  }
+  return heldByShort;
+}
+
+function purgeNonInstructionalDates(user) {
+  if (!user) return;
+  const shouldPurge = (iso) => (
+    iso < SEM1_START_DATE || iso > SEM1_LAST_INSTRUCTION_DATE ||
+    Boolean(getHolidayName(iso)) || EXAM_PERIODS.some(([s, e]) => iso >= s && iso <= e)
+  );
+  if (user.dailyLogs) Object.keys(user.dailyLogs).forEach(iso => { if (shouldPurge(iso)) delete user.dailyLogs[iso]; });
+  if (user.dailyTicks) Object.keys(user.dailyTicks).forEach(iso => { if (shouldPurge(iso)) delete user.dailyTicks[iso]; });
+  if (user.slot7Map) Object.keys(user.slot7Map).forEach(iso => { if (shouldPurge(iso)) delete user.slot7Map[iso]; });
+}
+
+function computeCalendarTotalsForSem(sem) {
+  const calMissedByShort = {}; const calExtraAttendedByShort = {}; const calExtraMissedByShort = {};
+  const courses = SEMESTER_DATA[sem] || [];
+  courses.forEach(c => { calMissedByShort[c.short] = 0; calExtraAttendedByShort[c.short] = 0; calExtraMissedByShort[c.short] = 0; });
+  if (sem !== "Semester I" || !currentUser) return { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort };
+
+  const allDates = new Set([...Object.keys(currentUser.dailyTicks || {}), ...Object.keys(currentUser.slot7Map || {})]);
+  allDates.forEach(isoDate => {
+    if (isNonInstructionalDay(isoDate)) return;
+    const { isOff, units } = getMergedDaySlots(isoDate, sem);
+    if (isOff) return;
+    const dayTicks = (currentUser.dailyTicks && currentUser.dailyTicks[isoDate]) || {};
+    units.forEach(u => {
+      if (!u.short) return;
+      const isTickedMissed = u.indices.some(i => Boolean(dayTicks[i]));
+      if (u.isCustomExtra) {
+        if (isTickedMissed) calExtraMissedByShort[u.short] = (calExtraMissedByShort[u.short] || 0) + 1;
+        else calExtraAttendedByShort[u.short] = (calExtraAttendedByShort[u.short] || 0) + 1;
+      } else {
+        if (isTickedMissed) calMissedByShort[u.short] = (calMissedByShort[u.short] || 0) + 1;
+      }
+    });
+  });
+  return { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort };
+}
+
+function getWeekType(isoDate) {
+  const examInfo = getExamPeriodInfo(isoDate);
+  if (examInfo) return examInfo.code;
+  for (const [s, e] of EVEN_RANGES) { if (isoDate >= s && isoDate <= e) return "Even Week"; }
+  for (const [s, e] of ODD_RANGES) { if (isoDate >= s && isoDate <= e) return "Odd Week"; }
+  const d = new Date(isoDate + "T00:00:00");
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7) % 2 === 0 ? "Even Week" : "Odd Week";
+}
+
+function getSessionKind(entryText) {
+  const up = (entryText || "").toUpperCase();
+  if (/\bLAB\b/.test(up) || /\bWORKSHOP\b/.test(up) || up.includes("WS-I") || up.includes("WS-II")) return "lab";
+  if (/\bTUT\b/.test(up) || /\bTUTORIAL\b/.test(up)) return "tut";
+  return "theory";
+}
+
+function extractBatchEntry(raw, batchLetter) {
+  if (!raw) return { text: "Free Slot", isLab: false };
+  if (raw.includes("/") && (raw.includes("(A)") || raw.includes("(B)") || raw.includes("(C)"))) {
+    const parts = raw.split("/").map(p => p.trim());
+    for (const p of parts) { if (p.includes(`(${batchLetter})`)) return { text: p, isLab: true }; }
+  }
+  return { text: raw, isLab: false };
+}
+
+function matchSubjectShort(text, semCourses) {
+  if (!text) return null;
+  const up = text.trim().toUpperCase();
+  if (!up || up.includes("REMEDIAL LECTURE") || up.includes("MENTORING SLOT") || up.includes("EXTRA LECTURE SLOT") || up.includes("SHORT BREAK") || up.includes("LUNCH BREAK")) return null;
+  if (up.includes("WORKSHOP") || up.includes("WS-I") || up === "WS" || up === "WS1") return semCourses.some(c => c.short === "WS-I") ? "WS-I" : null;
+  if (up.includes("BE&DE") || up.includes("BEDE")) return semCourses.some(c => c.short.toUpperCase() === "BEDE") ? "BEDE" : null;
+  for (const c of semCourses) { if (up === c.short.toUpperCase() || up === c.code.toUpperCase()) return c.short; }
+  const sorted = [...semCourses].sort((a, b) => b.short.length - a.short.length);
+  for (const c of sorted) {
+    const escaped = c.short.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`(^|[^A-Z0-9&-])${escaped}($|[^A-Z0-9&-])`).test(up)) return c.short;
+  }
+  return null;
+}
+
+function syncTimetableToDate(isoDate) {
+  const effectiveIso = isoDate < SEM1_START_DATE ? SEM1_START_DATE : (isoDate > SEM1_LAST_INSTRUCTION_DATE ? SEM1_LAST_INSTRUCTION_DATE : isoDate);
+  const wk = getWeekType(effectiveIso);
+  if (ttWeekTab !== "Img" && (wk === "Odd Week" || wk === "Even Week")) ttWeekTab = wk === "Odd Week" ? "Odd" : "Even";
+  const dObj = new Date(effectiveIso + "T00:00:00");
+  const dow = (dObj.getDay() + 6) % 7;
+  if (dow >= 0 && dow <= 4) ttSelectedDay = ["MON", "TUE", "WED", "THR", "FRI"][dow];
+  updateTimetableTabButtons();
+}
+
+function updateTimetableTabButtons() {
+  document.getElementById("btn-tt-even").className = ttWeekTab === "Even" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white shadow" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+  document.getElementById("btn-tt-odd").className = ttWeekTab === "Odd" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white shadow" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+  document.getElementById("btn-tt-img").className = ttWeekTab === "Img" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 text-white shadow" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+  const autoBadge = document.getElementById("sec5-auto-badge");
+  if (autoBadge && ttWeekTab !== "Img") autoBadge.textContent = `Auto-Synced: ${ttWeekTab} Week (${ttSelectedDay})`;
+  document.querySelectorAll(".day-pill").forEach(b => {
+    b.className = b.dataset.day === ttSelectedDay ? "day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-blue-600 text-white" : "day-pill px-3 py-1.5 rounded-lg text-xs font-black bg-slate-800 text-slate-300";
+  });
+}
+
+function ensureUserSemData(user) {
+  if (!user.semData) user.semData = {};
+  if (!user.dailyLogs) user.dailyLogs = {};
+  if (!user.dailyTicks) user.dailyTicks = {};
+  if (!user.slot7Map) user.slot7Map = {};
+  if (!user.customHolidays) user.customHolidays = {};
+  if (!user.removedHolidays) user.removedHolidays = {};
+  if (!user.globalExtras) user.globalExtras = {};
+  if (!user.targetPct) user.targetPct = 75;
+  user.branch = normalizeBranchName(user.branch);
+  purgeNonInstructionalDates(user);
+
+  const { calMissedByShort, calExtraAttendedByShort } = computeCalendarTotalsForSem("Semester I");
+
+  Object.keys(SEMESTER_DATA).forEach(sem => {
+    if (!user.semData[sem]) user.semData[sem] = {};
+    SEMESTER_DATA[sem].forEach(c => {
+      if (!user.semData[sem][c.code]) {
+        user.semData[sem][c.code] = { unattended: 0, extra: 0, manualUnattended: 0, manualExtra: 0, imp: c.imp };
+      } else {
+        const rec = user.semData[sem][c.code];
+        if (rec.manualUnattended === undefined) rec.manualUnattended = Math.max(0, (parseInt(rec.unattended) || 0) - (sem === "Semester I" ? (calMissedByShort[c.short] || 0) : 0));
+        if (rec.manualExtra === undefined) rec.manualExtra = (parseInt(rec.extra) || 0) - (sem === "Semester I" ? (calExtraAttendedByShort[c.short] || 0) : 0);
+      }
+    });
+  });
+}
+
+function persistCurrentUser() {
+  if (!currentUser) return;
+  purgeNonInstructionalDates(currentUser);
+  currentUser.updatedAt = Date.now();
+  pushToFirebase();
+}
+
+function getComputedStats() {
+  ensureUserSemData(currentUser);
+  const courses = SEMESTER_DATA[currentSem];
+  const userSem = currentUser.semData[currentSem];
+  const globalExtras = currentUser.globalExtras || {};
+  const targetPct = Math.max(75, Math.min(100, parseInt(currentUser.targetPct || 75)));
+  const tRatio = targetPct / 100.0;
+  const { calMissedByShort, calExtraAttendedByShort, calExtraMissedByShort } = computeCalendarTotalsForSem(currentSem);
+  const heldTillTodayByShort = computeLecturesHeldTillToday(currentSem);
+
+  const statsMap = {};
+  const list = courses.map(c => {
+    const rec = userSem[c.code] || { unattended: 0, extra: 0, manualUnattended: 0, manualExtra: 0, imp: c.imp };
+    const calMissed = parseInt(calMissedByShort[c.short]) || 0;
+    const calExtraAttended = parseInt(calExtraAttendedByShort[c.short]) || 0;
+    const calExtraMissed = parseInt(calExtraMissedByShort[c.short]) || 0;
+    const manualMissed = Math.max(0, parseInt(rec.manualUnattended) || 0);
+    const manualExtra = parseInt(rec.manualExtra) || 0;
+
+    const manualExtraAttended = Math.max(0, manualExtra);
+    const manualExtraMissed = Math.abs(Math.min(0, manualExtra));
+    const addedExtra = Math.max(0, parseInt(globalExtras[c.code]) || 0);
+
+    const totalExtraAttended = calExtraAttended + manualExtraAttended + addedExtra;
+    const totalExtraMissed = calExtraMissed + manualExtraMissed;
+
+    const baseHeldTillToday = heldTillTodayByShort[c.short] || 0;
+    const rawUnattended = calMissed + manualMissed + totalExtraMissed;
+
+    const heldTillToday = Math.max(baseHeldTillToday + totalExtraAttended + totalExtraMissed, rawUnattended);
+    const unattended = Math.min(heldTillToday, rawUnattended);
+
+    const effAttended = Math.max(0, heldTillToday - unattended);
+    const pct = heldTillToday > 0 ? Number(((effAttended / heldTillToday) * 100).toFixed(2)) : 100.00;
+    const reqTarget = Math.ceil(tRatio * heldTillToday);
+    const needed = Math.max(0, reqTarget - effAttended);
+    const maxBunks = Math.max(0, heldTillToday - reqTarget);
+    const safeBunks = Math.max(0, maxBunks - unattended);
+
+    const displayUnattended = calMissed + manualMissed;
+    const displayExtra = manualExtra;
+
+    const item = {
+      ...c,
+      imp: rec.imp || c.imp,
+      semTotal: c.total,
+      heldTillToday,
+      dynamicTotal: heldTillToday,
+      unattended,
+      calMissed,
+      manualMissed,
+      calExtraAttended,
+      calExtraMissed,
+      manualExtra,
+      personalExtra: manualExtra,
+      displayUnattended,
+      displayExtra,
+      adminExtra: addedExtra,
+      totalExtra: totalExtraAttended,
+      effAttended,
+      pct,
+      reqTarget,
+      needed,
+      safeBunks,
+      isSafe: pct >= targetPct
+    };
+    statsMap[c.short] = item;
+    return item;
+  });
+  return { list, statsMap, targetPct };
+}
+
+function getUserAdminRole() {
+  if (!currentUser || !currentUser.email) return null;
+  if (currentUser.email.toLowerCase() === SUPER_ADMIN_EMAIL) return { isSuper: true, branch: "ALL" };
+  const key = encodeKey(currentUser.email);
+  if (adminsCache && adminsCache[key]) return { isSuper: false, branch: adminsCache[key].branch };
+  return null;
+}
+
+function updateHeaderMeta() {
+  if (!currentUser) return;
+  currentUser.branch = normalizeBranchName(currentUser.branch);
+  const hr = new Date().getHours();
+  const greet = hr < 12 ? "Good Morning" : hr < 17 ? "Good Afternoon" : "Good Evening";
+  document.getElementById("greeting-title").textContent = `${greet}, ${currentUser.name}`;
+  document.getElementById("student-meta").innerHTML = `<b>Branch:</b> ${escapeHTML(currentUser.branch)} &nbsp;|&nbsp; <b>Batch:</b> ${escapeHTML(currentUser.batch)} &nbsp;|&nbsp; <b>Account:</b> ${escapeHTML(currentUser.email)}`;
+  document.getElementById("dash-branch").value = currentUser.branch;
+  document.getElementById("dash-batch").value = currentUser.batch;
+  document.getElementById("custom-target-input").value = currentUser.targetPct || 75;
+
+  const role = getUserAdminRole();
+  const adminBtn = document.getElementById("btn-toggle-admin-panel");
+  const superBox = document.getElementById("super-admin-only-box");
+  const overrideBranchSel = document.getElementById("override-branch");
+  const heading = document.getElementById("admin-panel-heading");
+
+  if (role) {
+    adminBtn.classList.remove("hidden");
+    adminBtn.innerHTML = role.isSuper ? "&#128273; Super Admin Panel" : `&#128273; CR Admin (${escapeHTML(role.branch)})`;
+    if (role.isSuper) {
+      superBox?.classList.remove("hidden");
+      if (overrideBranchSel) overrideBranchSel.disabled = false;
+      if (heading) heading.textContent = "Super Admin Control Panel";
+    } else {
+      superBox?.classList.add("hidden");
+      if (overrideBranchSel) {
+        overrideBranchSel.value = role.branch;
+        overrideBranchSel.disabled = true;
+      }
+      if (heading) heading.textContent = `Branch CR Control Panel (${role.branch})`;
+    }
+  } else {
+    adminBtn.classList.add("hidden");
+    document.getElementById("super-admin-panel")?.classList.add("hidden");
+  }
+}
+
+function renderOverrideSlotsEditor() {
+  const dtInput = document.getElementById("override-date");
+  const brSel = document.getElementById("override-branch");
+  const listEl = document.getElementById("override-slots-list");
+  if (!dtInput || !brSel || !listEl) return;
+  if (!dtInput.value) dtInput.value = selectedCalDate;
+
+  const iso = dtInput.value;
+  const branch = normalizeBranchName(brSel.value);
+  const brKey = encodeKey(branch);
+  const existingOverride = branchOverridesCache?.[brKey]?.[iso]?.slots || null;
+
+  const dObj = new Date(iso + "T00:00:00");
+  const dow = (dObj.getDay() + 6) % 7;
+  const dayKey = dow < 5 ? ["MON", "TUE", "WED", "THR", "FRI"][dow] : "MON";
+  const wkType = getWeekType(iso);
+  const branchGrids = TIMETABLES_DB[branch] || TIMETABLES_DB["Computer Engineering - Div I"];
+  const defaultGrid = wkType === "Even Week" ? (branchGrids.EVEN || {}) : (branchGrids.ODD || {});
+  const baseSlots = existingOverride || defaultGrid[dayKey] || [];
+
+  listEl.innerHTML = TIME_SLOTS.map((slotLabel, idx) => {
+    const val = baseSlots[idx] || "";
+    const isBreak = idx === 2 || idx === 5;
+    return `
+      <div class="flex items-center gap-2">
+        <span class="w-36 text-[10px] font-bold text-slate-400 shrink-0">${escapeHTML(slotLabel)}</span>
+        <input type="text" data-slot-idx="${idx}" value="${escapeHTML(val)}" ${isBreak ? "readonly" : ""}
+          class="override-slot-input flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-semibold" />
+      </div>
+    `;
+  }).join("");
+}
+
+function enterDashboard() {
+  ensureUserSemData(currentUser);
+  document.getElementById("login-view").classList.add("hidden");
+  document.getElementById("app-view").classList.remove("hidden");
+  updateHeaderMeta();
+  updateUndoButtonVisibility();
+  populatePersonalPanel();
+  syncTimetableToDate(selectedCalDate);
+  renderOverrideSlotsEditor();
+  loadSavedTimetableImage();
+  renderAll();
+}
+
+function renderAll() {
+  if (!currentUser) return;
+  updateHeaderMeta();
+  updateUndoButtonVisibility();
+  const { list, statsMap, targetPct } = getComputedStats();
+  const wdBar = document.getElementById("term-working-days-bar");
+  if (currentSem === "Semester I") {
+    const { totalWorkingDays, completedWorkingDays, remainingWorkingDays } = computeSem1WorkingDaysSummary();
+    const minDaysSoFar = Math.ceil((targetPct / 100) * completedWorkingDays);
+    wdBar.innerHTML = `
+      <span class="font-bold text-emerald-400">Working Days Held Till Today (${getTodayIsoLocal()}): <b>${completedWorkingDays} days</b> (Min ${minDaysSoFar} days for ${targetPct}%)</span>
+      <span class="font-bold text-sky-300">Upcoming Working Days (Blue): <b>${remainingWorkingDays} days</b></span>
+      <span class="font-bold text-slate-400">Total Semester Working Days (Info Only): <b>${totalWorkingDays} days</b></span>
+    `;
+    wdBar.classList.remove("hidden");
+  } else wdBar.classList.add("hidden");
+
+  document.querySelectorAll(".target-pill").forEach(btn => {
+    const val = parseInt(btn.dataset.target);
+    btn.className = val === targetPct ? "target-pill px-3.5 py-2 rounded-xl text-xs font-black border bg-blue-600 border-sky-400 text-white shadow-md" : "target-pill px-3.5 py-2 rounded-xl text-xs font-black border bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700";
+  });
+
+  const totEff = list.reduce((a, b) => a + b.effAttended, 0);
+  const totHeld = list.reduce((a, b) => a + b.heldTillToday, 0);
+  const overallPct = totHeld ? ((totEff / totHeld) * 100).toFixed(2) : "100.00";
+  const totMissed = list.reduce((a, b) => a + b.unattended, 0);
+  const totBunks = list.reduce((a, b) => a + b.safeBunks, 0);
+  const totNeeded = list.reduce((a, b) => a + b.needed, 0);
+  const totAdminEx = list.reduce((a, b) => a + b.adminExtra, 0);
+
+  document.getElementById("metric-overall").textContent = `${overallPct}%`;
+  const badgeEl = document.getElementById("metric-overall-badge");
+  if (parseFloat(overallPct) >= targetPct) {
+    badgeEl.textContent = `Safe (>=${targetPct}% of ${totHeld} held)`; badgeEl.className = "text-[11px] font-black mt-1 text-emerald-400";
+  } else {
+    badgeEl.textContent = `Shortage (<${targetPct}% of ${totHeld} held)`; badgeEl.className = "text-[11px] font-black mt-1 text-amber-400";
+  }
+  document.getElementById("metric-unattended").textContent = `${totMissed} missed`;
+  document.getElementById("metric-bunks-label").textContent = `Safe Bunks Left (${targetPct}%)`;
+  document.getElementById("metric-bunks").textContent = `${totBunks} left`;
+  document.getElementById("metric-needed-label").textContent = `Classes Needed (${targetPct}%)`;
+  document.getElementById("metric-needed").textContent = `${totNeeded} classes`;
+
+  const bannerEl = document.getElementById("personal-extra-banner");
+  if (totAdminEx > 0) {
+    bannerEl.textContent = `Personal Extra Lectures Active: ${totAdminEx} extra lecture(s) added to your Lectures Held Till Today!`;
+    bannerEl.classList.remove("hidden");
+  } else if (bannerEl) bannerEl.classList.add("hidden");
+
+  renderPersonalCustomHolidaysBadges();
+  renderSubjectsUI(list, targetPct);
+  renderCalendarGrid();
+  renderDailyInspector(statsMap, targetPct);
+  renderTimetableSection(statsMap, targetPct);
+}
+
+window.stepSubject = function(code, field, delta) {
+  const rec = currentUser.semData[currentSem][code];
+  const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
+  const { calMissedByShort } = computeCalendarTotalsForSem(currentSem);
+  const calMissed = parseInt(calMissedByShort[course.short]) || 0;
+
+  if (field === "unattended") {
+    const displayUnattended = calMissed + (parseInt(rec.manualUnattended) || 0);
+    rec.manualUnattended = Math.max(0, (displayUnattended + parseInt(delta)) - calMissed);
+  } else {
+    rec.manualExtra = (parseInt(rec.manualExtra) || 0) + parseInt(delta);
+  }
+  persistCurrentUser();
+  renderAll();
+};
+
+window.setSubjectVal = function(code, field, val) {
+  const rec = currentUser.semData[currentSem][code];
+  const course = SEMESTER_DATA[currentSem].find(c => c.code === code);
+  const { calMissedByShort } = computeCalendarTotalsForSem(currentSem);
+  const calMissed = parseInt(calMissedByShort[course.short]) || 0;
+  const num = parseInt(val) || 0;
+
+  if (field === "unattended") {
+    rec.manualUnattended = Math.max(0, num - calMissed);
+  } else {
+    rec.manualExtra = num;
+  }
+  persistCurrentUser();
+  renderAll();
+};
+
+function renderSubjectsUI(list, targetPct) {
+  document.getElementById("th-req-target").textContent = `Req (${targetPct}%)`;
+  document.getElementById("th-need-target").textContent = `Need (${targetPct}%)`;
+
+  const mobContainer = document.getElementById("mobile-subject-cards");
+  mobContainer.innerHTML = list.map(item => {
+    const borderCol = item.isSafe ? "border-emerald-500/50 bg-emerald-950/20" : "border-amber-500/60 bg-amber-950/25";
+    const pctCol = item.isSafe ? "text-emerald-400" : "text-amber-300";
+    return `
+      <div class="border ${borderCol} rounded-2xl p-4 space-y-3 shadow-md">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <span class="text-xs font-black px-2.5 py-0.5 rounded-lg bg-slate-800 text-sky-300 border border-slate-700">${item.short}</span>
+            <h3 class="text-sm font-black text-white mt-1.5">${item.name}</h3>
+            <p class="text-[11px] text-slate-400 font-medium">Code: ${item.code} | Credits: ${item.credits} | Sem Total (Info): <b>${item.semTotal}</b></p>
+          </div>
+          <div class="text-right shrink-0">
+            <div class="text-lg font-black ${pctCol}">${item.pct}%</div>
+            <div class="text-[10px] font-extrabold uppercase tracking-wider ${pctCol}">${item.isSafe ? `Safe (Bunk ${item.safeBunks})` : `Need ${item.needed} more`}</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 pt-1">
+          <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-2.5">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-black text-slate-400 uppercase">Unattended (Missed)</span>
+              <span class="text-[9px] font-bold text-amber-400/90">Cal: ${item.calMissed} | Man: ${item.manualMissed}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <button type="button" onclick="stepSubject('${item.code}', 'unattended', -1)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-base transition">-</button>
+              <input type="number" min="0" value="${item.displayUnattended}" onchange="setSubjectVal('${item.code}', 'unattended', this.value)" class="w-12 bg-transparent text-center font-black text-sm text-amber-300 focus:outline-none" />
+              <button type="button" onclick="stepSubject('${item.code}', 'unattended', 1)" class="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-base transition">+</button>
+            </div>
+          </div>
+          <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-2.5">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-black text-slate-400 uppercase">Extra (+ Att / - Miss)</span>
+              <span class="text-[9px] font-bold text-emerald-400/90">Cal: ${item.calExtraAttended} | Man: ${item.manualExtra}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <button type="button" onclick="stepSubject('${item.code}', 'extra', -1)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-base transition">-</button>
+              <input type="number" value="${item.displayExtra}" onchange="setSubjectVal('${item.code}', 'extra', this.value)" class="w-12 bg-transparent text-center font-black text-sm text-emerald-300 focus:outline-none" />
+              <button type="button" onclick="stepSubject('${item.code}', 'extra', 1)" class="w-8 h-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-base transition">+</button>
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-wrap justify-between gap-2 text-xs text-slate-300 pt-2 border-t border-slate-800/80 font-semibold">
+          <span>Attended / Held Today: <b class="text-white">${item.effAttended} / ${item.heldTillToday}</b></span>
+          <span>Sem Total: <b class="text-slate-400">${item.semTotal}</b></span>
+          <span>Req (${targetPct}%): <b>${item.reqTarget}</b></span>
+          <span>Safe Bunks: <b>${item.safeBunks}</b></span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  const tbody = document.getElementById("desktop-subject-tbody");
+  tbody.innerHTML = list.map(item => {
+    const rowBg = item.isSafe ? "bg-emerald-950/20 text-emerald-200" : "bg-amber-950/25 text-amber-200";
+    return `
+      <tr class="${rowBg} hover:bg-slate-800/60 transition">
+        <td class="py-3 px-3 font-black text-sky-300">${item.short}</td>
+        <td class="py-3 px-3 font-bold text-white">${item.name}</td>
+        <td class="py-3 px-3 text-center font-semibold">${item.credits}</td>
+        <td class="py-3 px-3 text-center">
+          <div class="inline-flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-2 py-1">
+            <button type="button" onclick="stepSubject('${item.code}', 'unattended', -1)" class="px-2 py-0.5 text-slate-300 hover:text-white font-black">-</button>
+            <input type="number" min="0" value="${item.displayUnattended}" onchange="setSubjectVal('${item.code}', 'unattended', this.value)" class="w-12 bg-transparent text-center font-black text-amber-300 focus:outline-none" />
+            <button type="button" onclick="stepSubject('${item.code}', 'unattended', 1)" class="px-2 py-0.5 text-sky-400 hover:text-sky-300 font-black">+</button>
+          </div>
+          <div class="text-[10px] text-amber-300/80 font-bold mt-0.5">Cal: ${item.calMissed} | Man: ${item.manualMissed}</div>
+        </td>
+        <td class="py-3 px-3 text-center">
+          <div class="inline-flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-2 py-1">
+            <button type="button" onclick="stepSubject('${item.code}', 'extra', -1)" class="px-2 py-0.5 text-slate-300 hover:text-white font-black">-</button>
+            <input type="number" value="${item.displayExtra}" onchange="setSubjectVal('${item.code}', 'extra', this.value)" class="w-12 bg-transparent text-center font-black text-emerald-300 focus:outline-none" />
+            <button type="button" onclick="stepSubject('${item.code}', 'extra', 1)" class="px-2 py-0.5 text-emerald-400 hover:text-emerald-300 font-black">+</button>
+          </div>
+          <div class="text-[10px] text-emerald-300/80 font-bold mt-0.5">Cal: ${item.calExtraAttended} | Man: ${item.manualExtra}</div>
+        </td>
+        <td class="py-3 px-3 text-center font-black text-white">${item.effAttended} / ${item.heldTillToday}</td>
+        <td class="py-3 px-3 text-center font-bold text-slate-400">${item.semTotal}</td>
+        <td class="py-3 px-3 text-center font-black">${item.pct}%</td>
+        <td class="py-3 px-3 text-center font-bold">${item.reqTarget}</td>
+        <td class="py-3 px-3 text-center font-black">${item.needed}</td>
+        <td class="py-3 px-3 text-center font-black">${item.safeBunks}</td>
+        <td class="py-3 px-3 text-center font-black text-xs">${item.isSafe ? `Safe (>=${targetPct}%)` : `Shortage (<${targetPct}%)`}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderCalendarGrid() {
+  const ym = document.getElementById("cal-month-select").value;
+  const [year, month] = ym.split("-").map(Number);
+  const firstDay = new Date(year, month - 1, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const todayIso = getTodayIsoLocal();
+  const gridEl = document.getElementById("calendar-grid");
+  let html = "";
+  for (let i = 0; i < startOffset; i++) html += `<div class="min-h-[54px] bg-slate-950/40 border border-slate-800/70 rounded-xl"></div>`;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const dow = (startOffset + d - 1) % 7;
+    const isSunday = dow === 6;
+    const isWeekend = dow >= 5;
+    const isHoliday = Boolean(getHolidayName(iso));
+    const isPreTerm = isBeforeTermStart(iso);
+    const isPostTerm = isAfterTermEnd(iso);
+    const examInfo = getExamPeriodInfo(iso);
+    const bunkVal = (isPreTerm || isPostTerm || isHoliday || examInfo) ? "" : (currentUser.dailyLogs[iso] || "");
+    const extraSlot7 = (isPreTerm || isPostTerm || isHoliday || examInfo) ? "" : (currentUser.slot7Map[iso] || "");
+    const isSelected = iso === selectedCalDate;
+
+    let bg = "bg-blue-600 text-white border-blue-400";
+    let sub = getWeekType(iso).split(" ")[0].toUpperCase();
+
+    if (isHoliday || isPreTerm) { bg = "bg-red-600 text-white border-red-400"; sub = "HOL"; }
+    else if (isSunday) { bg = "bg-red-600/90 text-white border-red-400"; sub = "WKND"; }
+    else if (examInfo) { bg = "bg-purple-600 text-white border-purple-400"; sub = examInfo.code; }
+    else if (isWeekend) { bg = "bg-red-600/90 text-white border-red-400"; sub = "WKND"; }
+    else if (isPostTerm) { bg = "bg-red-600/80 text-white border-red-400"; sub = "END"; }
+    else if (bunkVal) { bg = "bg-amber-400 text-slate-950 border-amber-200"; sub = escapeHTML(bunkVal); }
+    else if (iso <= todayIso) { bg = "bg-emerald-600 text-white border-emerald-400"; sub = extraSlot7 ? `+${escapeHTML(extraSlot7)}` : "ATT"; }
+    else {
+      bg = "bg-blue-600 text-white border-blue-400";
+      sub = extraSlot7 ? `+${escapeHTML(extraSlot7)}` : getWeekType(iso).split(" ")[0].toUpperCase();
+    }
+
+    const ring = isSelected ? "ring-2 ring-white scale-[1.04] z-10 shadow-lg" : "opacity-95 hover:opacity-100";
+    html += `<button type="button" onclick="selectDate('${iso}')" class="min-h-[54px] p-1 rounded-xl border ${bg} ${ring} flex flex-col items-center justify-center transition active:scale-95"><span class="text-xs sm:text-sm font-black leading-none">${d}</span><span class="text-[9px] font-black mt-1 leading-tight truncate max-w-full px-0.5">${sub}</span></button>`;
+  }
+  gridEl.innerHTML = html;
+}
+
+window.selectDate = function(iso) {
+  selectedCalDate = iso;
+  const ym = iso.slice(0, 7);
+  if (MONTHS_LIST.includes(ym)) document.getElementById("cal-month-select").value = ym;
+  const holInput = document.getElementById("personal-holiday-date");
+  if (holInput) holInput.value = iso;
+  const ovInput = document.getElementById("override-date");
+  if (ovInput) { ovInput.value = iso; renderOverrideSlotsEditor(); }
+  syncTimetableToDate(iso);
+  renderAll();
+};
+
+function getMergedDaySlots(isoDate, semOverride = null) {
+  const activeSem = semOverride || currentSem;
+  if (activeSem === "Semester I" && isNonInstructionalDay(isoDate)) return { dow: 0, isOff: true, units: [] };
+  const dObj = new Date(isoDate + "T00:00:00");
+  const dow = (dObj.getDay() + 6) % 7;
+  if (dow >= 5 || getHolidayName(isoDate)) return { dow, isOff: true, units: [] };
+
+  const dayKey = ["MON", "TUE", "WED", "THR", "FRI"][dow];
+  const wkType = getWeekType(isoDate);
+  const branchKey = normalizeBranchName(currentUser?.branch);
+  const branchGrids = TIMETABLES_DB[branchKey] || TIMETABLES_DB["Computer Engineering - Div I"];
+
+  const grid = wkType === "Even Week" ? (branchGrids.EVEN || {}) : (branchGrids.ODD || {});
+  const brEncoded = encodeKey(branchKey);
+  const dateOverrideSlots = branchOverridesCache?.[brEncoded]?.[isoDate]?.slots || null;
+  const rawSlots = dateOverrideSlots || grid[dayKey] || [];
+
+  const batchLetter = (currentUser?.batch || "Batch A").slice(-1).toUpperCase();
+  const courses = SEMESTER_DATA[activeSem] || [];
+  const savedSlot7 = (currentUser?.slot7Map && currentUser.slot7Map[isoDate]) || "";
+
+  const extracted = rawSlots.map((raw, idx) => {
+    if (idx === 8 && savedSlot7) return { idx, slotLabel: TIME_SLOTS[idx], text: `Extra Lecture: ${savedSlot7} (4–5 PM)`, short: savedSlot7, isLab: false, kind: "extra", isCustomExtra: true };
+    const { text, isLab } = extractBatchEntry(raw, batchLetter);
+    return { idx, slotLabel: TIME_SLOTS[idx], text, short: matchSubjectShort(text, courses), isLab, kind: getSessionKind(text), isCustomExtra: false };
+  });
+
+  const units = [];
+  let i = 0;
+  while (i < extracted.length) {
+    const curr = extracted[i];
+    if (curr.short && curr.idx < 8 && i + 1 < extracted.length && extracted[i + 1].short === curr.short && extracted[i + 1].kind === curr.kind && extracted[i + 1].idx < 8) {
+      let endI = i + 1;
+      while (endI < extracted.length && extracted[endI].short === curr.short && extracted[endI].kind === curr.kind && extracted[endI].idx < 8) endI++;
+      endI--;
+      const indices = [];
+      for (let k = i; k <= endI; k++) indices.push(extracted[k].idx);
+      units.push({ headIdx: curr.idx, indices, slotLabel: `Bulk Unit (Slots ${i + 1}–${endI + 1})`, text: `${curr.text} [1 Combined Bulk Unit]`, short: curr.short, isLab: curr.isLab, kind: curr.kind, isCustomExtra: false });
+      i = endI + 1;
+    } else {
+      units.push({ headIdx: curr.idx, indices: [curr.idx], slotLabel: curr.slotLabel, text: curr.text, short: curr.short, isLab: curr.isLab, kind: curr.kind, isCustomExtra: curr.isCustomExtra });
+      i++;
+    }
+  }
+  return { dow, isOff: false, wkType, units, isOverridden: Boolean(dateOverrideSlots) };
+}
+
+function renderDailyInspector(statsMap, targetPct) {
+  const dObj = new Date(selectedCalDate + "T00:00:00");
+  const wkType = getWeekType(selectedCalDate);
+  const examInfo = getExamPeriodInfo(selectedCalDate);
+  const holidayLabel = getHolidayName(selectedCalDate);
+  const todayIso = getTodayIsoLocal();
+  const isFutureDay = selectedCalDate > todayIso;
+
+  const { isOff, units, isOverridden } = getMergedDaySlots(selectedCalDate);
+
+  document.getElementById("inspected-date-title").textContent = `${dObj.toDateString()} ${isFutureDay ? "(Upcoming Day)" : ""}`;
+  document.getElementById("inspected-date-meta").textContent = `Schedule Status: ${holidayLabel ? holidayLabel : (examInfo ? `${examInfo.label}` : (isOverridden ? `${wkType} [CR Override Active]` : wkType))} | Your Batch: ${currentUser.batch}`;
+
+  const personalHolMount = document.getElementById("inspector-personal-holiday-mount");
+  if (personalHolMount) {
+    if (holidayLabel) {
+      personalHolMount.innerHTML = `
+        <div class="bg-amber-950/50 border border-amber-500/60 rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs">
+          <span class="font-bold text-amber-300">&#9889; Holiday Active: ${selectedCalDate} (${escapeHTML(holidayLabel)})</span>
+          <button type="button" onclick="window.universalRemoveHoliday('${selectedCalDate}')" class="bg-slate-800 hover:bg-slate-700 border border-amber-400 text-amber-300 font-black px-3 py-1.5 rounded-lg shrink-0 transition">Remove Holiday</button>
+        </div>
+      `;
+    } else {
+      personalHolMount.innerHTML = `
+        <div class="bg-red-950/50 border border-red-500/60 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span class="font-bold text-red-200">&#9889; Quick Holiday Action for ${selectedCalDate}:</span>
+          <button type="button" onclick="window.universalDeclareHoliday('${selectedCalDate}', prompt('Holiday Name / Reason:', 'Declared Holiday') || 'Declared Holiday')" class="bg-red-600 hover:bg-red-500 text-white font-black px-3 py-1.5 rounded-lg shadow shrink-0 transition">Declare ${selectedCalDate} as Holiday</button>
+        </div>
+      `;
+    }
+  }
+
+  const container = document.getElementById("daily-slots-container");
+  const slot7Box = document.getElementById("slot7-editor-box");
+  const quickBtns = document.getElementById("day-quick-bunk-btns");
+
+  if (isBeforeTermStart(selectedCalDate)) {
+    container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">No Regular Lectures (Classes started on 07th September 2026)</div>`;
+    slot7Box.classList.add("hidden"); quickBtns.classList.add("hidden"); return;
+  }
+  if (holidayLabel) {
+    container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">Holiday: ${escapeHTML(holidayLabel)} (No Regular Lectures)</div>`;
+    slot7Box.classList.add("hidden"); quickBtns.classList.add("hidden"); return;
+  }
+  if (examInfo) {
+    container.innerHTML = `<div class="bg-purple-950/80 border border-purple-400 text-purple-100 p-4 rounded-xl text-xs font-bold leading-relaxed"><b>${examInfo.label}:</b> Regular timetable lectures are paused during official college examinations.</div>`;
+    slot7Box.classList.add("hidden"); quickBtns.classList.add("hidden"); return;
+  }
+  if (isAfterTermEnd(selectedCalDate)) {
+    container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">Term Completed (Semester I ended on 23rd December 2026)</div>`;
+    slot7Box.classList.add("hidden"); quickBtns.classList.add("hidden"); return;
+  }
+
+  if (isOff) {
+    container.innerHTML = `<div class="bg-red-950/70 border border-red-500 text-red-200 p-3.5 rounded-xl text-xs font-bold">Weekend (Saturday / Sunday) — No Regular Lectures</div>`;
+    slot7Box.classList.add("hidden"); quickBtns.classList.add("hidden"); return;
+  }
+
+  slot7Box.classList.remove("hidden"); quickBtns.classList.remove("hidden");
+  document.getElementById("slot7-input").value = currentUser.slot7Map[selectedCalDate] || "";
+  const dayTicks = currentUser.dailyTicks[selectedCalDate] || {};
+
+  container.innerHTML = units.map((u, uIdx) => {
+    const isTicked = u.indices.some(i => Boolean(dayTicks[i]));
+    const st = u.short ? statsMap[u.short] : null;
+    let statusHtml = `<span class="text-slate-400">Non-Credit / Free Slot (Editable in 4–5 PM box below)</span>`;
+    if (u.text.includes("BREAK")) statusHtml = `<span class="text-slate-400">Official Break</span>`;
+    else if (st) {
+      if (u.isCustomExtra) statusHtml = isTicked ? `<span class="text-amber-300 font-bold">+1 Missed to ${u.short} (Missed: ${st.unattended}/${st.heldTillToday} | ${st.pct}%)</span>` : `<span class="text-emerald-400 font-bold">+1 Attended to ${u.short} (Extra: ${st.personalExtra} | ${st.pct}%)</span>`;
+      else if (st.needed > 0) statusHtml = `<span class="text-amber-300 font-bold">Held Today: ${st.effAttended}/${st.heldTillToday} (Sem: ${st.semTotal}) | Need ${st.needed} for ${targetPct}% (${st.pct}%)</span>`;
+      else statusHtml = `<span class="text-emerald-400 font-bold">Held Today: ${st.effAttended}/${st.heldTillToday} (Sem: ${st.semTotal}) | Safe: Bunk ${st.safeBunks} (${st.pct}%)</span>`;
+    }
+    const labBadge = u.isLab ? `<span class="batch-badge ml-1">YOUR ${escapeHTML((currentUser?.batch || "Batch A").toUpperCase())} LAB</span>` : "";
+    const canTick = Boolean(u.short);
+
+    return `
+      <div class="flex items-center justify-between gap-2.5 bg-slate-900 border ${isTicked ? 'border-amber-500/60 bg-amber-950/20' : (isFutureDay ? 'border-blue-500/40 bg-blue-950/15' : 'border-slate-800')} rounded-xl px-3.5 py-2.5 text-xs">
+        <div class="flex items-center gap-3">
+          ${canTick ? `<input type="checkbox" ${isTicked ? "checked" : ""} onchange="toggleDailyUnitTick('${selectedCalDate}', ${uIdx}, this.checked)" class="w-4 h-4 rounded accent-amber-400 cursor-pointer shrink-0" />` : `<span class="w-4 h-4 inline-block shrink-0"></span>`}
+          <div>
+            <div class="font-extrabold text-white">${escapeHTML(u.text)} ${labBadge}</div>
+            <div class="text-[11px] text-slate-400 font-medium mt-0.5">${u.slotLabel} &bull; ${statusHtml}</div>
+          </div>
+        </div>
+        ${canTick ? `<span class="text-[10px] font-black ${isTicked ? 'text-amber-400' : (isFutureDay ? 'text-sky-400' : 'text-emerald-400')}">${isTicked ? 'MISSED (+1 UNATTENDED)' : (u.isCustomExtra ? 'ATTENDED (+1 EXTRA)' : (isFutureDay ? 'UPCOMING (BLUE)' : 'ATTENDED'))}</span>` : ''}
+      </div>
+    `;
+  }).join("");
+}
+
+window.toggleDailyUnitTick = function(isoDate, unitIdx, isChecked) {
+  if (isNonInstructionalDay(isoDate)) return;
+  const { units } = getMergedDaySlots(isoDate);
+  const unit = units[unitIdx];
+  if (!unit || !unit.short) return;
+  if (!currentUser.dailyTicks[isoDate]) currentUser.dailyTicks[isoDate] = {};
+  unit.indices.forEach(i => { currentUser.dailyTicks[isoDate][i] = isChecked; });
+  recomputeDayBadge(isoDate, units, currentUser.dailyTicks[isoDate]);
+  persistCurrentUser();
+  renderAll();
+};
+
+function applyPresetBunkMode(mode) {
+  if (isNonInstructionalDay(selectedCalDate)) return;
+  const { isOff, units } = getMergedDaySlots(selectedCalDate);
+  if (isOff) return;
+  if (!currentUser.dailyTicks[selectedCalDate]) currentUser.dailyTicks[selectedCalDate] = {};
+  const dayTicks = currentUser.dailyTicks[selectedCalDate];
+  units.forEach(u => {
+    if (u.short) {
+      let shouldTick = false;
+      if (mode === "FULL") shouldTick = true;
+      else if (mode === "AM" && u.headIdx <= 4) shouldTick = true;
+      else if (mode === "PM" && u.headIdx >= 5) shouldTick = true;
+      else if (mode === "CLEAR") shouldTick = false;
+      u.indices.forEach(i => { dayTicks[i] = shouldTick; });
+    }
+  });
+  if (mode === "CLEAR") { delete currentUser.dailyTicks[selectedCalDate]; delete currentUser.dailyLogs[selectedCalDate]; }
+  else recomputeDayBadge(selectedCalDate, units, dayTicks);
+  persistCurrentUser();
+  renderAll();
+}
+
+function recomputeDayBadge(isoDate, units, dayTicks) {
+  if (isNonInstructionalDay(isoDate)) { delete currentUser.dailyLogs[isoDate]; return; }
+  const creditUnits = units.filter(u => Boolean(u.short));
+  const missedShorts = []; let tickedCount = 0;
+  creditUnits.forEach(u => {
+    if (u.indices.some(i => Boolean(dayTicks[i]))) { tickedCount++; if (!missedShorts.includes(u.short)) missedShorts.push(u.short); }
+  });
+  if (tickedCount === 0) delete currentUser.dailyLogs[isoDate];
+  else if (creditUnits.length > 0 && tickedCount >= creditUnits.length) currentUser.dailyLogs[isoDate] = "F";
+  else currentUser.dailyLogs[isoDate] = missedShorts.join(", ");
+}
+
+function renderTimetableSection(statsMap, targetPct) {
+  const branchKey = normalizeBranchName(currentUser?.branch);
+  const branchGrids = TIMETABLES_DB[branchKey] || TIMETABLES_DB["Computer Engineering - Div I"];
+  const grid = ttWeekTab === "Odd" ? (branchGrids.ODD || branchGrids.EVEN) : (branchGrids.EVEN || branchGrids.ODD);
+  const batchLetter = (currentUser?.batch || "Batch A").slice(-1).toUpperCase();
+  const courses = SEMESTER_DATA[currentSem] || [];
+
+  const daySlots = grid[ttSelectedDay] || [];
+  let cardsHtml = ""; let i = 0;
+  while (i < TIME_SLOTS.length) {
+    const raw = daySlots[i] || "";
+    const { text, isLab } = extractBatchEntry(raw, batchLetter);
+    const short = matchSubjectShort(text, courses);
+    const kind = getSessionKind(text);
+    let span = 1;
+
+    if (short && i < 8) {
+      while (i + span < 8) {
+        const nextRaw = daySlots[i + span] || "";
+        if (matchSubjectShort(extractBatchEntry(nextRaw, batchLetter).text, courses) === short && getSessionKind(extractBatchEntry(nextRaw, batchLetter).text) === kind) {
+          span++;
+        } else break;
+      }
+    }
+
+    const st = short ? statsMap[short] : null;
+    let cardClass = "cell-blue"; let meta = "Non-Credit / Extra Slot";
+    if (raw.includes("BREAK")) { cardClass = "cell-red"; meta = "Official Break"; }
+    else if (st) {
+      cardClass = st.pct >= targetPct ? "cell-green" : "cell-yellow";
+      meta = `Attendance: <b>${st.pct}%</b> | Attended/Held: <b>${st.effAttended}/${st.heldTillToday}</b> (Sem Total: ${st.semTotal}) | ${st.needed > 0 ? `Need ${st.needed} for ${targetPct}%` : `Safe (Bunk ${st.safeBunks})`}`;
+    }
+
+    const slotText = span > 1 ? `Slots ${i + 1}–${i + span} [1 Combined Bulk Unit]` : TIME_SLOTS[i];
+    const labBadge = isLab ? `<span class="batch-badge ml-1.5">YOUR ${escapeHTML((currentUser?.batch || "Batch A").toUpperCase())} LAB</span>` : "";
+
+    cardsHtml += `
+      <div class="${cardClass} rounded-2xl p-4 border border-slate-700 flex items-center justify-between gap-3 shadow-md">
+        <div>
+          <div class="text-[11px] font-black uppercase tracking-wider text-sky-300">${slotText}</div>
+          <div class="text-sm sm:text-base font-black mt-1">${escapeHTML(text)} ${labBadge}</div>
+          <div class="text-xs mt-1.5 opacity-90 font-medium">${meta}</div>
+        </div>
+      </div>
+    `;
+    i += span;
+  }
+  document.getElementById("tt-cards-output").innerHTML = cardsHtml;
+
+  const days = ["MON", "TUE", "WED", "THR", "FRI"];
+  const skip = { MON: {}, TUE: {}, WED: {}, THR: {}, FRI: {} };
+  const spanMap = { MON: {}, TUE: {}, WED: {}, THR: {}, FRI: {} };
+
+  days.forEach(d => {
+    let s = 0;
+    const dSlots = grid[d] || [];
+    while (s < TIME_SLOTS.length) {
+      const dRaw = dSlots[s] || "";
+      const { text } = extractBatchEntry(dRaw, batchLetter);
+      const sf = matchSubjectShort(text, courses);
+      const kind = getSessionKind(text);
+      if (sf && s < 8) {
+        let sp = 1;
+        while (s + sp < 8) {
+          const nextRaw = dSlots[s + sp] || "";
+          if (matchSubjectShort(extractBatchEntry(nextRaw, batchLetter).text, courses) === sf && getSessionKind(extractBatchEntry(nextRaw, batchLetter).text) === kind) {
+            skip[d][s + sp] = true; sp++;
+          } else break;
+        }
+        spanMap[d][s] = sp; s += sp;
+      } else {
+        spanMap[d][s] = 1; s++;
+      }
+    }
+  });
+
+  let tableHtml = `<div class="tt-scroll"><table class="tt-table"><thead><tr><th class="tt-sticky-col">TIME SLOT</th>`;
+  days.forEach(d => { tableHtml += `<th>${d}</th>`; });
+  tableHtml += `</tr></thead><tbody>`;
+
+  TIME_SLOTS.forEach((slotName, sIdx) => {
+    tableHtml += `<tr><td class="tt-sticky-col">${slotName}</td>`;
+    days.forEach(d => {
+      if (skip[d][sIdx]) return;
+      const raw = (grid[d] || [])[sIdx] || "";
+      const { text, isLab } = extractBatchEntry(raw, batchLetter);
+      const sf = matchSubjectShort(text, courses);
+      const rSpan = spanMap[d][sIdx] || 1;
+      const st = sf ? statsMap[sf] : null;
+
+      let cls = "cell-blue"; let sub = "";
+      if (raw.includes("BREAK")) { cls = "cell-red"; }
+      else if (st) {
+        cls = st.pct >= targetPct ? "cell-green" : "cell-yellow";
+        sub = `<div class="text-[11px] mt-1.5 opacity-95 font-medium">Att: ${st.pct}% | Held: ${st.effAttended}/${st.heldTillToday} (Sem: ${st.semTotal})</div>`;
+      }
+
+      const bulkTag = rSpan > 1 ? `<div class="text-[10px] text-sky-300 font-black">[1 Combined Bulk Unit (${rSpan} Hrs)]</div>` : "";
+      const labTag = isLab ? `<div class="mt-1.5"><span class="batch-badge">YOUR ${escapeHTML((currentUser?.batch || "Batch A").toUpperCase())} LAB</span></div>` : "";
+      tableHtml += `<td class="${cls}" ${rSpan > 1 ? `rowspan="${rSpan}"` : ""}><div><div>${escapeHTML(text)}</div>${bulkTag}${labTag}${sub}</div></td>`;
+    });
+    tableHtml += `</tr>`;
+  });
+  tableHtml += `</tbody></table></div>`;
+  document.getElementById("tt-grid-output").innerHTML = tableHtml;
+}
+
+function getDefaultDateForMonth(ym) {
+  const todayIso = getTodayIsoLocal();
+  if (todayIso.slice(0, 7) === ym) return todayIso;
+  return ym === "2026-09" ? SEM1_START_DATE : `${ym}-01`;
+}
+
+function switchTtTab(tab) {
+  ttWeekTab = tab;
+  updateTimetableTabButtons();
+  if (tab === "Img") {
+    document.getElementById("tt-schedule-container").classList.add("hidden");
+    document.getElementById("tt-image-container").classList.remove("hidden");
+  } else {
+    document.getElementById("tt-schedule-container").classList.remove("hidden");
+    document.getElementById("tt-image-container").classList.add("hidden");
+    renderAll();
+  }
+}
+
+function switchTtMode(mode) {
+  ttViewMode = mode;
+  document.getElementById("btn-mode-cards").className = mode === "cards" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-sky-600 text-white" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+  document.getElementById("btn-mode-grid").className = mode === "grid" ? "px-3.5 py-2 rounded-xl text-xs font-black bg-sky-600 text-white" : "px-3.5 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300";
+
+  if (mode === "cards") {
+    document.getElementById("tt-day-pills").classList.remove("hidden");
+    document.getElementById("tt-cards-output").classList.remove("hidden");
+    document.getElementById("tt-grid-output").classList.add("hidden");
+  } else {
+    document.getElementById("tt-day-pills").classList.add("hidden");
+    document.getElementById("tt-cards-output").classList.add("hidden");
+    document.getElementById("tt-grid-output").classList.remove("hidden");
+  }
+}
+
+function loadSavedTimetableImage() {
+  const dataUrl = localStorage.getItem("att_saved_tt_img");
+  const imgEl = document.getElementById("tt-saved-preview");
+  const rmBtn = document.getElementById("btn-remove-img");
+  if (dataUrl) {
+    imgEl.src = dataUrl;
+    imgEl.classList.remove("hidden");
+    rmBtn.classList.remove("hidden");
+  } else {
+    imgEl.src = "";
+    imgEl.classList.add("hidden");
+    rmBtn.classList.add("hidden");
+  }
+}
+
+window.addEventListener("DOMContentLoaded", async () => {
+  const semSel = document.getElementById("dash-semester");
+  Object.keys(SEMESTER_DATA).forEach(s => {
+    const opt = document.createElement("option"); opt.value = s; opt.textContent = s; semSel.appendChild(opt);
+  });
+  const todayIso = getTodayIsoLocal();
+  selectedCalDate = (todayIso >= SEM1_START_DATE && todayIso <= "2026-12-31") ? todayIso : SEM1_START_DATE;
+  const ym = selectedCalDate.slice(0, 7);
+  if (MONTHS_LIST.includes(ym)) document.getElementById("cal-month-select").value = ym;
+  const ovDateEl = document.getElementById("override-date");
+  if (ovDateEl) ovDateEl.value = selectedCalDate;
+  syncTimetableToDate(selectedCalDate);
+
+  setupEventListeners();
+
+  let lastCheckedDay = getTodayIsoLocal();
+  setInterval(() => {
+    const nowDay = getTodayIsoLocal();
+    if (nowDay !== lastCheckedDay) {
+      lastCheckedDay = nowDay;
+      if (currentUser) renderAll();
+    }
+  }, 60000);
+
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      const email = (user.email || "").toLowerCase();
+      const name = user.displayName || email.split("@")[0];
+      const uid = user.uid;
+
+      let userData = null;
+      try {
+        const snapshot = await db.ref("users/" + uid).once("value");
+        userData = snapshot.val();
+      } catch (e) {
+        const cached = localStorage.getItem("att_local_backup_" + uid);
+        if (cached) userData = JSON.parse(cached);
+      }
+
+      if (!userData || !userData.semData) {
+        const branch = normalizeBranchName(document.getElementById("reg-branch").value);
+        const batch = document.getElementById("reg-batch").value;
+        userData = {
+          uid,
+          email,
+          name,
+          branch,
+          batch,
+          targetPct: 75,
+          semData: {},
+          dailyLogs: {},
+          dailyTicks: {},
+          slot7Map: {},
+          customHolidays: {},
+          removedHolidays: {},
+          globalExtras: {},
+          updatedAt: Date.now()
+        };
+      } else {
+        userData.uid = uid;
+        userData.email = email;
+        userData.branch = normalizeBranchName(userData.branch);
+      }
+
+      currentUser = userData;
+      ensureUserSemData(currentUser);
+      enterDashboard();
+      startRealtimeListeners(uid);
+      await pushToFirebase();
+    } else {
+      document.getElementById("login-view").classList.remove("hidden");
+      document.getElementById("app-view").classList.add("hidden");
+    }
+  });
+});
+
+function setupEventListeners() {
+  document.getElementById("btn-google-login")?.addEventListener("click", async () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    try {
+      await auth.signInWithPopup(provider);
+    } catch (e) {
+      const errEl = document.getElementById("login-error");
+      if (errEl) {
+        errEl.textContent = "Google Sign-In failed: " + e.message;
+        errEl.classList.remove("hidden");
+      }
+    }
+  });
+
+  document.getElementById("cal-month-select")?.addEventListener("change", (e) => {
+    selectedCalDate = getDefaultDateForMonth(e.target.value); syncTimetableToDate(selectedCalDate); renderAll();
+  });
+  document.getElementById("btn-prev-month")?.addEventListener("click", () => {
+    const sel = document.getElementById("cal-month-select"); const idx = MONTHS_LIST.indexOf(sel.value);
+    if (idx > 0) { sel.value = MONTHS_LIST[idx - 1]; selectedCalDate = getDefaultDateForMonth(sel.value); syncTimetableToDate(selectedCalDate); renderAll(); }
+  });
+  document.getElementById("btn-next-month")?.addEventListener("click", () => {
+    const sel = document.getElementById("cal-month-select"); const idx = MONTHS_LIST.indexOf(sel.value);
+    if (idx < MONTHS_LIST.length - 1) { sel.value = MONTHS_LIST[idx + 1]; selectedCalDate = getDefaultDateForMonth(sel.value); syncTimetableToDate(selectedCalDate); renderAll(); }
+  });
+
+  document.getElementById("btn-day-full-bunk")?.addEventListener("click", () => applyPresetBunkMode("FULL"));
+  document.getElementById("btn-day-am-bunk")?.addEventListener("click", () => applyPresetBunkMode("AM"));
+  document.getElementById("btn-day-pm-bunk")?.addEventListener("click", () => applyPresetBunkMode("PM"));
+  document.getElementById("btn-day-clear-bunk")?.addEventListener("click", () => applyPresetBunkMode("CLEAR"));
+
+  document.getElementById("dash-branch")?.addEventListener("change", (e) => {
+    if (!currentUser) return;
+    currentUser.branch = normalizeBranchName(e.target.value);
+    persistCurrentUser();
+    renderAll();
+  });
+  document.getElementById("dash-semester")?.addEventListener("change", (e) => { currentSem = e.target.value; populatePersonalPanel(); renderAll(); });
+  document.getElementById("dash-batch")?.addEventListener("change", (e) => {
+    if (!currentUser) return;
+    currentUser.batch = e.target.value;
+    persistCurrentUser();
+    renderAll();
+  });
+
+  document.getElementById("btn-reset-sem")?.addEventListener("click", () => {
+    if (!currentUser) return;
+    if (!confirm("Are you sure you want to reset all missed lectures and calendar ticks to 0? You can undo this immediately if needed.")) {
+      return;
+    }
+    try {
+      const snapshot = {
+        email: currentUser.email,
+        sem: currentSem,
+        semData: JSON.parse(JSON.stringify(currentUser.semData[currentSem] || {})),
+        dailyLogs: JSON.parse(JSON.stringify(currentUser.dailyLogs || {})),
+        dailyTicks: JSON.parse(JSON.stringify(currentUser.dailyTicks || {})),
+        slot7Map: JSON.parse(JSON.stringify(currentUser.slot7Map || {}))
+      };
+      localStorage.setItem(UNDO_BACKUP_KEY, JSON.stringify(snapshot));
+    } catch (e) {}
+
+    SEMESTER_DATA[currentSem].forEach(c => {
+      currentUser.semData[currentSem][c.code] = { unattended: 0, extra: 0, manualUnattended: 0, manualExtra: 0, imp: c.imp };
+    });
+    currentUser.dailyLogs = {};
+    currentUser.dailyTicks = {};
+    currentUser.slot7Map = {};
+    persistCurrentUser();
+    renderAll();
+  });
+
+  document.getElementById("btn-undo-reset")?.addEventListener("click", () => {
+    if (!currentUser) return;
+    try {
+      const raw = localStorage.getItem(UNDO_BACKUP_KEY);
+      if (!raw) { alert("No recent reset backup found to undo."); return; }
+      const snapshot = JSON.parse(raw);
+      if (snapshot.email !== currentUser.email) { alert("Backup belongs to a different account."); return; }
+      currentUser.semData[snapshot.sem] = snapshot.semData;
+      currentUser.dailyLogs = snapshot.dailyLogs || {};
+      currentUser.dailyTicks = snapshot.dailyTicks || {};
+      currentUser.slot7Map = snapshot.slot7Map || {};
+      localStorage.removeItem(UNDO_BACKUP_KEY);
+      persistCurrentUser();
+      renderAll();
+    } catch (e) { alert("Could not restore backup."); }
+  });
+
+  document.querySelectorAll(".target-pill").forEach(btn => {
+    btn.addEventListener("click", () => { currentUser.targetPct = parseInt(btn.dataset.target); document.getElementById("custom-target-input").value = currentUser.targetPct; persistCurrentUser(); renderAll(); });
+  });
+
+  document.getElementById("custom-target-input")?.addEventListener("change", (e) => {
+    const val = Math.max(75, Math.min(100, parseInt(e.target.value) || 75)); e.target.value = val; currentUser.targetPct = val; persistCurrentUser(); renderAll();
+  });
+
+  document.getElementById("btn-toggle-power-panel")?.addEventListener("click", () => {
+    const panel = document.getElementById("power-panel");
+    if (!panel) return;
+    panel.classList.toggle("hidden");
+    if (!panel.classList.contains("hidden")) panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+
+  document.getElementById("btn-toggle-admin-panel")?.addEventListener("click", () => {
+    const panel = document.getElementById("super-admin-panel");
+    if (!panel) return;
+    renderOverrideSlotsEditor();
+    panel.classList.toggle("hidden");
+    if (!panel.classList.contains("hidden")) panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+
+  document.getElementById("btn-save-admin-role")?.addEventListener("click", async () => {
+    const email = document.getElementById("admin-assign-email").value.trim().toLowerCase();
+    const branch = document.getElementById("admin-assign-branch").value;
+    if (!email || !email.includes("@")) { alert("Enter a valid Gmail address."); return; }
+    try {
+      await db.ref("admins/" + encodeKey(email)).set({ email, branch });
+      document.getElementById("admin-assign-status").textContent = `Assigned ${branch} CR admin rights to ${email}!`;
+    } catch (e) {
+      alert("Failed to save admin role: " + e.message);
+    }
+  });
+
+  document.getElementById("btn-add-global-holiday")?.addEventListener("click", async () => {
+    const iso = document.getElementById("global-holiday-date").value;
+    const reason = document.getElementById("global-holiday-name").value.trim() || "College Holiday";
+    if (!iso) return;
+    try {
+      await db.ref("global_holidays/" + iso).set(reason);
+      alert(`Universal holiday declared for ${iso} (${reason})!`);
+    } catch (e) {
+      alert("Failed to declare universal holiday: " + e.message);
+    }
+  });
+
+  document.getElementById("btn-remove-global-holiday")?.addEventListener("click", async () => {
+    const iso = document.getElementById("global-holiday-date").value;
+    if (!iso) return;
+    try {
+      await db.ref("global_holidays/" + iso).remove();
+      alert(`Removed universal holiday for ${iso}.`);
+    } catch (e) {
+      alert("Failed to remove universal holiday: " + e.message);
+    }
+  });
+
+  document.getElementById("btn-load-day-slots")?.addEventListener("click", () => renderOverrideSlotsEditor());
+  document.getElementById("override-date")?.addEventListener("change", () => renderOverrideSlotsEditor());
+  document.getElementById("override-branch")?.addEventListener("change", () => renderOverrideSlotsEditor());
+
+  document.getElementById("btn-save-date-override")?.addEventListener("click", async () => {
+    const dt = document.getElementById("override-date").value;
+    const role = getUserAdminRole();
+    if (!role) return;
+    const branch = role.isSuper ? document.getElementById("override-branch").value : role.branch;
+    if (!dt || !branch) return;
+
+    const inputs = Array.from(document.querySelectorAll(".override-slot-input"));
+    const slots = inputs.map(inp => inp.value.trim());
+
+    try {
+      await db.ref(`branch_overrides/${encodeKey(branch)}/${dt}`).set({
+        branch,
+        date: dt,
+        slots,
+        updatedBy: currentUser.email,
+        updatedAt: Date.now()
+      });
+      document.getElementById("override-status-msg").textContent = `Published schedule override for ${branch} on ${dt}!`;
+    } catch (e) {
+      alert("Failed to publish override: " + e.message);
+    }
+  });
+
+  document.getElementById("btn-clear-date-override")?.addEventListener("click", async () => {
+    const dt = document.getElementById("override-date").value;
+    const role = getUserAdminRole();
+    if (!role) return;
+    const branch = role.isSuper ? document.getElementById("override-branch").value : role.branch;
+    if (!dt || !branch) return;
+    try {
+      await db.ref(`branch_overrides/${encodeKey(branch)}/${dt}`).remove();
+      renderOverrideSlotsEditor();
+      document.getElementById("override-status-msg").textContent = `Restored default schedule for ${branch} on ${dt}.`;
+    } catch (e) {
+      alert("Failed to clear override: " + e.message);
+    }
+  });
+
+  document.getElementById("btn-personal-add-holiday")?.addEventListener("click", () => {
+    window.universalDeclareHoliday(document.getElementById("personal-holiday-date").value, document.getElementById("personal-holiday-name").value);
+  });
+
+  document.getElementById("btn-personal-remove-holiday")?.addEventListener("click", () => {
+    window.universalRemoveHoliday(document.getElementById("personal-holiday-date").value);
+  });
+
+  document.getElementById("btn-personal-extra")?.addEventListener("click", () => {
+    if (!currentUser) return;
+    const code = document.getElementById("personal-course-select").value;
+    const count = Math.max(0, parseInt(document.getElementById("personal-extra-count").value) || 0);
+    currentUser.globalExtras[code] = count;
+    persistCurrentUser();
+    document.getElementById("personal-extra-status").textContent = `Saved ${count} extra lecture(s) for ${code} to your personal total!`;
+    renderAll();
+  });
+
+  document.getElementById("btn-save-slot7")?.addEventListener("click", () => {
+    const val = document.getElementById("slot7-input").value.trim();
+    const newShort = val ? matchSubjectShort(val, SEMESTER_DATA[currentSem]) : null;
+    if (val && !newShort) { alert("Unrecognized subject short-form."); return; }
+    if (newShort) currentUser.slot7Map[selectedCalDate] = newShort;
+    else { delete currentUser.slot7Map[selectedCalDate]; if (currentUser.dailyTicks[selectedCalDate]) delete currentUser.dailyTicks[selectedCalDate][8]; }
+    const { units } = getMergedDaySlots(selectedCalDate); recomputeDayBadge(selectedCalDate, units, currentUser.dailyTicks[selectedCalDate] || {}); persistCurrentUser(); renderAll();
+  });
+
+  document.getElementById("btn-clear-slot7")?.addEventListener("click", () => {
+    document.getElementById("slot7-input").value = "";
+    delete currentUser.slot7Map[selectedCalDate]; if (currentUser.dailyTicks[selectedCalDate]) delete currentUser.dailyTicks[selectedCalDate][8];
+    const { units } = getMergedDaySlots(selectedCalDate); recomputeDayBadge(selectedCalDate, units, currentUser.dailyTicks[selectedCalDate] || {}); persistCurrentUser(); renderAll();
+  });
+
+  document.getElementById("btn-tt-even")?.addEventListener("click", () => switchTtTab("Even"));
+  document.getElementById("btn-tt-odd")?.addEventListener("click", () => switchTtTab("Odd"));
+  document.getElementById("btn-tt-img")?.addEventListener("click", () => switchTtTab("Img"));
+  document.getElementById("btn-mode-cards")?.addEventListener("click", () => switchTtMode("cards"));
+  document.getElementById("btn-mode-grid")?.addEventListener("click", () => switchTtMode("grid"));
+  document.querySelectorAll(".day-pill").forEach(btn => {
+    btn.addEventListener("click", () => { ttSelectedDay = btn.dataset.day; updateTimetableTabButtons(); renderAll(); });
+  });
+
+  document.getElementById("tt-file-input")?.addEventListener("change", (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader(); reader.onload = (ev) => { localStorage.setItem("att_saved_tt_img", ev.target.result); loadSavedTimetableImage(); }; reader.readAsDataURL(file);
+  });
+
+  document.getElementById("paste-zone")?.addEventListener("paste", (e) => {
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items; let found = false;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") === 0) {
+        found = true; const blob = items[i].getAsFile(); const reader = new FileReader();
+        reader.onload = (ev) => { localStorage.setItem("att_saved_tt_img", ev.target.result); document.getElementById("paste-status").textContent = "Image pasted and saved!"; loadSavedTimetableImage(); };
+        reader.readAsDataURL(blob); break;
+      }
+    }
+    if (!found) document.getElementById("paste-status").textContent = "Clipboard does not contain an image!";
+  });
+
+  document.getElementById("btn-remove-img")?.addEventListener("click", () => { localStorage.removeItem("att_saved_tt_img"); loadSavedTimetableImage(); });
+  switchTtMode(ttViewMode);
+}
+</script>
+</body>
+</html>
