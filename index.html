@@ -1078,6 +1078,7 @@ function getSessionKind(entryText) {
   return "theory";
 }
 
+// SMART SHORT-FORM FORMATTER
 function formatSlotEntry(rawText, semCourses = SEMESTER_DATA["Semester I"]) {
   if (!rawText) return "";
   const trimmed = String(rawText).trim();
@@ -1671,10 +1672,9 @@ function getMergedDaySlots(isoDate, semOverride = null) {
   const savedSlot7 = rawSlot7 ? (matchSubjectShort(rawSlot7, courses) || formatSlotEntry(rawSlot7, courses)) : "";
 
   const extracted = rawSlots.map((raw, idx) => {
-    if (idx === 8 && savedSlot7) return { idx, slotLabel: TIME_SLOTS[idx], text: `Extra Lecture: ${savedSlot7} (4–5 PM)`, short: savedSlot7, isLab: false, kind: "extra", isCustomExtra: true, isSlotOverridden: false };
+    if (idx === 8 && savedSlot7) return { idx, slotLabel: TIME_SLOTS[idx], text: `Extra Lecture: ${savedSlot7} (4–5 PM)`, short: savedSlot7, isLab: false, kind: getSessionKind(savedSlot7), isCustomExtra: true, isSlotOverridden: false };
     const { text, isLab } = extractBatchEntry(raw, batchLetter);
     const defaultExtracted = extractBatchEntry(defaultDaySlots[idx] || "", batchLetter);
-    // Compare this specific slot against the default slot for that day so ONLY edited slots get flagged
     const isSlotOverridden = Boolean(dateOverrideSlots) && (text.trim().toUpperCase() !== defaultExtracted.text.trim().toUpperCase());
     const matchedShort = matchSubjectShort(text, courses);
     const displayText = (!isLab && matchedShort && text.toUpperCase() === matchedShort.toUpperCase()) ? matchedShort : text;
@@ -1685,9 +1685,10 @@ function getMergedDaySlots(isoDate, semOverride = null) {
   let i = 0;
   while (i < extracted.length) {
     const curr = extracted[i];
-    if (curr.short && curr.idx < 8 && i + 1 < extracted.length && extracted[i + 1].short === curr.short && extracted[i + 1].kind === curr.kind && extracted[i + 1].idx < 8) {
+    // Relaxed bound `< 9` (extracted.length) allowing index 7 and index 8 to merge if shorts match.
+    if (curr.short && i + 1 < extracted.length && extracted[i + 1].short === curr.short && (extracted[i + 1].kind === curr.kind || extracted[i + 1].idx === 8)) {
       let endI = i + 1;
-      while (endI < extracted.length && extracted[endI].short === curr.short && extracted[endI].kind === curr.kind && extracted[endI].idx < 8) endI++;
+      while (endI < extracted.length && extracted[endI].short === curr.short && (extracted[endI].kind === curr.kind || extracted[endI].idx === 8)) endI++;
       endI--;
       const indices = [];
       let anyOverridden = false;
@@ -1779,7 +1780,6 @@ function renderDailyInspector(statsMap, targetPct) {
       else statusHtml = `<span class="text-emerald-400 font-bold">Held Today: ${st.effAttended}/${st.heldTillToday} (Sem: ${st.semTotal}) | Safe: Bunk ${st.safeBunks} (${st.pct}%)</span>`;
     }
     const labBadge = u.isLab ? `<span class="batch-badge ml-1">YOUR ${escapeHTML((currentUser?.batch || "Batch A").toUpperCase())} LAB</span>` : "";
-    // Only display CR OVERRIDE badge on the specific slot(s) that were actually edited
     const overrideTag = u.isSlotOverridden ? `<span class="override-badge ml-1">CR OVERRIDE</span>` : "";
     const canTick = Boolean(u.short);
 
@@ -1882,17 +1882,16 @@ function renderTimetableSection(statsMap, targetPct) {
     const kind = getSessionKind(displayText);
     let span = 1;
 
-    if (short && i < 8) {
-      while (i + span < 8) {
+    if (short && i < 9) { // Relaxed to 9 to allow slot 7 and 8 to merge in Cards
+      while (i + span < 9) {
         const nextRaw = daySlots[i + span] || "";
         const nextExt = extractBatchEntry(nextRaw, batchLetter);
-        if (matchSubjectShort(nextExt.text, courses) === short && getSessionKind(nextExt.text) === kind) {
+        if (matchSubjectShort(nextExt.text, courses) === short && (getSessionKind(nextExt.text) === kind || (i + span) === 8)) {
           span++;
         } else break;
       }
     }
 
-    // Check if any slot in this span was actually modified compared to defaultDaySlots
     let isThisCardOverridden = false;
     if (overrideDateForSelectedDay) {
       for (let k = i; k < i + span; k++) {
@@ -1942,12 +1941,12 @@ function renderTimetableSection(statsMap, targetPct) {
       const { text } = extractBatchEntry(dRaw, batchLetter);
       const sf = matchSubjectShort(text, courses);
       const kind = getSessionKind(text);
-      if (sf && s < 8) {
+      if (sf && s < 9) { // Relaxed to 9 to allow slot 7 and 8 to merge in Grid
         let sp = 1;
-        while (s + sp < 8) {
+        while (s + sp < 9) {
           const nextRaw = dSlots[s + sp] || "";
           const nextExt = extractBatchEntry(nextRaw, batchLetter);
-          if (matchSubjectShort(nextExt.text, courses) === sf && getSessionKind(nextExt.text) === kind) {
+          if (matchSubjectShort(nextExt.text, courses) === sf && (getSessionKind(nextExt.text) === kind || (s + sp) === 8)) {
             skip[d][s + sp] = true; sp++;
           } else break;
         }
@@ -1975,7 +1974,6 @@ function renderTimetableSection(statsMap, targetPct) {
       const rSpan = spanMap[d][sIdx] || 1;
       const st = sf ? statsMap[sf] : null;
 
-      // Check if this specific cell (or merged span) differs from defaultFormattedGrid[d]
       let isCellOverridden = false;
       if (overriddenDays[d]) {
         for (let k = sIdx; k < sIdx + rSpan; k++) {
